@@ -50,6 +50,9 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
     public decimal TotalComTaxa => TotalVenda + Acrescimo;
 
     [ObservableProperty]
+    private ProdutoItem? _itemSelecionado;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Troco))]
     [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
     public partial decimal? ValorRecebido { get; set; }
@@ -87,6 +90,29 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
         foreach(var f in filtrados)
         {
             ResultadosPesquisa.Add(f);
+        }
+    }
+
+    [RelayCommand]
+    private void LancarPrimeiroResultado()
+    {
+        var produto = ResultadosPesquisa.FirstOrDefault();
+        if (produto != null)
+        {
+            AdicionarAoCarrinho(produto);
+            TextoPesquisa = string.Empty; 
+            ResultadosPesquisa.Clear(); 
+        }
+    }
+
+    [RelayCommand]
+    private void RemoverItemSelecionado()
+    {
+        if (ItemSelecionado != null)
+        {
+            Carrinho.Remove(ItemSelecionado);
+            ItemSelecionado = null;
+            AtualizarTotal();
         }
     }
 

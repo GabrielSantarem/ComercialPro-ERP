@@ -37,13 +37,16 @@
                                         <ListBox Grid.Row="1" ItemsSource="{Binding ProdutosLista}" Background="Transparent" BorderThickness="0">
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Grid ColumnDefinitions="3*, 1*, 1*" Margin="0,5" Padding="10">
-                                                        <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" FontWeight="Medium" Foreground="#2C3E50" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                                                        <TextBlock Grid.Column="1" Text="{Binding Preco, StringFormat='{}R$ {0:N2}'}" FontSize="16" Foreground="#27AE60" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                                        <Border Grid.Column="2" Background="#FFF3E0" CornerRadius="6" Padding="8,4" HorizontalAlignment="Right">
-                                                            <TextBlock Text="{Binding Estoque, StringFormat='{}{0} Cx/Un'}" FontSize="14" Foreground="#D35400" FontWeight="Bold" VerticalAlignment="Center"/>
-                                                        </Border>
-                                                    </Grid>
+                                                    <!-- REMOVIDO PADDING DO GRID E SUBSTITUÍDO POR BORDER -->
+                                                    <Border Padding="10" Margin="0,5">
+                                                        <Grid ColumnDefinitions="3*, 1*, 1*">
+                                                            <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" FontWeight="Medium" Foreground="#2C3E50" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                            <TextBlock Grid.Column="1" Text="{Binding Preco, StringFormat='{}R$ {0:N2}'}" FontSize="16" Foreground="#27AE60" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                                            <Border Grid.Column="2" Background="#FFF3E0" CornerRadius="6" Padding="8,4" HorizontalAlignment="Right">
+                                                                <TextBlock Text="{Binding Estoque, StringFormat='{}{0} Cx/Un'}" FontSize="14" Foreground="#D35400" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </Grid>
+                                                    </Border>
                                                 </DataTemplate>
                                             </ListBox.ItemTemplate>
                                         </ListBox>
@@ -106,12 +109,15 @@
                                     <ListBox Grid.Row="1" ItemsSource="{Binding Relatorio}" Background="Transparent" BorderThickness="0">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
-                                                <Grid ColumnDefinitions="3*, 1.5*, 1.5*, 1.5*" Margin="0,5" Padding="15,10">
-                                                    <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" FontWeight="Medium" Foreground="#2C3E50" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                                                    <TextBlock Grid.Column="1" Text="{Binding QuantidadeVendida, StringFormat='{}-{0} un'}" FontSize="16" Foreground="#E74C3C" FontWeight="Black" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="2" Text="{Binding EstoqueAtualSistema, StringFormat='{}{0} un'}" FontSize="16" Foreground="#27AE60" FontWeight="Black" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                    <Border Grid.Column="3" BorderBrush="#BDC3C7" BorderThickness="0,0,0,2" Margin="30,0" Height="25" VerticalAlignment="Bottom"/>
-                                                </Grid>
+                                                <!-- REMOVIDO PADDING DO GRID E SUBSTITUÍDO POR BORDER -->
+                                                <Border Padding="15,10" Margin="0,5">
+                                                    <Grid ColumnDefinitions="3*, 1.5*, 1.5*, 1.5*">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" FontWeight="Medium" Foreground="#2C3E50" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding QuantidadeVendida, StringFormat='{}-{0} un'}" FontSize="16" Foreground="#E74C3C" FontWeight="Black" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding EstoqueAtualSistema, StringFormat='{}{0} un'}" FontSize="16" Foreground="#27AE60" FontWeight="Black" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                        <Border Grid.Column="3" BorderBrush="#BDC3C7" BorderThickness="0,0,0,2" Margin="30,0" Height="25" VerticalAlignment="Bottom"/>
+                                                    </Grid>
+                                                </Border>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
