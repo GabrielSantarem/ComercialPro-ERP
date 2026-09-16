@@ -18,9 +18,7 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-#if DEBUG
-            .WithDeveloperTools()
-#endif
+// DeveloperTools desativado para liberar F12 para o PDV
             .WithInterFont()
             .LogToTrace();
 }

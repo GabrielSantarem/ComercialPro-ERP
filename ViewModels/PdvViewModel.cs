@@ -22,9 +22,11 @@ public partial class ProdutoItem : ObservableObject
 
 public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> logger) : ViewModelBase
 {
+    private readonly PdvService _pdvService = pdvService;
+    private readonly ILogger<PdvViewModel> _logger = logger;
+
     async partial void OnFormaPagamentoSelecionadaChanged(string value)
     {
-        // Atualiza as dependencias se trocar a combo
         OnPropertyChanged(nameof(Acrescimo));
         OnPropertyChanged(nameof(TotalComTaxa));
         OnPropertyChanged(nameof(Troco));
@@ -32,11 +34,11 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
         ValorRecebido = TotalComTaxa;
     }
 
-    private readonly PdvService _pdvService = pdvService;
-    private readonly ILogger<PdvViewModel> _logger = logger;
-
     [ObservableProperty]
     public partial bool IsModalAberto { get; set; }
+
+    [ObservableProperty]
+    public partial string ClienteIdentificacao { get; set; } = string.Empty;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Acrescimo))]
@@ -53,13 +55,15 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
     private ProdutoItem? _itemSelecionado;
 
     [ObservableProperty]
+    private Produto? _produtoPesquisaSelecionado;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Troco))]
     [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
     public partial decimal? ValorRecebido { get; set; }
 
     public decimal Troco => (ValorRecebido ?? 0) - TotalComTaxa;
     public bool PodeConfirmarPagamento => (ValorRecebido ?? 0) >= TotalComTaxa && TotalComTaxa > 0;
-
 
     [ObservableProperty]
     public partial string TextoPesquisa { get; set; } = string.Empty;
@@ -75,7 +79,7 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
     {
         await _pdvService.InicializarBancoDadosAsync();
 
-        if(Vendedores.Count > 0) return; // Ja iniciou antes
+        if (Vendedores.Count > 0) return;
         var vendedoresDb = await _pdvService.ObterVendedoresAsync();
         Vendedores.Clear();
         foreach (var v in vendedoresDb) Vendedores.Add(v);
@@ -85,36 +89,69 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
 
     async partial void OnTextoPesquisaChanged(string value)
     {
-        _logger.LogInformation("[PDV DEBUG] Texto de Pesquisa Modificado para: '{Value}'", value);
         ResultadosPesquisa.Clear();
-        var filtrados = await _pdvService.PesquisarProdutosAsync(value);
-        foreach(var f in filtrados)
+        if (string.IsNullOrWhiteSpace(value))
         {
-            ResultadosPesquisa.Add(f);
-        }
-    }
-
-    [RelayCommand]
-    private async Task LancarPrimeiroResultadoAsync()
-    {
-        _logger.LogInformation("[PDV DEBUG] Comando ENTER disparado. TextoPesquisa atual na VM: '{Texto}'", TextoPesquisa);
-        if (string.IsNullOrWhiteSpace(TextoPesquisa)) 
-        {
-            _logger.LogWarning("[PDV DEBUG] Abortando ENTER. TextoPesquisa estava vazio no ViewModel.");
+            ProdutoPesquisaSelecionado = null;
             return;
         }
 
-        // Pode ser que o leitor bipou TÃO rápido que a lista ResultadosPesquisa ainda não preencheu,
-        // então aqui nós fazemos uma busca forçada bloqueante para garantir que o item venha!
-        var produtos = await _pdvService.PesquisarProdutosAsync(TextoPesquisa);
-        var produto = produtos.FirstOrDefault();
-        _logger.LogInformation("[PDV DEBUG] Busca forçada retornou: {Result}", produto?.Nome ?? "NENHUM");
-        
+        // Se houver multiplicador (ex: "5*sacola"), busca pelo termo após o '*'
+        var termo = ExtrairTermoBusca(value);
+        var filtrados = await _pdvService.PesquisarProdutosAsync(termo);
+        foreach (var f in filtrados)
+        {
+            ResultadosPesquisa.Add(f);
+        }
+
+        ProdutoPesquisaSelecionado = ResultadosPesquisa.FirstOrDefault();
+    }
+
+    private static (int Quantidade, string Termo) ProcessarMultiplicador(string input)
+    {
+        input = input.Trim();
+        var asteriscoIdx = input.IndexOf('*');
+        if (asteriscoIdx > 0 && asteriscoIdx < input.Length - 1)
+        {
+            var prefixo = input[..asteriscoIdx].Trim();
+            var resto = input[(asteriscoIdx + 1)..].Trim();
+            if (int.TryParse(prefixo, out int qtd) && qtd > 0)
+            {
+                return (qtd, resto);
+            }
+        }
+        return (1, input);
+    }
+
+    private static string ExtrairTermoBusca(string input)
+    {
+        var (_, termo) = ProcessarMultiplicador(input);
+        return termo;
+    }
+
+    [RelayCommand]
+    public async Task LancarProdutoAsync()
+    {
+        if (string.IsNullOrWhiteSpace(TextoPesquisa)) return;
+
+        var (quantidade, termo) = ProcessarMultiplicador(TextoPesquisa);
+
+        // 1. Se o operador navegou e selecionou um item na lista com setas, usa ele
+        Produto? produto = ProdutoPesquisaSelecionado;
+
+        // 2. Se não selecionou explicitamente, busca no banco pelo termo
+        if (produto == null || !produto.Nome.Contains(termo, System.StringComparison.OrdinalIgnoreCase))
+        {
+            var produtos = await _pdvService.PesquisarProdutosAsync(termo);
+            produto = produtos.FirstOrDefault();
+        }
+
         if (produto != null)
         {
-            AdicionarAoCarrinho(produto);
-            TextoPesquisa = string.Empty; 
-            ResultadosPesquisa.Clear(); 
+            AdicionarAoCarrinhoComQtd(produto, quantidade);
+            TextoPesquisa = string.Empty;
+            ResultadosPesquisa.Clear();
+            ProdutoPesquisaSelecionado = null;
         }
     }
 
@@ -130,51 +167,52 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
     }
 
     [RelayCommand]
-    private void AdicionarAoCarrinho(Produto produto)
+    public void AdicionarAoCarrinho(Produto produto)
     {
-        _logger.LogInformation("[PDV DEBUG] Adicionando produto ao carrinho: ID {Id} - {Nome}", produto?.Id, produto?.Nome);
-        if (produto == null) return;
+        AdicionarAoCarrinhoComQtd(produto, 1);
+    }
+
+    public void AdicionarAoCarrinhoComQtd(Produto produto, int quantidade)
+    {
+        if (produto == null || quantidade <= 0) return;
         var existente = Carrinho.FirstOrDefault(x => x.Produto.Id == produto.Id);
-        if (existente != null) existente.Quantidade++;
-        else Carrinho.Add(new ProdutoItem { Produto = produto, Quantidade = 1 });
+        if (existente != null)
+        {
+            existente.Quantidade += quantidade;
+        }
+        else
+        {
+            Carrinho.Add(new ProdutoItem { Produto = produto, Quantidade = quantidade });
+        }
         AtualizarTotal();
     }
 
     [RelayCommand]
     private void AumentarQtd(ProdutoItem item)
     {
-        if (item != null) { item.Quantidade++; AtualizarTotal(); }
+        item.Quantidade++;
+        AtualizarTotal();
     }
 
     [RelayCommand]
     private void DiminuirQtd(ProdutoItem item)
     {
-        _logger.LogInformation("Diminuindo quantidade de {Produto}", item.Produto.Nome);
-        if (item != null)
+        if (item.Quantidade > 1)
         {
             item.Quantidade--;
-            if (item.Quantidade <= 0) Carrinho.Remove(item);
-            AtualizarTotal();
         }
+        else
+        {
+            Carrinho.Remove(item);
+        }
+        AtualizarTotal();
     }
-
 
     [RelayCommand]
     private void AbrirModalPagamento()
     {
-        if (Carrinho.Count == 0)
-        {
-            _logger.LogWarning("Tentativa de finalizar venda com carrinho vazio.");
-            return;
-        }
-        if (VendedorSelecionado == null)
-        {
-            _logger.LogWarning("Tentativa de finalizar sem selecionar vendedor.");
-            return;
-        }
-
-        FormaPagamentoSelecionada = "Dinheiro";
-        ValorRecebido = TotalComTaxa; // Default para facilitar a vida do caixa
+        if (Carrinho.Count == 0) return;
+        ValorRecebido = TotalComTaxa;
         IsModalAberto = true;
     }
 
@@ -182,7 +220,6 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
     private void FecharModalPagamento()
     {
         IsModalAberto = false;
-        ValorRecebido = null;
     }
 
     [RelayCommand]
@@ -190,13 +227,14 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
     {
         if (!PodeConfirmarPagamento) return;
 
-        _logger.LogInformation("Confirmando Checkout do Carrinho. Itens: {Qtd}", Carrinho.Count);
+        _logger.LogInformation("Confirmando Checkout do Carrinho. Itens: {Qtd}, Cliente: {Cliente}", Carrinho.Count, ClienteIdentificacao);
         var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
 
         await _pdvService.SalvarPedidoAsync(VendedorSelecionado!.Id, itens);
 
         Carrinho.Clear();
         TextoPesquisa = string.Empty;
+        ClienteIdentificacao = string.Empty;
         ResultadosPesquisa.Clear();
         AtualizarTotal();
         IsModalAberto = false;
@@ -217,5 +255,6 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
         OnPropertyChanged(nameof(TotalComTaxa));
         OnPropertyChanged(nameof(Troco));
         OnPropertyChanged(nameof(PodeConfirmarPagamento));
+        ValorRecebido = TotalComTaxa;
     }
 }
