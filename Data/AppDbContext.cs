@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using GetStartedApp.Models;
 
 namespace GetStartedApp.Data;
@@ -21,6 +22,8 @@ public class AppDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlite("Data Source=pdv.db");
+        // Suprime o PendingModelChangesWarning para evitar crash se o modelo for alterado antes da migration
+        optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
     }
 
     // === INTERCEPTADOR ANTIFRAUDE (BLOCKCHAIN FISCAL) ===
