@@ -18,8 +18,7 @@ public partial class MainViewModel : ViewModelBase
     public MainViewModel(IServiceProvider services)
     {
         _services = services;
-        // Iniciar já abrindo o Dashboard invés do PDV
-        NavigateToHome(); // Mudado do Dashboard para o HUB
+        NavigateToHome(); // Inicia no HUB de módulos
     }
 
     [RelayCommand]
@@ -52,6 +51,15 @@ public partial class MainViewModel : ViewModelBase
     private void NavigateToEstoque() 
     {
         var vm = _services.GetRequiredService<EstoqueViewModel>();
+        CurrentPage = vm;
+        IsHome = false;
+    }
+
+    [RelayCommand]
+    private void NavigateToEntradaNfe()
+    {
+        var vm = _services.GetRequiredService<EntradaNfeViewModel>();
+        _ = vm.CarregarCatalogoAsync();
         CurrentPage = vm;
         IsHome = false;
     }
