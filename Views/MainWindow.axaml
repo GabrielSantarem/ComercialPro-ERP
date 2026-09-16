@@ -7,36 +7,43 @@
         x:Class="GetStartedApp.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Sistema ERP e PDV"
-        RequestedThemeVariant="Light"
+        Title="Comercial Pro ERP"
         WindowState="Maximized">
 
-    <Grid ColumnDefinitions="250, *">
-        <!-- BARRA LATERAL (MENU LATERAL DA ESQUERDA) -->
-        <Border Grid.Column="0" Background="#1E2A38" Padding="15">
-            <Grid RowDefinitions="Auto, *, Auto">
+    <Design.DataContext>
+        <vm:MainViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto, *">
+        
+        <!-- CABEÇALHO GLOBAL (Substitui a velha barra lateral) -->
+        <Border Grid.Row="0" Background="#2C3E50" Height="70" Padding="20,0" BoxShadow="0 2 10 0 #55000000" ZIndex="100">
+            <Grid ColumnDefinitions="Auto, *, Auto, Auto">
                 
-                <!-- Logo / Titulo -->
-                <StackPanel Grid.Row="0" Margin="0,20,0,40" Spacing="5">
-                    <TextBlock Text="Comercial" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Pro ERP" Foreground="#3498DB" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                </StackPanel>
-                
-                <!-- Opções de Menu -->
-                <StackPanel Grid.Row="1" Spacing="15">
-                    <Button Command="{Binding NavigateToDashboardCommand}" Content="📊 Dashboard" Background="Transparent" Foreground="White" FontSize="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15"/>
-                    <Button Command="{Binding NavigateToPdvCommand}" Content="💰 Frente de Caixa (PDV)" Background="#3498DB" Foreground="White" FontSize="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15"/>
-                    <Button Command="{Binding NavigateToEstoqueCommand}" Content="📦 Estoque" Background="Transparent" Foreground="White" FontSize="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15"/>
-                    <Button Command="{Binding NavigateToConfiguracoesCommand}" Content="⚙️ Configurações" Background="Transparent" Foreground="White" FontSize="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15"/>
+                <!-- Logo -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
+                    <TextBlock Text="🛒" FontSize="28"/>
+                    <TextBlock Text="Comercial Pro ERP" Foreground="White" FontSize="22" FontWeight="Black" VerticalAlignment="Center" LetterSpacing="1"/>
                 </StackPanel>
 
-                <!-- Footer do Menu -->
-                <TextBlock Grid.Row="2" Text="v1.0.0" Foreground="#7F8C8D" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                <!-- Status Usuário -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0" IsVisible="{Binding !IsHome}">
+                    <TextBlock Text="Operador: Padrão" Foreground="#95A5A6" FontSize="14" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                </StackPanel>
+
+                <!-- Botão Voltar (Hub) - Escondido se já estiver na Home -->
+                <Button Grid.Column="3" Content="⬅️ Voltar aos Módulos" 
+                        Command="{Binding NavigateToHomeCommand}" 
+                        IsVisible="{Binding !IsHome}"
+                        Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="16" Padding="15,8" CornerRadius="8" Cursor="Hand" VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
-        <!-- ÁREA PRINCIPAL ONDE AS PÁGINAS MUDAM MAGICAMENTE -->
-        <!-- O ContentControl troca de Visual baseado no CurrentPage do ViewLocator -->
-        <TransitioningContentControl Grid.Column="1" Content="{Binding CurrentPage}" />
+        <!-- ESPAÇO DE TRABALHO (Carrega Pdv, Estoque ou Dashboard) -->
+        <Border Grid.Row="1" Background="#ECF0F1">
+            <TransitioningContentControl Content="{Binding CurrentPage}" />
+        </Border>
+        
     </Grid>
+
 </Window>

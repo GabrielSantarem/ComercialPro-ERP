@@ -7,22 +7,37 @@ namespace GetStartedApp.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
-    [RelayCommand]
-    private void NavigateToConfiguracoes() => CurrentPage = _services.GetRequiredService<ConfiguracoesViewModel>();
     private readonly IServiceProvider _services;
 
     [ObservableProperty]
     public partial ViewModelBase CurrentPage { get; set; } = null!;
 
+    [ObservableProperty]
+    private bool _isHome; // Propriedade para gerenciar o estado da navbar no topo
+
     public MainViewModel(IServiceProvider services)
     {
         _services = services;
-        // Iniciar já abrindo o PDV para testes
-        NavigateToPdv();
+        // Iniciar já abrindo o Dashboard invés do PDV
+        NavigateToHome(); // Mudado do Dashboard para o HUB
     }
 
     [RelayCommand]
-    private void NavigateToDashboard() => CurrentPage = _services.GetRequiredService<DashboardViewModel>();
+    private void NavigateToHome()
+    {
+        var vm = _services.GetRequiredService<HomeModulesViewModel>();
+        CurrentPage = vm;
+        IsHome = true;
+    }
+
+    [RelayCommand]
+    private void NavigateToDashboard() 
+    {
+        var vm = _services.GetRequiredService<DashboardViewModel>();
+        _ = vm.CarregarMetricasAsync();
+        CurrentPage = vm;
+        IsHome = false;
+    }
 
     [RelayCommand]
     private void NavigateToPdv() 
@@ -30,8 +45,22 @@ public partial class MainViewModel : ViewModelBase
         var vm = _services.GetRequiredService<PdvViewModel>();
         _ = vm.InicializarAsync();
         CurrentPage = vm;
+        IsHome = false;
     }
 
     [RelayCommand]
-    private void NavigateToEstoque() => CurrentPage = _services.GetRequiredService<EstoqueViewModel>();
+    private void NavigateToEstoque() 
+    {
+        var vm = _services.GetRequiredService<EstoqueViewModel>();
+        CurrentPage = vm;
+        IsHome = false;
+    }
+
+    [RelayCommand]
+    private void NavigateToConfiguracoes() 
+    {
+        var vm = _services.GetRequiredService<ConfiguracoesViewModel>();
+        CurrentPage = vm;
+        IsHome = false;
+    }
 }

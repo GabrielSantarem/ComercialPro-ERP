@@ -51,11 +51,12 @@ public partial class App : Application
             collection.AddSingleton<PdvService>();
             
             // Nossas ViewModels
-            collection.AddTransient<MainViewModel>();     // O Navigation Shell (Janela)
-            collection.AddTransient<PdvViewModel>();      // A Pagina de Venda
-            collection.AddTransient<DashboardViewModel>();// Dashboard
-            collection.AddTransient<EstoqueViewModel>();
-            collection.AddTransient<ConfiguracoesViewModel>();  // Estoque
+            collection.AddTransient<MainViewModel>();           // O Navigation Shell (Janela)
+            collection.AddTransient<HomeModulesViewModel>();    // A Tela Inicial (Hub de App)
+            collection.AddTransient<PdvViewModel>();            // A Pagina de Venda
+            collection.AddTransient<DashboardViewModel>();      // Dashboard
+            collection.AddTransient<EstoqueViewModel>();        // Estoque
+            collection.AddTransient<ConfiguracoesViewModel>();  // Configuracoes
 
             Services = collection.BuildServiceProvider();
 

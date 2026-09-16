@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GetStartedApp.ViewModels"
+             x:Class="GetStartedApp.Views.HomeModulesView"
+             x:DataType="vm:HomeModulesViewModel">
+             
+    <Border Background="#ECF0F1" Padding="40">
+        <Grid RowDefinitions="Auto, *">
+            
+            <StackPanel Grid.Row="0" Margin="0,0,0,40" HorizontalAlignment="Center">
+                <TextBlock Text="Navegação de Módulos" FontSize="36" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center"/>
+                <TextBlock Text="Selecione o aplicativo que deseja inicializar" FontSize="18" Foreground="#7F8C8D" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20">
+                    
+                    <!-- Módulo PDV -->
+                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToPdvCommand}" 
+                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
+                        <StackPanel VerticalAlignment="Center" Spacing="15">
+                            <TextBlock Text="🖥️" FontSize="60" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Frente de Caixa (PDV)" FontSize="20" FontWeight="Bold" Foreground="#2980B9" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Sistema de Vendas Rápido" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Módulo Estoque -->
+                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToEstoqueCommand}" 
+                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
+                        <StackPanel VerticalAlignment="Center" Spacing="15">
+                            <TextBlock Text="📦" FontSize="60" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Gestão de Estoque" FontSize="20" FontWeight="Bold" Foreground="#27AE60" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Inventário e Cadastros" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Módulo Gerencial -->
+                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToDashboardCommand}" 
+                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
+                        <StackPanel VerticalAlignment="Center" Spacing="15">
+                            <TextBlock Text="📊" FontSize="60" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Painel Gerencial" FontSize="20" FontWeight="Bold" Foreground="#8E44AD" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Faturamento e Relatórios" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Módulo Configurações -->
+                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToConfiguracoesCommand}" 
+                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
+                        <StackPanel VerticalAlignment="Center" Spacing="15">
+                            <TextBlock Text="⚙️" FontSize="60" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Configurações (RH)" FontSize="20" FontWeight="Bold" Foreground="#E67E22" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Vendedores e Permissões" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                </WrapPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

@@ -3,10 +3,54 @@
              xmlns:vm="using:GetStartedApp.ViewModels"
              x:Class="GetStartedApp.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
-    <Border Background="#ECF0F1" Padding="40"><Grid>
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="📊" FontSize="80" HorizontalAlignment="Center" Margin="0,0,0,20"/>
-            <TextBlock Text="{Binding Mensagem}" FontSize="32" FontWeight="SemiBold" Foreground="#2C3E50"/>
-        </StackPanel>
-    </Grid></Border>
+             
+    <!-- Tela de Dashboard -->
+    <Border Background="#F4F6F7" Padding="30">
+        <Grid RowDefinitions="Auto, *, Auto">
+            
+            <!-- Cabecalho -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,30">
+                <TextBlock Text="📈 Painel Gerencial" FontSize="36" FontWeight="Bold" Foreground="#2C3E50"/>
+                <TextBlock Text="Visão geral do seu negócio em tempo real." FontSize="18" Foreground="#7F8C8D" Margin="0,5,0,0"/>
+            </StackPanel>
+            
+            <!-- Cards de Métricas -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    
+                    <!-- Card 1: Faturamento do Dia -->
+                    <Border Background="White" CornerRadius="12" Padding="25" Margin="15" Width="300" BoxShadow="0 4 15 0 #1A000000">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Faturamento Hoje" FontSize="18" Foreground="#95A5A6" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding FaturamentoHoje, StringFormat='{}R$ {0:N2}'}" FontSize="36" FontWeight="Black" Foreground="#2ECC71"/>
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="🛒" FontSize="16"/>
+                                <TextBlock Text="{Binding TotalVendasHoje, StringFormat='{}{0} Pedidos Fechados'}" FontSize="14" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Card 2: Valor Alocado Estoque -->
+                    <Border Background="White" CornerRadius="12" Padding="25" Margin="15" Width="300" BoxShadow="0 4 15 0 #1A000000">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Patrimônio em Estoque" FontSize="18" Foreground="#95A5A6" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding ValorEstoque, StringFormat='{}R$ {0:N2}'}" FontSize="36" FontWeight="Black" Foreground="#2980B9"/>
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="📦" FontSize="16"/>
+                                <TextBlock Text="{Binding TotalProdutosEstoque, StringFormat='{}{0} Unidades Físicas'}" FontSize="14" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    
+                </WrapPanel>
+            </ScrollViewer>
+            
+            <!-- Footer Loader -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" IsVisible="{Binding Carregando}">
+                <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="#F39C12"/>
+                <TextBlock Text=" Calculando Metricas..." Foreground="#F39C12" Margin="10,0,0,0"/>
+            </StackPanel>
+            
+        </Grid>
+    </Border>
 </UserControl>
