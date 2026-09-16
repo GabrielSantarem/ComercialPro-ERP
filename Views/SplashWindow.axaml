@@ -3,7 +3,7 @@
         x:Class="GetStartedApp.Views.SplashWindow"
         Width="500" Height="280"
         WindowStartupLocation="CenterScreen"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Background="Transparent"
         Topmost="True"
         ExtendClientAreaToDecorationsHint="True">

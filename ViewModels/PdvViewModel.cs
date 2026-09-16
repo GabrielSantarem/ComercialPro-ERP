@@ -20,39 +20,53 @@ public partial class ProdutoItem : ObservableObject
     public decimal Total => Quantidade * Produto.Preco;
 }
 
-public partial class PdvViewModel : ViewModelBase
+public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> logger) : ViewModelBase
 {
-    private readonly PdvService _pdvService;
-    private readonly ILogger<PdvViewModel> _logger;
+    async partial void OnFormaPagamentoSelecionadaChanged(string value)
+    {
+        // Atualiza as dependencias se trocar a combo
+        OnPropertyChanged(nameof(Acrescimo));
+        OnPropertyChanged(nameof(TotalComTaxa));
+        OnPropertyChanged(nameof(Troco));
+        OnPropertyChanged(nameof(PodeConfirmarPagamento));
+        ValorRecebido = TotalComTaxa;
+    }
+
+    private readonly PdvService _pdvService = pdvService;
+    private readonly ILogger<PdvViewModel> _logger = logger;
 
     [ObservableProperty]
-    private bool _isModalAberto;
+    public partial bool IsModalAberto { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Acrescimo))]
+    [NotifyPropertyChangedFor(nameof(TotalComTaxa))]
+    [NotifyPropertyChangedFor(nameof(Troco))]
+    [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
+    public partial string FormaPagamentoSelecionada { get; set; } = "Dinheiro";
+    public ObservableCollection<string> FormasPagamento { get; } = ["Dinheiro", "PIX", "Débito", "Crédito (+2%)"];
+
+    public decimal Acrescimo => FormaPagamentoSelecionada == "Crédito (+2%)" ? TotalVenda * 0.02m : 0m;
+    public decimal TotalComTaxa => TotalVenda + Acrescimo;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Troco))]
     [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
-    private decimal? _valorRecebido;
+    public partial decimal? ValorRecebido { get; set; }
 
-    public decimal Troco => (ValorRecebido ?? 0) - TotalVenda;
-    public bool PodeConfirmarPagamento => (ValorRecebido ?? 0) >= TotalVenda && TotalVenda > 0;
+    public decimal Troco => (ValorRecebido ?? 0) - TotalComTaxa;
+    public bool PodeConfirmarPagamento => (ValorRecebido ?? 0) >= TotalComTaxa && TotalComTaxa > 0;
 
-
-    [ObservableProperty]
-    private string _textoPesquisa = string.Empty;
 
     [ObservableProperty]
-    private Vendedor? _vendedorSelecionado;
+    public partial string TextoPesquisa { get; set; } = string.Empty;
 
+    [ObservableProperty]
+    public partial Vendedor? VendedorSelecionado { get; set; }
     public ObservableCollection<Vendedor> Vendedores { get; } = new();
     public ObservableCollection<Produto> ResultadosPesquisa { get; } = new();
     public ObservableCollection<ProdutoItem> Carrinho { get; } = new();
     public decimal TotalVenda => Carrinho.Sum(x => x.Total);
-
-    public PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> logger)
-    {
-        _pdvService = pdvService;
-        _logger = logger;
-    }
 
     public async Task InicializarAsync()
     {
@@ -104,22 +118,23 @@ public partial class PdvViewModel : ViewModelBase
         }
     }
 
-    
+
     [RelayCommand]
     private void AbrirModalPagamento()
     {
-        if (Carrinho.Count == 0) 
+        if (Carrinho.Count == 0)
         {
             _logger.LogWarning("Tentativa de finalizar venda com carrinho vazio.");
             return;
         }
-        if (VendedorSelecionado == null) 
+        if (VendedorSelecionado == null)
         {
             _logger.LogWarning("Tentativa de finalizar sem selecionar vendedor.");
             return;
         }
-        
-        ValorRecebido = TotalVenda; // Default para facilitar a vida do caixa
+
+        FormaPagamentoSelecionada = "Dinheiro";
+        ValorRecebido = TotalComTaxa; // Default para facilitar a vida do caixa
         IsModalAberto = true;
     }
 
@@ -134,12 +149,12 @@ public partial class PdvViewModel : ViewModelBase
     private async Task ConfirmarPagamentoAsync()
     {
         if (!PodeConfirmarPagamento) return;
-        
+
         _logger.LogInformation("Confirmando Checkout do Carrinho. Itens: {Qtd}", Carrinho.Count);
         var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
-        
-        await _pdvService.SalvarPedidoAsync(VendedorSelecionado.Id, itens);
-        
+
+        await _pdvService.SalvarPedidoAsync(VendedorSelecionado!.Id, itens);
+
         Carrinho.Clear();
         TextoPesquisa = string.Empty;
         ResultadosPesquisa.Clear();
@@ -155,5 +170,12 @@ public partial class PdvViewModel : ViewModelBase
         AtualizarTotal();
     }
 
-    private void AtualizarTotal() => OnPropertyChanged(nameof(TotalVenda));
+    private void AtualizarTotal()
+    {
+        OnPropertyChanged(nameof(TotalVenda));
+        OnPropertyChanged(nameof(Acrescimo));
+        OnPropertyChanged(nameof(TotalComTaxa));
+        OnPropertyChanged(nameof(Troco));
+        OnPropertyChanged(nameof(PodeConfirmarPagamento));
+    }
 }

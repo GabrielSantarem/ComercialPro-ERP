@@ -24,6 +24,9 @@ public class Venda
     public Vendedor Vendedor { get; set; } = null!;
     public DateTime DataHora { get; set; }
     public decimal ValorTotal { get; set; }
+    
+    // Novo campo antifraude (Blockchain local)
+    public string HashSeguranca { get; set; } = string.Empty;
 
     public List<ItemVenda> Itens { get; set; } = [];
 }

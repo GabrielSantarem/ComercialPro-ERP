@@ -116,9 +116,19 @@
                     <TextBlock Text="Resumo do Pagamento" FontSize="32" FontWeight="Bold" Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                     
                     <!-- Resumo -->
-                    <Grid ColumnDefinitions="*, *">
-                        <TextBlock Grid.Column="0" Text="Valor a Pagar:" FontSize="22" Foreground="#7F8C8D"/>
-                        <TextBlock Grid.Column="1" Text="{Binding TotalVenda, StringFormat='{}R$ {0:N2}'}" FontSize="32" FontWeight="Bold" Foreground="#E74C3C" HorizontalAlignment="Right"/>
+                    <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto">
+                        
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Método:" FontSize="20" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                        <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding FormasPagamento}" SelectedItem="{Binding FormaPagamentoSelecionada}" HorizontalAlignment="Stretch" Margin="0,0,0,15" FontSize="18"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Subtotal:" FontSize="18" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalVenda, StringFormat='{}R$ {0:N2}'}" FontSize="18" FontWeight="SemiBold" Foreground="#333" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Acréscimo (Juros):" FontSize="18" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Acrescimo, StringFormat='{}+ R$ {0:N2}'}" FontSize="18" FontWeight="SemiBold" Foreground="#E67E22" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Valor a Pagar:" FontSize="24" FontWeight="Bold" Foreground="#2C3E50" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding TotalComTaxa, StringFormat='{}R$ {0:N2}'}" FontSize="32" FontWeight="Bold" Foreground="#E74C3C" HorizontalAlignment="Right"/>
                     </Grid>
 
                     <Border Height="1" Background="#ECF0F1" Margin="0,10"/>
