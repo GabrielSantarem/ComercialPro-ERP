@@ -11,12 +11,12 @@ namespace GetStartedApp.ViewModels;
 public partial class EstoqueViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private DateTime? _dataFiltro = DateTimeOffset.Now;
+    public partial DateTime? DataFiltro { get; set; } = DateTime.Today;
 
     private readonly PdvService _service;
 
-    public ObservableCollection<Produto> ProdutosLista { get; } = new();
-    public ObservableCollection<RelatorioInventarioDto> Relatorio { get; } = new();
+    public ObservableCollection<Produto> ProdutosLista { get; } = [];
+    public ObservableCollection<RelatorioInventarioDto> Relatorio { get; } = [];
 
     [ObservableProperty]
     private string _mensagemAviso = string.Empty;
@@ -52,12 +52,12 @@ public partial class EstoqueViewModel : ViewModelBase
             Estoque = NovoEstoque
         };
         await _service.SalvarProdutoAsync(pro);
-        
+
         // Limpar form
         NovoNome = string.Empty;
         NovoPreco = 0;
         NovoEstoque = 0;
-        
+
         await CarregarProdutosAsync();
         MensagemAviso = "Produto salvo com sucesso!";
         _ = LimparAvisoDepoisAsync();
@@ -78,7 +78,7 @@ public partial class EstoqueViewModel : ViewModelBase
         _ = LimparAvisoDepoisAsync();
     }
 
-    private async Task LimparAvisoDepoisAsync() 
+    private async Task LimparAvisoDepoisAsync()
     {
         await Task.Delay(3000);
         MensagemAviso = string.Empty;
