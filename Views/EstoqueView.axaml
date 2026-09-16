@@ -1,96 +1,127 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GetStartedApp.ViewModels"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
              x:Class="GetStartedApp.Views.EstoqueView"
              x:DataType="vm:EstoqueViewModel">
 
-    <Grid Background="#ECF0F1">
-        <TabControl Margin="20">
-            <!-- ABA 1: GERENCIAMENTO E CADASTRO -->
-            <TabItem Header="Cadastro de Produtos" FontSize="18">
-                <Grid ColumnDefinitions="2*, 1*" Margin="0,15,0,0">
-                    
-                    <!-- Lado Esquerdo: Lista de Produtos -->
-                    <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="15" Margin="0,0,15,0">
+    <Border Background="#F4F6F7" Padding="20">
+        <Grid RowDefinitions="Auto, *">
+            
+            <TextBlock Grid.Row="0" Text="📦 Gestão de Estoque e Precificação" FontSize="32" FontWeight="Black" Foreground="#2C3E50" Margin="0,0,0,25"/>
+
+            <TabControl Grid.Row="1" Background="Transparent">
+                
+                <!-- ABA 1: GERENCIAMENTO E CADASTRO -->
+                <TabItem Header="📋 Produtos e Preços" FontSize="18" FontWeight="SemiBold">
+                    <Grid ColumnDefinitions="3*, 1.5*" Margin="0,20,0,0">
+                        
+                        <!-- Lado Esquerdo: Lista de Produtos -->
+                        <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20" Margin="0,0,20,0" BoxShadow="0 4 15 0 #1A000000">
+                            <Grid RowDefinitions="Auto, *">
+                                <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,15">
+                                    <TextBlock Grid.Column="0" Text="Inventário Atual" FontSize="22" FontWeight="Bold" Foreground="#34495E" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="Status de Caixa Forte" FontSize="14" Foreground="#95A5A6" VerticalAlignment="Center"/>
+                                </Grid>
+                                
+                                <Border Grid.Row="1" BorderBrush="#ECF0F1" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+                                    <Grid RowDefinitions="Auto, *">
+                                        <!-- Header Tabela -->
+                                        <Border Grid.Row="0" Background="#F8F9F9" Padding="15,12">
+                                            <Grid ColumnDefinitions="3*, 1*, 1*">
+                                                <TextBlock Grid.Column="0" Text="Produto e Variação" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                                <TextBlock Grid.Column="1" Text="Preço Unitário" FontWeight="Bold" Foreground="#7F8C8D" HorizontalAlignment="Right"/>
+                                                <TextBlock Grid.Column="2" Text="Qtd Atual" FontWeight="Bold" Foreground="#7F8C8D" HorizontalAlignment="Right"/>
+                                            </Grid>
+                                        </Border>
+                                        <!-- Corpo Tabela -->
+                                        <ListBox Grid.Row="1" ItemsSource="{Binding ProdutosLista}" Background="Transparent" BorderThickness="0">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid ColumnDefinitions="3*, 1*, 1*" Margin="0,5" Padding="10">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" FontWeight="Medium" Foreground="#2C3E50" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Preco, StringFormat='{}R$ {0:N2}'}" FontSize="16" Foreground="#27AE60" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                                        <Border Grid.Column="2" Background="#FFF3E0" CornerRadius="6" Padding="8,4" HorizontalAlignment="Right">
+                                                            <TextBlock Text="{Binding Estoque, StringFormat='{}{0} Cx/Un'}" FontSize="14" Foreground="#D35400" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Lado Direito: Formulário Adicionar -->
+                        <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="25" BoxShadow="0 4 15 0 #1A000000" VerticalAlignment="Top">
+                            <StackPanel Spacing="15">
+                                <TextBlock Text="➕ Cadastro Rápido" FontSize="22" FontWeight="Bold" Foreground="#34495E" Margin="0,0,0,10"/>
+                                
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Nome ou Descrição:" FontSize="14" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding NovoNome}" FontSize="16" Padding="12" Background="#F4F6F7" BorderThickness="0" CornerRadius="6" PlaceholderText="Ex: Fita Adesiva..."/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Preço de Venda (R$):" FontSize="14" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                    <NumericUpDown Value="{Binding NovoPreco}" Minimum="0" Increment="0.5" FontSize="16" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6" FormatString="N2"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Qtd de Estoque Inicial:" FontSize="14" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                    <NumericUpDown Value="{Binding NovoEstoque}" Minimum="0" Increment="1" FontSize="16" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                </StackPanel>
+
+                                <Button Command="{Binding SalvarNovoProdutoCommand}" Content="💾 Salvar no Catálogo" Background="#2ECC71" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15" CornerRadius="8" Cursor="Hand" Margin="0,10,0,0"/>
+
+                                <TextBlock Text="{Binding MensagemAviso}" Foreground="#E74C3C" FontWeight="Bold" TextWrapping="Wrap" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <!-- ABA 2: RELATÓRIO / CONTAGEM FISICA CAIXA -->
+                <TabItem Header="🔄 Fechamento Físico (Giro do Dia)" FontSize="18" FontWeight="SemiBold">
+                     <Border Background="White" CornerRadius="12" Padding="25" Margin="0,20,0,0" BoxShadow="0 4 15 0 #1A000000">
                         <Grid RowDefinitions="Auto, *">
-                            <TextBlock Grid.Row="0" Text="Inventário Atual" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" Foreground="#34495E"/>
-                            <ListBox Grid.Row="1" ItemsSource="{Binding ProdutosLista}" Background="Transparent">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnDefinitions="3*, 1*, 1*" Margin="0,5">
-                                            <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Estoque, StringFormat='{}Estoque: {0}'}" FontSize="16" Foreground="#E67E22" FontWeight="Bold" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding Preco, StringFormat='{}R$ {0:N2}'}" FontSize="16" Foreground="#27AE60" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15" Margin="0,0,0,25">
+                                <TextBlock Text="Filtrar Movimentação:" VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold" Foreground="#34495E" />
+                                <CalendarDatePicker SelectedDate="{Binding DataFiltro}" Width="220" FontSize="16" Padding="10" VerticalAlignment="Center" BorderThickness="1" BorderBrush="#BDC3C7" CornerRadius="6"/>
+                                <Button Command="{Binding BuscarGiroEstoqueCommand}" Content="🔍 Gerar Relatório" Background="#3498DB" Foreground="White" FontWeight="Bold" Padding="20,10" CornerRadius="6" FontSize="16" VerticalAlignment="Center" Cursor="Hand"/>
+                                <TextBlock Text="{Binding MensagemAviso}" VerticalAlignment="Center" Foreground="#E74C3C" FontWeight="Bold" FontSize="16" Margin="15,0,0,0" />
+                            </StackPanel>
+
+                            <Border Grid.Row="1" BorderBrush="#ECF0F1" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+                                <Grid RowDefinitions="Auto, *">
+                                    <!-- Cabeçalho do relatorio -->
+                                    <Border Grid.Row="0" Background="#34495E" Padding="15">
+                                        <Grid ColumnDefinitions="3*, 1.5*, 1.5*, 1.5*">
+                                            <TextBlock Grid.Column="0" Text="Nome do Produto" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="1" Text="Qtd Vendida" Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="2" Text="Qtd Atual Sist." Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="3" Text="Contagem Papel" Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                         </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </Grid>
-                    </Border>
+                                    </Border>
 
-                    <!-- Lado Direito: Formulário Adicionar -->
-                    <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="20">
-                        <StackPanel Spacing="15">
-                            <TextBlock Text="Novo Produto" FontSize="20" FontWeight="Bold" Foreground="#34495E"/>
-                            
-                            <TextBlock Text="Nome / Descrição:" />
-                            <TextBox Text="{Binding NovoNome}" PlaceholderText="Ex: Fita Adesiva Durex..."/>
-
-                            <TextBlock Text="Preço Unitário (R$):" />
-                            <NumericUpDown Value="{Binding NovoPreco}" Minimum="0" Increment="0.5"/>
-
-                            <TextBlock Text="Qtd Estoque Inicial:" />
-                            <NumericUpDown Value="{Binding NovoEstoque}" Minimum="0" Increment="1"/>
-
-                            <Button Command="{Binding SalvarNovoProdutoCommand}" Content="💾 Salvar Produto" Background="#2ECC71" Foreground="White" FontSize="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="10" Margin="0,15,0,0"/>
-
-                            <TextBlock Text="{Binding MensagemAviso}" Foreground="#2980B9" FontWeight="Bold" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </TabItem>
-
-            <!-- ABA 2: RELATÓRIO / CONTAGEM FISICA CAIXA -->
-            <TabItem Header="Levantamento (Giro Diário)" FontSize="18">
-                 <Grid RowDefinitions="Auto, *" Margin="0,15,0,0">
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15" Margin="0,0,0,20">
-                        <TextBlock Text="Filtrar Relatório:" VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold" Foreground="#34495E" />
-                        <CalendarDatePicker SelectedDate="{Binding DataFiltro}" Width="200" FontSize="16" VerticalAlignment="Center" />
-                        <Button Command="{Binding BuscarGiroEstoqueCommand}" Content="🔍 Buscar" Background="#3498DB" Foreground="White" Padding="15,8" FontSize="16" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding MensagemAviso}" VerticalAlignment="Center" Foreground="#E74C3C" FontWeight="Bold" FontSize="16" Margin="10,0,0,0" />
-                    </StackPanel>
-
-                    <Border Grid.Row="1" Background="White" CornerRadius="8" BorderThickness="1" BorderBrush="#DDD" ClipToBounds="True">
-                        <Grid RowDefinitions="Auto, *">
-                            <!-- Cabeçalho do relatorio -->
-                            <Border Grid.Row="0" Background="#34495E" Padding="15">
-                                <Grid ColumnDefinitions="3*, 1*, 1*, 1.5*">
-                                    <TextBlock Grid.Column="0" Text="Nome do Produto" Foreground="White" FontWeight="Bold"/>
-                                    <TextBlock Grid.Column="1" Text="Qtd Vendida" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="Estoque App" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
-                                    <TextBlock Grid.Column="3" Text="Contagem Física (Papel)" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding Relatorio}" Background="Transparent" BorderThickness="0">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="3*, 1.5*, 1.5*, 1.5*" Margin="0,5" Padding="15,10">
+                                                    <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" FontWeight="Medium" Foreground="#2C3E50" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding QuantidadeVendida, StringFormat='{}-{0} un'}" FontSize="16" Foreground="#E74C3C" FontWeight="Black" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding EstoqueAtualSistema, StringFormat='{}{0} un'}" FontSize="16" Foreground="#27AE60" FontWeight="Black" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <Border Grid.Column="3" BorderBrush="#BDC3C7" BorderThickness="0,0,0,2" Margin="30,0" Height="25" VerticalAlignment="Bottom"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
                                 </Grid>
                             </Border>
-
-                            <ListBox Grid.Row="1" ItemsSource="{Binding Relatorio}" Background="Transparent">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnDefinitions="3*, 1*, 1*, 1.5*" Margin="5,10">
-                                            <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding QuantidadeVendida}" FontSize="18" Foreground="#E74C3C" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding EstoqueAtualSistema}" FontSize="18" Foreground="#27AE60" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            <Border Grid.Column="3" BorderBrush="#95A5A6" BorderThickness="0,0,0,1" Margin="10,0" Height="25" VerticalAlignment="Bottom"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
                         </Grid>
-                    </Border>
-                 </Grid>
-            </TabItem>
-        </TabControl>
-    </Grid>
+                     </Border>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Border>
+
 </UserControl>

@@ -4,24 +4,35 @@
              x:Class="GetStartedApp.Views.ConfiguracoesView"
              x:DataType="vm:ConfiguracoesViewModel">
     
-    <Border Background="#ECF0F1" Padding="40">
+    <Border Background="#F4F6F7" Padding="20">
         <Grid RowDefinitions="Auto, *">
             
-            <TextBlock Grid.Row="0" Text="Configurações e Equipe" FontSize="28" FontWeight="Bold" Foreground="#2C3E50" Margin="0,0,0,20"/>
+            <TextBlock Grid.Row="0" Text="⚙️ Gestão de Equipe e Configurações" FontSize="32" FontWeight="Black" Foreground="#2C3E50" Margin="0,0,0,25"/>
 
-            <TabControl Grid.Row="1">
-                <TabItem Header="👨‍💼 Vendedores / Usuários" FontSize="18">
-                    <Grid ColumnDefinitions="*, *" Margin="0,15,0,0">
+            <TabControl Grid.Row="1" Background="Transparent">
+                
+                <!-- ABA 1: RH e EQUIPE -->
+                <TabItem Header="👥 Operadores de Caixa (RH)" FontSize="18" FontWeight="SemiBold">
+                    <Grid ColumnDefinitions="*, *" Margin="0,20,0,0">
                         
                         <!-- Lista de Vendedores -->
-                        <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="20" Margin="0,0,10,0">
+                        <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="25" Margin="0,0,15,0" BoxShadow="0 4 15 0 #1A000000">
                             <Grid RowDefinitions="Auto, *">
-                                <TextBlock Grid.Row="0" Text="Usuários Ativos" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,15" Foreground="#34495E"/>
-                                <ListBox Grid.Row="1" ItemsSource="{Binding VendedoresLista}" Background="Transparent">
+                                <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                                    <TextBlock Text="Membros Ativos" FontSize="22" FontWeight="Bold" Foreground="#34495E"/>
+                                    <TextBlock Text="Lista de funcionários autorizados a operar caixas." FontSize="14" Foreground="#95A5A6" Margin="0,5,0,0"/>
+                                </StackPanel>
+                                
+                                <ListBox Grid.Row="1" ItemsSource="{Binding VendedoresLista}" Background="Transparent" BorderThickness="0">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#F7F9F9" CornerRadius="5" Padding="15,10" Margin="0,5">
-                                                <TextBlock Text="{Binding Nome}" FontSize="18" Foreground="#2C3E50" FontWeight="Medium"/>
+                                            <Border Background="#Fdfdfd" BorderBrush="#ECF0F1" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,5">
+                                                <Grid ColumnDefinitions="Auto, *">
+                                                    <Border Grid.Column="0" Width="40" Height="40" CornerRadius="20" Background="#3498DB" Margin="0,0,15,0">
+                                                        <TextBlock Text="👤" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Nome}" FontSize="18" Foreground="#2C3E50" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                </Grid>
                                             </Border>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -30,28 +41,47 @@
                         </Border>
 
                         <!-- Novo Vendedor -->
-                        <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="20" Margin="10,0,0,0">
-                            <StackPanel Spacing="15">
-                                <TextBlock Text="Cadastrar Novo" FontSize="20" FontWeight="SemiBold" Foreground="#34495E"/>
+                        <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="25" Margin="15,0,0,0" BoxShadow="0 4 15 0 #1A000000" VerticalAlignment="Top">
+                            <StackPanel Spacing="20">
+                                <TextBlock Text="➕ Cadastrar Operador" FontSize="22" FontWeight="Bold" Foreground="#34495E"/>
                                 
-                                <TextBlock Text="Nome Completo / Cargo:" Foreground="#7F8C8D" />
-                                <TextBox Text="{Binding NovoVendedorNome}" FontSize="16" Padding="10" PlaceholderText="Ex: Roberto (Supervisor)"/>
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Nome Completo / Matrícula:" FontSize="14" FontWeight="SemiBold" Foreground="#7F8C8D" />
+                                    <TextBox Text="{Binding NovoVendedorNome}" FontSize="16" Padding="12" Background="#F4F6F7" BorderThickness="0" CornerRadius="6" PlaceholderText="Ex: Amanda Silva (Turno Manhã)"/>
+                                </StackPanel>
 
-                                <Button Command="{Binding AdicionarVendedorCommand}" Content="➕ Adicionar Operador" Background="#27AE60" Foreground="White" FontSize="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" Margin="0,10,0,0"/>
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Nível de Permissão (Visual):" FontSize="14" FontWeight="SemiBold" Foreground="#7F8C8D" />
+                                    <!-- Um ComboBox apenas visual/Mock para dar cara de sistema completo -->
+                                    <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#F4F6F7" BorderThickness="0" Padding="12">
+                                        <ComboBoxItem Content="Operador Padrão (PDV Apenas)"/>
+                                        <ComboBoxItem Content="Supervisor (Contagem de Estoque)"/>
+                                        <ComboBoxItem Content="Gerente Master (Acesso Total)"/>
+                                    </ComboBox>
+                                </StackPanel>
 
-                                <TextBlock Text="{Binding MensagemAviso}" Foreground="#2980B9" FontWeight="Bold" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                                <Button Command="{Binding AdicionarVendedorCommand}" Content="✅ Registrar Funcionário" Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15" CornerRadius="8" Cursor="Hand" Margin="0,15,0,0"/>
+
+                                <TextBlock Text="{Binding MensagemAviso}" Foreground="#E74C3C" FontWeight="Bold" TextWrapping="Wrap" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Border>
 
                     </Grid>
                 </TabItem>
                 
-                <!-- Placeholder de aba futura de Config do PDV -->
-                <TabItem Header="📠 Impressora / Cupom" FontSize="18">
-                    <Border Padding="20">
-                        <StackPanel Spacing="20">
-                            <TextBlock Text="Opções em Desenvolvimento" FontSize="24" Foreground="#95A5A6" HorizontalAlignment="Center" Margin="0,40,0,0"/>
-                            <TextBlock Text="Aqui você poderá configurar rodapé de cupom NFC-e, Porta COM da Impressora Térmica, e Margens." FontSize="16" Foreground="#7F8C8D" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                <!-- ABA 2: HARDWARE E IMPRESSÃO (Placeholder bonito) -->
+                <TabItem Header="🖨️ Hardware e Impressão" FontSize="18" FontWeight="SemiBold">
+                    <Border Background="White" CornerRadius="12" Padding="40" Margin="0,20,0,0" BoxShadow="0 4 15 0 #1A000000">
+                        <StackPanel Spacing="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="🛠️ Módulo de Integração Desativado" FontSize="24" FontWeight="Black" Foreground="#7F8C8D" HorizontalAlignment="Center"/>
+                            <TextBlock Text="As configurações de Spooler do Windows/Linux e portas escaneadas para Balanças Filizola / Toledo e Impressoras Elgin / Epson aparecerão aqui na próxima versão base." 
+                                       FontSize="16" Foreground="#95A5A6" HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="600" TextAlignment="Center"/>
+                            
+                            <!-- Botoes Ficticios -->
+                            <StackPanel Orientation="Horizontal" Spacing="20" HorizontalAlignment="Center" Margin="0,30,0,0">
+                                <Button Content="Testar Comunicação SAT" Background="#E67E22" Foreground="White" Padding="20,10" CornerRadius="6" IsEnabled="False"/>
+                                <Button Content="Localizar Balanças (COM)" Background="#95A5A6" Foreground="White" Padding="20,10" CornerRadius="6" IsEnabled="False"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </TabItem>
