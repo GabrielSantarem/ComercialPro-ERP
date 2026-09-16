@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GetStartedApp.Views.SplashWindow"
+        Width="500" Height="280"
+        WindowStartupLocation="CenterScreen"
+        SystemDecorations="None"
+        Background="Transparent"
+        Topmost="True"
+        ExtendClientAreaToDecorationsHint="True">
+    
+    <!-- Design da Tela de Carregamento flutuante -->
+    <Border Background="#2C3E50" CornerRadius="15" BorderBrush="#F4D03F" BorderThickness="2" BoxShadow="0 15 40 0 #99000000">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="25">
+            <TextBlock Text="Comercial Pro ERP" FontSize="42" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" LetterSpacing="1"/>
+            
+            <TextBlock Text="Versão 1.0.0.1 - Empresa Fictícia Ltda" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center" Margin="0,-15,0,10"/>
+            
+            <ProgressBar x:Name="Progresso" IsIndeterminate="True" Background="#34495E" Foreground="#F4D03F" Width="300" Height="6" CornerRadius="3"/>
+            
+            <TextBlock x:Name="StatusText" Text="Iniciando sistema..." FontSize="16" Foreground="#ECF0F1" HorizontalAlignment="Center" FontWeight="Medium"/>
+        </StackPanel>
+    </Border>
+</Window>

@@ -61,16 +61,9 @@ public partial class App : Application
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                var mainVm = Services.GetRequiredService<MainViewModel>();
-                
-                desktop.MainWindow = new MainWindow
-                {
-                    DataContext = mainVm
-                };
-                
-                // Inicializamos o banco pela DI
-                var pdvSvc = Services.GetRequiredService<PdvService>();
-                _ = pdvSvc.InicializarBancoDadosAsync();
+                // Em vez de iniciar o Main abrindo rasgado, nós puxamos a nossa Tela de Início (Splash Screen)
+                // Ela fará o trabalho interno de configurar o BD e carregar a janela mestre.
+                desktop.MainWindow = new SplashWindow();
             }
 
             base.OnFrameworkInitializationCompleted();
