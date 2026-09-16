@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GetStartedApp.ViewModels"
+             x:Class="GetStartedApp.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+    <Border Background="#ECF0F1" Padding="40"><Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock Text="📊" FontSize="80" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+            <TextBlock Text="{Binding Mensagem}" FontSize="32" FontWeight="SemiBold" Foreground="#2C3E50"/>
+        </StackPanel>
+    </Grid></Border>
+</UserControl>

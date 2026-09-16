@@ -480,3 +480,4 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+\npdv.db\npdv.db-shm\npdv.db-wal\nlogs/\n*.db

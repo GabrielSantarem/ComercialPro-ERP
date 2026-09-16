@@ -3,20 +3,40 @@
         xmlns:vm="using:GetStartedApp.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="GetStartedApp.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="GetStartedApp">
+        Title="Sistema ERP e PDV"
+        RequestedThemeVariant="Light"
+        WindowState="Maximized">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainViewModel />
-    </Design.DataContext>
+    <Grid ColumnDefinitions="250, *">
+        <!-- BARRA LATERAL (MENU LATERAL DA ESQUERDA) -->
+        <Border Grid.Column="0" Background="#1E2A38" Padding="15">
+            <Grid RowDefinitions="Auto, *, Auto">
+                
+                <!-- Logo / Titulo -->
+                <StackPanel Grid.Row="0" Margin="0,20,0,40" Spacing="5">
+                    <TextBlock Text="Comercial" Foreground="White" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Pro ERP" Foreground="#3498DB" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                </StackPanel>
+                
+                <!-- Opções de Menu -->
+                <StackPanel Grid.Row="1" Spacing="15">
+                    <Button Command="{Binding NavigateToDashboardCommand}" Content="📊 Dashboard" Background="Transparent" Foreground="White" FontSize="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15"/>
+                    <Button Command="{Binding NavigateToPdvCommand}" Content="💰 Frente de Caixa (PDV)" Background="#3498DB" Foreground="White" FontSize="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15"/>
+                    <Button Command="{Binding NavigateToEstoqueCommand}" Content="📦 Estoque" Background="Transparent" Foreground="White" FontSize="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15"/>
+                    <Button Command="{Binding NavigateToConfiguracoesCommand}" Content="⚙️ Configurações" Background="Transparent" Foreground="White" FontSize="18" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="15"/>
+                </StackPanel>
 
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+                <!-- Footer do Menu -->
+                <TextBlock Grid.Row="2" Text="v1.0.0" Foreground="#7F8C8D" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+            </Grid>
+        </Border>
 
+        <!-- ÁREA PRINCIPAL ONDE AS PÁGINAS MUDAM MAGICAMENTE -->
+        <!-- O ContentControl troca de Visual baseado no CurrentPage do ViewLocator -->
+        <TransitioningContentControl Grid.Column="1" Content="{Binding CurrentPage}" />
+    </Grid>
 </Window>
