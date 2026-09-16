@@ -8,8 +8,8 @@
              Focusable="True">
 
     <Grid Background="#1E272E">
-        <!-- CAMADA 1: CONTEÚDO PRINCIPAL (PDV FÍSICO) -->
-        <Grid RowDefinitions="Auto, *, Auto">
+        <!-- CAMADA 1: CONTEÚDO PRINCIPAL (PDV FÍSICO) - DESABILITADO QUANDO MODAL ESTIVER ABERTO -->
+        <Grid RowDefinitions="Auto, *, Auto" IsEnabled="{Binding !IsModalAberto}">
             
             <!-- TOPO: Informações do Caixa -->
             <Border Grid.Row="0" Background="#2C3E50" Padding="15,10" BorderBrush="#000" BorderThickness="0,0,0,3">
@@ -135,8 +135,12 @@
             </Border>
         </Grid>
 
-        <!-- CAMADA 2: MODAL DE FINALIZAÇÃO COM IDENTIFICAÇÃO DO CLIENTE -->
-        <Border Background="#F2000000" IsVisible="{Binding IsModalAberto}" ZIndex="100">
+        <!-- CAMADA 2: MODAL DE FINALIZAÇÃO (ESCUDO MODAL TOTAL COM ISHITTESTVISIBLE) -->
+        <Border Background="#F2000000" 
+                IsVisible="{Binding IsModalAberto}" 
+                IsHitTestVisible="{Binding IsModalAberto}"
+                ZIndex="100"
+                KeyboardNavigation.TabNavigation="Cycle">
             <Border Background="White" Width="620" CornerRadius="12" Padding="35" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AAF1C40F">
                 <StackPanel Spacing="15">
                     <TextBlock Text="💰 FECHAMENTO DE NOTA / RECEBIMENTO" FontSize="22" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,5"/>

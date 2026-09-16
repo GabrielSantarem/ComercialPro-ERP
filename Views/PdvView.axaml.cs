@@ -30,41 +30,70 @@ public partial class PdvView : UserControl
         txt?.Focus();
     }
 
+    private void FocarModal()
+    {
+        // Ao abrir o modal, coloca o foco no primeiro campo editável (Cliente ou Valor)
+        var txtCliente = this.FindControl<TextBox>("TxtCliente");
+        txtCliente?.Focus();
+    }
+
     private async void PdvView_KeyDownTunnel(object? sender, KeyEventArgs e)
     {
         if (this.DataContext is not PdvViewModel vm) return;
 
-        // SE O MODAL DE PAGAMENTO ESTIVER ABERTO:
+        // ==========================================
+        // 1. SE O MODAL DE PAGAMENTO ESTIVER ABERTO:
+        // ==========================================
         if (vm.IsModalAberto)
         {
+            // ESC: Fecha o modal e volta para a venda intacta
             if (e.Key == Key.Escape)
             {
+                Log.Information("[PDV MODAL] ESC pressionado -> Fechando modal e restaurando foco na venda");
                 vm.FecharModalPagamentoCommand.Execute(null);
                 FocarBusca();
                 e.Handled = true;
                 return;
             }
 
+            // ENTER: Se o foco estiver no campo de cliente, pula para o próximo campo (ValorRecebido)
             if (e.Key == Key.Enter || e.Key == Key.Return)
             {
+                var txtCliente = this.FindControl<TextBox>("TxtCliente");
+                if (txtCliente != null && txtCliente.IsFocused)
+                {
+                    // Pula o foco para a caixa de valor recebido
+                    var numValor = this.FindControl<NumericUpDown>("NumValorRecebido");
+                    numValor?.Focus();
+                    e.Handled = true;
+                    return;
+                }
+
+                // Se já estiver no valor ou puder confirmar, conclui o pagamento
                 if (vm.PodeConfirmarPagamento)
                 {
+                    Log.Information("[PDV MODAL] ENTER de confirmação -> Concluindo venda");
                     await vm.ConfirmarPagamentoCommand.ExecuteAsync(null);
                     FocarBusca();
                     e.Handled = true;
                 }
                 return;
             }
+
+            // Nenhuma outra tecla da tela de trás pode vazar enquanto o modal estiver aberto!
             return;
         }
 
-        // SE ESTIVER NA TELA PRINCIPAL DO PDV:
+        // ==========================================
+        // 2. SE ESTIVER NA TELA PRINCIPAL DO PDV:
+        // ==========================================
 
         // F12: Abre modal de pagamento / fechamento
         if (e.Key == Key.F12)
         {
             Log.Information("[PDV ATALHO] F12 pressionado -> Abrir Pagamento");
             vm.AbrirModalPagamentoCommand.Execute(null);
+            FocarModal();
             e.Handled = true;
             return;
         }
