@@ -4,7 +4,7 @@
              xmlns:models="using:GetStartedApp.Models"
              x:Class="GetStartedApp.Views.PdvView"
              x:DataType="vm:PdvViewModel"
-             x:Name="RootWindow">
+             x:Name="RootWindow" Focusable="True">
 
     <UserControl.KeyBindings>
         <KeyBinding Gesture="F12" Command="{Binding AbrirModalPagamentoCommand}" />
@@ -73,14 +73,11 @@
                         <StackPanel Spacing="10">
                             <TextBlock Text="CÓDIGO DE BARRAS / BUSCA (F2):" FontSize="14" FontWeight="Black" Foreground="#34495E" />
                             <TextBox x:Name="TxtPesquisa" Text="{Binding TextoPesquisa}" FontSize="24" FontWeight="Bold" Padding="10" Background="#EAEDED" BorderThickness="0" CornerRadius="4">
-                                <TextBox.KeyBindings>
-                                    <!-- Enter lanca no carrinho o primeiro item que bater -->
-                                    <KeyBinding Gesture="Enter" Command="{Binding LancarPrimeiroResultadoCommand}" />
-                                </TextBox.KeyBindings>
+                                
                             </TextBox>
                             
                             <!-- Lista rápida flutuante pra guiar a busca visual (some se vazio) -->
-                            <ListBox ItemsSource="{Binding ResultadosPesquisa}" MaxHeight="120" Background="White" IsVisible="{Binding ResultadosPesquisa.Count}" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="4">
+                            <ListBox ItemsSource="{Binding ResultadosPesquisa}" Focusable="False" MaxHeight="120" Background="White" IsVisible="{Binding ResultadosPesquisa.Count}" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="4">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate x:DataType="models:Produto">
                                         <TextBlock Text="{Binding Nome}" FontSize="14" FontWeight="Medium" Foreground="#2980B9"/>

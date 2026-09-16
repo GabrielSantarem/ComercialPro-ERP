@@ -85,6 +85,7 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
 
     async partial void OnTextoPesquisaChanged(string value)
     {
+        _logger.LogInformation("[PDV DEBUG] Texto de Pesquisa Modificado para: '{Value}'", value);
         ResultadosPesquisa.Clear();
         var filtrados = await _pdvService.PesquisarProdutosAsync(value);
         foreach(var f in filtrados)
@@ -94,9 +95,21 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
     }
 
     [RelayCommand]
-    private void LancarPrimeiroResultado()
+    private async Task LancarPrimeiroResultadoAsync()
     {
-        var produto = ResultadosPesquisa.FirstOrDefault();
+        _logger.LogInformation("[PDV DEBUG] Comando ENTER disparado. TextoPesquisa atual na VM: '{Texto}'", TextoPesquisa);
+        if (string.IsNullOrWhiteSpace(TextoPesquisa)) 
+        {
+            _logger.LogWarning("[PDV DEBUG] Abortando ENTER. TextoPesquisa estava vazio no ViewModel.");
+            return;
+        }
+
+        // Pode ser que o leitor bipou TÃO rápido que a lista ResultadosPesquisa ainda não preencheu,
+        // então aqui nós fazemos uma busca forçada bloqueante para garantir que o item venha!
+        var produtos = await _pdvService.PesquisarProdutosAsync(TextoPesquisa);
+        var produto = produtos.FirstOrDefault();
+        _logger.LogInformation("[PDV DEBUG] Busca forçada retornou: {Result}", produto?.Nome ?? "NENHUM");
+        
         if (produto != null)
         {
             AdicionarAoCarrinho(produto);
@@ -119,6 +132,7 @@ public partial class PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> l
     [RelayCommand]
     private void AdicionarAoCarrinho(Produto produto)
     {
+        _logger.LogInformation("[PDV DEBUG] Adicionando produto ao carrinho: ID {Id} - {Nome}", produto?.Id, produto?.Nome);
         if (produto == null) return;
         var existente = Carrinho.FirstOrDefault(x => x.Produto.Id == produto.Id);
         if (existente != null) existente.Quantidade++;
