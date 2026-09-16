@@ -167,4 +167,64 @@ public class PdvService
         await _db.SaveChangesAsync();
     }
 
+    // === GESTÃO DE ENTRADA MANUAL DE MERCADORIAS ===
+    public async Task<List<EntradaMercadoria>> ObterHistoricoEntradasAsync()
+    {
+        return await _db.EntradasMercadoria
+            .Include(e => e.Itens)
+            .ThenInclude(i => i.Produto)
+            .OrderByDescending(e => e.DataEntrada)
+            .ToListAsync();
     }
+
+    public async Task RegistrarEntradaMercadoriaAsync(
+        string numeroNota, 
+        string fornecedor, 
+        string observacao, 
+        List<(int ProdutoId, int Quantidade, decimal CustoUnitario)> itens)
+    {
+        if (itens.Count == 0) return;
+
+        using var transaction = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            var entrada = new EntradaMercadoria
+            {
+                NumeroNota = numeroNota,
+                Fornecedor = fornecedor,
+                Observacao = observacao,
+                DataEntrada = DateTime.Now,
+                ValorTotal = itens.Sum(x => x.Quantidade * x.CustoUnitario)
+            };
+
+            foreach (var item in itens)
+            {
+                var produto = await _db.Produtos.FindAsync(item.ProdutoId);
+                if (produto != null)
+                {
+                    // Alimenta o estoque físico do produto
+                    produto.Estoque += item.Quantidade;
+
+                    entrada.Itens.Add(new ItemEntradaMercadoria
+                    {
+                        ProdutoId = item.ProdutoId,
+                        QuantidadeEntrada = item.Quantidade,
+                        CustoUnitario = item.CustoUnitario
+                    });
+                }
+            }
+
+            _db.EntradasMercadoria.Add(entrada);
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Entrada de Mercadoria NF '{Nota}' registrada com sucesso. Total: R$ {Total}", numeroNota, entrada.ValorTotal);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Erro ao registrar entrada de mercadorias da NF '{Nota}'", numeroNota);
+            throw;
+        }
+    }
+}
