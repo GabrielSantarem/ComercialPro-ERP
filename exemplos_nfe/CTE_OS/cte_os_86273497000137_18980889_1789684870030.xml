@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cteOSProc versao="3.00" xmlns="http://www.portalfiscal.inf.br/cte">
+    <CTeOS xmlns="http://www.portalfiscal.inf.br/cte" versao="3.00">
+        <infCte versao="3.00" Id="CTe132609862734970001376710189808891067778922">
+            <ide>
+                <cUF>35</cUF>
+                <cCT>06777892</cCT>
+                <CFOP>5352</CFOP>
+                <natOp>PRESTACAO DE SERVICO DE TRANSPORTE</natOp>
+                <mod>67</mod>
+                <serie>1</serie>
+                <nCT>18980889</nCT>
+                <dhEmi>2026-09-17T09:18:54-03:00</dhEmi>
+                <tpImp>1</tpImp>
+                <tpEmis>1</tpEmis>
+                <cDV>2</cDV>
+                <tpAmb>1</tpAmb>
+                <tpCTe>0</tpCTe>
+                <procEmi>0</procEmi>
+                <verProc>AppGerador 1.0</verProc>
+                <cMunEnv>3550308</cMunEnv>
+                <xMunEnv>Sao Paulo</xMunEnv>
+                <UFEnv>SP</UFEnv>
+                <modal>01</modal>
+                <tpServ>6</tpServ>
+                <indIEToma>1</indIEToma>
+                <cMunIni>3550308</cMunIni>
+                <xMunIni>Sao Paulo</xMunIni>
+                <UFIni>SP</UFIni>
+                <cMunFim>3515004</cMunFim>
+                <xMunFim>Embu das Artes</xMunFim>
+                <UFFim>SP</UFFim>
+            </ide>
+            <compl>
+                <xObs>OBSERVACOES ADICIONAIS DO CT-E OS</xObs>
+            </compl>
+            <emit>
+                <CNPJ>86273497000137</CNPJ>
+                <IE>123456789012</IE>
+                <xNome>TRANSPORTADORA EMITENTE LTDA</xNome>
+                <xFant>FANTASIA TRANSPORTADORA</xFant>
+                <enderEmit>
+                    <xLgr>RUA DA TRANSPORTADORA</xLgr>
+                    <nro>789</nro>
+                    <xBairro>VILA TRANSPORTE</xBairro>
+                    <cMun>3550308</cMun>
+                    <xMun>Sao Paulo</xMun>
+                    <CEP>03000000</CEP>
+                    <UF>SP</UF>
+                </enderEmit>
+            </emit>
+            <toma>
+                <CNPJ>33679200000171</CNPJ>
+                <IE>098765432109</IE>
+                <xNome>TOMADOR DO SERVICO LTDA</xNome>
+                <enderToma>
+                    <xLgr>AV DO TOMADOR</xLgr>
+                    <nro>1011</nro>
+                    <xBairro>CENTRO TOMADOR</xBairro>
+                    <cMun>3515004</cMun>
+                    <xMun>Embu das Artes</xMun>
+                    <CEP>04000000</CEP>
+                    <UF>SP</UF>
+                </enderToma>
+            </toma>
+            <vPrest>
+                <vTPrest>47.77</vTPrest>
+                <vRec>47.77</vRec>
+            </vPrest>
+            <imp>
+                <ICMS>
+                    <ICMS00>
+                        <CST>00</CST>
+                        <vBC>47.77</vBC>
+                        <pICMS>12.00</pICMS>
+                        <vICMS>5.73</vICMS>
+                    </ICMS00>
+                </ICMS>
+            </imp>
+            <infCTeNorm>
+                <infServico>
+                    <xDescServ>SERVICO DE TRANSPORTE RODOVIARIO</xDescServ>
+                    <infQ>
+                        <qCarga>1.0000</qCarga>
+                    </infQ>
+                </infServico>
+                <seg>
+                    <respSeg>5</respSeg>
+                </seg>
+                <infModal versaoModal="3.00">
+                    <rodoOS>
+                        <TAF>000000000000</TAF> 
+                        <veic>
+                            <placa>ABC1D23</placa>
+                            <UF>SP</UF>
+                        </veic>
+                    </rodoOS>
+                </infModal>
+            </infCTeNorm>
+        </infCte>
+        <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+            <SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#CTe132609862734970001376710189808891067778922"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>dummyDigestValue=</DigestValue></Reference></SignedInfo>
+            <SignatureValue>dummySignatureValue=</SignatureValue>
+            <KeyInfo><X509Data><X509Certificate>dummyCertificate=</X509Certificate></X509Data></KeyInfo>
+        </Signature>
+    </CTeOS>
+    <protCTe versao="3.00">
+        <infProt Id="ID_Protocolo_CTe_132609862734970001376710189808891067778922">
+            <tpAmb>1</tpAmb>
+            <verAplic>SP_CTE_PL_3_00a</verAplic>
+            <chCTe>132609862734970001376710189808891067778922</chCTe>
+            <dhRecbto>2026-09-17T09:19:49-03:00</dhRecbto>
+            <nProt>335170000123456</nProt>
+            <digVal>dummyDigestValue=</digVal>
+            <cStat>100</cStat>
+            <xMotivo>Autorizado o uso do CT-e OS</xMotivo>
+        </infProt>
+    </protCTe>
+</cteOSProc>

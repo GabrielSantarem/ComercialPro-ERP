@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CompNfse xmlns="http://www.abrasf.org.br/nfse.xsd">
+    <Nfse xmlns="http://www.abrasf.org.br/nfse.xsd" versao="1.00">
+        <InfNfse Id="nfse_53722387">
+            <Numero>53722387</Numero>
+            <CodigoVerificacao>fd7e1e7c</CodigoVerificacao>
+            <DataEmissao>2026-09-17</DataEmissao>
+            <IdentificacaoRps>
+                <Numero>53722387</Numero>
+                <Serie>NFSE</Serie>
+                <Tipo>1</Tipo>
+            </IdentificacaoRps>
+            <DataEmissaoRps>2026-09-17</DataEmissaoRps>
+            <NaturezaOperacao>1</NaturezaOperacao>
+            <OptanteSimplesNacional>2</OptanteSimplesNacional>
+            <IncentivadorCultural>2</IncentivadorCultural>
+            <Competencia>2026-09-17</Competencia>
+            <Servico>
+                <Valores>
+                    <ValorServicos>725.63</ValorServicos>
+                    <IssRetido>2</IssRetido>
+                    <ValorIss>36.28</ValorIss>
+                    <BaseCalculo>725.63</BaseCalculo>
+                    <Aliquota>0.05</Aliquota>
+                    <ValorLiquidoNfse>725.63</ValorLiquidoNfse>
+                </Valores>
+                <ItemListaServico>25.03</ItemListaServico>
+                <CodigoTributacaoMunicipio>250300188</CodigoTributacaoMunicipio>
+                <Discriminacao>SERVICOS PRESTADOS REFERENTE A NOTA 53722387</Discriminacao>
+                <CodigoMunicipio>3106200</CodigoMunicipio>
+            </Servico>
+            <PrestadorServico>
+                <IdentificacaoPrestador>
+                    <Cnpj>86273497000137</Cnpj>
+                    <InscricaoMunicipal>1663080011</InscricaoMunicipal>
+                </IdentificacaoPrestador>
+                <RazaoSocial>EMPRESA EMITENTE MODELO</RazaoSocial>
+                <Endereco>
+                    <Endereco>AVENIDA PRINCIPAL</Endereco>
+                    <Numero>1000</Numero>
+                    <Complemento>SALA 1</Complemento>
+                    <Bairro>CENTRO</Bairro>
+                    <CodigoMunicipio>3106200</CodigoMunicipio>
+                    <Uf>MG</Uf>
+                    <Cep>30110000</Cep>
+                </Endereco>
+                <Contato>
+                    <Email>contato@emitente.com.br</Email>
+                </Contato>
+            </PrestadorServico>
+            <TomadorServico>
+                <IdentificacaoTomador>
+                    <CpfCnpj>
+                        <Cnpj>33679200000171</Cnpj>
+                    </CpfCnpj>
+                </IdentificacaoTomador>
+                <RazaoSocial>EMPRESA TOMADORA OU CLIENTE</RazaoSocial>
+                <Endereco>
+                    <Endereco>RUA SECUNDARIA</Endereco>
+                    <Numero>200</Numero>
+                    <Bairro>BAIRRO MODELO</Bairro>
+                    <CodigoMunicipio>3106200</CodigoMunicipio>
+                    <Uf>MG</Uf>
+                    <Cep>30120000</Cep>
+                </Endereco>
+            </TomadorServico>
+            <OrgaoGerador>
+                <CodigoMunicipio>3106200</CodigoMunicipio>
+                <Uf>MG</Uf>
+            </OrgaoGerador>
+        </InfNfse>
+        <Signature xmlns="http://www.w3.org/2000/09/xmldsig#" Id="Assinatura_nfse_53722387">
+            <SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#nfse_53722387"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>dummyDigestValue=</DigestValue></Reference></SignedInfo>
+            <SignatureValue>dummySignatureValue=</SignatureValue>
+            <KeyInfo><X509Data><X509Certificate>dummyCertificate=</X509Certificate></X509Data></KeyInfo>
+        </Signature>
+    </Nfse>
+</CompNfse>

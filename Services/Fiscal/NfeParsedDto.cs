@@ -32,6 +32,8 @@ public class NfeParsedDto
     public string ChaveAcesso { get; set; } = string.Empty;
     public string NumeroNota { get; set; } = string.Empty;
     public string Serie { get; set; } = string.Empty;
+    public string ModeloDocumento { get; set; } = "55"; // 55 = NF-e, 65 = NFC-e
+    public string TipoDocumentoDescricao { get; set; } = "NF-e (Mercantil)";
     public DateTime? DataEmissao { get; set; }
     public string NaturezaOperacao { get; set; } = string.Empty;
 

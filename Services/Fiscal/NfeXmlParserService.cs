@@ -31,6 +31,9 @@ public class NfeXmlParserService
 
     private NfeParsedDto ParseXmlDocument(XDocument doc)
     {
+        // 0. Detecção inteligente de outros padrões fiscais brasileiros não-mercantis
+        ValidarTipoDocumentoXml(doc);
+
         var dto = new NfeParsedDto();
 
         // O XML da NF-e padrão SEFAZ usa o namespace http://www.portalfiscal.inf.br/nfe
@@ -38,7 +41,7 @@ public class NfeXmlParserService
         var infNfe = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "infNFe");
         if (infNfe == null)
         {
-            throw new InvalidOperationException("O arquivo XML fornecido não é um documento fiscal NF-e válido (tag 'infNFe' ausente).");
+            throw new InvalidOperationException("O arquivo XML fornecido não é um documento fiscal NF-e ou NFC-e válido (tag 'infNFe' ausente).");
         }
 
         // 1. Chave de Acesso (atributo Id do infNFe)
@@ -54,6 +57,18 @@ public class NfeXmlParserService
             dto.NumeroNota = GetElementValue(ide, "nNF");
             dto.Serie = GetElementValue(ide, "serie");
             dto.NaturezaOperacao = GetElementValue(ide, "natOp");
+
+            var modelo = GetElementValue(ide, "mod");
+            if (!string.IsNullOrWhiteSpace(modelo))
+            {
+                dto.ModeloDocumento = modelo;
+                dto.TipoDocumentoDescricao = modelo switch
+                {
+                    "65" => "NFC-e (Consumidor Eletrônica)",
+                    "55" => "NF-e (Mercantil Eletrônica)",
+                    _ => $"NF mod. {modelo}"
+                };
+            }
 
             var dhEmi = GetElementValue(ide, "dhEmi");
             if (string.IsNullOrWhiteSpace(dhEmi)) dhEmi = GetElementValue(ide, "dEmi");
@@ -124,7 +139,7 @@ public class NfeXmlParserService
         }
 
         // 6. Cobrança e Duplicatas (cobr/dup)
-        var dups = infNfe.Descendants().Where(e => e.Name.LocalName == "dup");
+        var dups = infNfe.Descendants().Where(e => e.Name.LocalName == "dup").ToList();
         foreach (var dup in dups)
         {
             var parcela = new NfeDuplicataParsedDto
@@ -143,10 +158,65 @@ public class NfeXmlParserService
             dto.Duplicatas.Add(parcela);
         }
 
-        _logger.LogInformation("NF-e {Numero} emitida por '{Fornecedor}' parseada com sucesso. {QtdItens} itens, {QtdDups} duplicatas.",
-            dto.NumeroNota, dto.EmitenteRazaoSocial, dto.Itens.Count, dto.Duplicatas.Count);
+        // 6.1 Fallback para pagamento à vista ou NFC-e via <pag><detPag>
+        if (dto.Duplicatas.Count == 0)
+        {
+            var detsPag = infNfe.Descendants().Where(e => e.Name.LocalName == "detPag").ToList();
+            int seqPag = 1;
+            foreach (var detPag in detsPag)
+            {
+                var valorPag = ParseDecimal(GetElementValue(detPag, "vPag"));
+                if (valorPag > 0)
+                {
+                    dto.Duplicatas.Add(new NfeDuplicataParsedDto
+                    {
+                        Numero = $"AVISTA-{seqPag++:D2}",
+                        Vencimento = dto.DataEmissao ?? DateTime.Today,
+                        Valor = valorPag
+                    });
+                }
+            }
+        }
+
+        _logger.LogInformation("{Tipo} {Numero} emitida por '{Fornecedor}' parseada com sucesso. {QtdItens} itens, {QtdDups} duplicatas.",
+            dto.TipoDocumentoDescricao, dto.NumeroNota, dto.EmitenteRazaoSocial, dto.Itens.Count, dto.Duplicatas.Count);
 
         return dto;
+    }
+
+    private static void ValidarTipoDocumentoXml(XDocument doc)
+    {
+        // 1. Bilhete de Passagem Eletrônico (BP-e Mod. 63)
+        if (doc.Descendants().Any(e => e.Name.LocalName is "infBPe" or "bpeProc" or "BPe"))
+        {
+            throw new InvalidOperationException(
+                "O arquivo selecionado é um BP-e (Bilhete de Passagem Eletrônico - Modelo 63). " +
+                "Este módulo aceita apenas notas de mercadorias para estoque (NF-e modelo 55 e NFC-e modelo 65).");
+        }
+
+        // 2. Conhecimento de Transporte Eletrônico (CT-e / CT-e OS Mod. 67 / 57)
+        if (doc.Descendants().Any(e => e.Name.LocalName is "infCte" or "cteOSProc" or "CTeOS" or "cteProc" or "CTe"))
+        {
+            throw new InvalidOperationException(
+                "O arquivo selecionado é um CT-e / CT-e OS (Conhecimento de Transporte Eletrônico). " +
+                "Documentos de frete/transporte não contêm itens para entrada de estoque físico.");
+        }
+
+        // 3. NFS-e Municipal Padrão ABRASF (Ex: Belo Horizonte, SP, etc.)
+        if (doc.Descendants().Any(e => e.Name.LocalName is "CompNfse" or "InfNfse" or "ConsultarNfseResposta"))
+        {
+            throw new InvalidOperationException(
+                "O arquivo selecionado é uma NFS-e Municipal de Prestação de Serviços (Padrão ABRASF/Prefeituras). " +
+                "Para entrada de produtos em estoque, utilize uma NF-e de Mercadorias (Modelo 55).");
+        }
+
+        // 4. NFS-e Padrão Nacional (Receita Federal / MEI)
+        if (doc.Descendants().Any(e => e.Name.LocalName is "infNFSe" or "NFSe" or "DPS"))
+        {
+            throw new InvalidOperationException(
+                "O arquivo selecionado é uma NFS-e Nacional de Serviços (Padrão SPED / Receita Federal). " +
+                "Para entrada e formação de estoque de produtos, utilize a NF-e Mercantil (Modelo 55).");
+        }
     }
 
     private static string GetElementValue(XElement parent, string localName)

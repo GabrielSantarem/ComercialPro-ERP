@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpeProc xmlns="http://www.portalfiscal.inf.br/bpe" versao="1.00">
+    <BPe>
+        <infBPe versao="1.00" Id="BPe132609862734970001376310668393761088554969" xmlns="http://www.portalfiscal.inf.br/bpe">
+            <ide>
+                <cUF>31</cUF>
+                <tpAmb>1</tpAmb>
+                <mod>63</mod>
+                <serie>1</serie>
+                <nBP>66839376</nBP>
+                <cBP>08855496</cBP>
+                <cDV>9</cDV>
+                <modal>1</modal>
+                <dhEmi>2026-09-17T19:37:07-03:00</dhEmi>
+                <tpEmis>1</tpEmis>
+                <verProc>AppGerador 1.0</verProc>
+                <tpBPe>0</tpBPe>
+                <indPres>1</indPres>
+                <UFIni>MG</UFIni>
+                <cMunIni>3170404</cMunIni>
+                <UFFim>DF</UFFim>
+                <cMunFim>5300108</cMunFim>
+            </ide>
+            <emit>
+                <CNPJ>86273497000137</CNPJ>
+                <IE>7045287440058</IE>
+                <xNome>EMPRESA DE TRANSPORTE PASSAGEIROS</xNome>
+                <xFant>PASSAGENS BARATAS</xFant>
+                <IM>608</IM>
+                <CNAE>4922102</CNAE>
+                <CRT>3</CRT>
+                <enderEmit>
+                    <xLgr>AV. PRINCIPAL</xLgr>
+                    <nro>1817</nro>
+                    <xBairro>Centro</xBairro>
+                    <cMun>3170404</cMun>
+                    <xMun>UNAI</xMun>
+                    <CEP>38610000</CEP>
+                    <UF>MG</UF>
+                    <fone>08001234567</fone>
+                    <email>contato@emitente.com.br</email>
+                </enderEmit>
+                <TAR>0055</TAR>
+            </emit>
+            <agencia>
+                <xNome>AGENCIA MODELO</xNome>
+                <CNPJ>86273497000137</CNPJ>
+                <enderAgencia>
+                    <xLgr>RUA DA AGENCIA</xLgr>
+                    <nro>283</nro>
+                    <xCpl>RODOVIARIA</xCpl>
+                    <xBairro>CENTRO</xBairro>
+                    <cMun>3170404</cMun>
+                    <xMun>UNAI</xMun>
+                    <CEP>38610009</CEP>
+                    <UF>MG</UF>
+                    <fone>3831234567</fone>
+                    <email>agencia@emitente.com.br</email>
+                </enderAgencia>
+            </agencia>
+            <infPassagem>
+                <cLocOrig>107</cLocOrig>
+                <xLocOrig>CIDADE ORIGEM</xLocOrig>
+                <cLocDest>2</cLocDest>
+                <xLocDest>CIDADE DESTINO</xLocDest>
+                <dhEmb>2026-09-17T19:38:15-03:00</dhEmb> 
+                <dhValidade>2026-09-18T19:37:07-03:00</dhValidade>
+                <infPassageiro>
+                    <xNome>PASSAGEIRO EXEMPLO</xNome>
+                    <tpDoc>02</tpDoc>
+                    <nDoc>33.679.200/0001-71</nDoc>
+                </infPassageiro>
+            </infPassagem>
+            <infViagem>
+                <cPercurso>PERCURSO EXEMPLO</cPercurso>
+                <xPercurso>DESCRICAO PERCURSO</xPercurso>
+                <tpViagem>00</tpViagem>
+                <tpServ>6</tpServ>
+                <tpAcomodacao>1</tpAcomodacao>
+                <tpTrecho>1</tpTrecho>
+                <dhViagem>2026-09-17T19:38:15-03:00</dhViagem>
+                <prefixo>12-0129-61</prefixo>
+                <poltrona>13</poltrona>
+            </infViagem>
+            <infValorBPe>
+                <vBP>764.00</vBP>
+                <vDesconto>0.00</vDesconto>
+                <vPgto>764.00</vPgto>
+                <vTroco>0.00</vTroco>
+                <Comp><tpComp>01</tpComp><vComp>687.60</vComp></Comp>
+                <Comp><tpComp>02</tpComp><vComp>0.00</vComp></Comp>
+                <Comp><tpComp>03</tpComp><vComp>76.40</vComp></Comp>
+                <Comp><tpComp>04</tpComp><vComp>0.00</vComp></Comp>
+                <Comp><tpComp>99</tpComp><vComp>0.00</vComp></Comp>
+            </infValorBPe>
+            <imp>
+                <ICMS>
+                    <ICMS00>
+                        <CST>00</CST>
+                        <vBC>687.60</vBC>
+                        <pICMS>18.00</pICMS>
+                        <vICMS>123.77</vICMS>
+                    </ICMS00>
+                </ICMS>
+                <vTotTrib>764.00</vTotTrib>
+            </imp>
+            <pag>
+                <tPag>01</tPag>
+                <vPag>764.00</vPag>
+            </pag>
+            <autXML>
+                <CNPJ>00033613000125</CNPJ>
+            </autXML>
+            <infAdic>
+                <infAdFisco>ICMS:123.77 (18,00%)|(Lei Federal 12.741/2012)</infAdFisco>
+            </infAdic>
+            <infRespTec>
+                <CNPJ>17455912000150</CNPJ>
+                <xContato>App Gerador</xContato>
+                <email>suporte@appgerador.com.br</email>
+                <fone>11999999999</fone>
+            </infRespTec>
+        </infBPe>
+        <infBPeSupl xmlns="http://www.portalfiscal.inf.br/bpe">
+            <qrCodBPe>https://bpe.fazenda.mg.gov.br/portalbpe/sistema/qrcode.xhtml?chBPe=132609862734970001376310668393761088554969&amp;tpAmb=1</qrCodBPe>
+            <boardPassBPe>******************************************************DUMMYBP</boardPassBPe>
+        </infBPeSupl>
+        <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+            <SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#BPe132609862734970001376310668393761088554969"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>dummyDigestValue=</DigestValue></Reference></SignedInfo>
+            <SignatureValue>dummySignatureValue=</SignatureValue>
+            <KeyInfo><X509Data><X509Certificate>dummyCertificate=</X509Certificate></X509Data></KeyInfo>
+        </Signature>
+    </BPe>
+    <protBPe>
+        <retBPe xmlns="http://www.portalfiscal.inf.br/bpe" xmlns:ns0="http://www.w3.org/2000/09/xmldsig#" versao="1.00">
+            <tpAmb>1</tpAmb>
+            <cUF>31</cUF>
+            <verAplic>W-1.2.1</verAplic>
+            <cStat>100</cStat>
+            <xMotivo>Autorizado o uso do BP-e</xMotivo>
+            <protBPe versao="1.00">
+                <infProt>
+                    <tpAmb>1</tpAmb>
+                    <verAplic>W-1.2.1</verAplic>
+                    <chBPe>132609862734970001376310668393761088554969</chBPe>
+                    <dhRecbto>2026-09-17T19:38:15-03:00</dhRecbto>
+                    <nProt>131210000123456</nProt>
+                    <digVal>dummyDigestValue=</digVal>
+                    <cStat>100</cStat>
+                    <xMotivo>Autorizado o uso do BP-e</xMotivo>
+                </infProt>
+            </protBPe>
+        </retBPe>
+    </protBPe>
+</bpeProc>

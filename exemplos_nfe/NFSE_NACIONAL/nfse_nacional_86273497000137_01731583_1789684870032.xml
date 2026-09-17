@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" versao="1.00">
+	<infNFSe Id="NFS13026031260986273497000137000000173158395504891953525">
+		<xLocEmi>Manaus</xLocEmi>
+		<xLocPrestacao>Manaus</xLocPrestacao>
+		<nNFSe>01731583</nNFSe>
+		<cLocIncid>1302603</cLocIncid>
+		<xLocIncid>Manaus</xLocIncid>
+		<xTribNac>Representacao de qualquer natureza, inclusive comercial.</xTribNac>
+		<xTribMun>Representacao de qualquer natureza, inclusive comercial.</xTribMun>
+		<xNBS>Servicos de intermediacao na distribuicao de mercadorias</xNBS>
+		<verAplic>1.00</verAplic>
+		<ambGer>1</ambGer>
+		<tpEmis>2</tpEmis>
+		<cStat>100</cStat>
+		<dhProc>2026-09-17T15:15:43-03:00</dhProc>
+		<nDFSe>01731583</nDFSe>
+		<emit>
+			<CNPJ>86273497000137</CNPJ>
+			<IM>6100961</IM>
+			<xNome>NOME EMITENTE PADRAO</xNome>
+			<xFant>FANTASIA PADRAO</xFant>
+			<enderNac>
+				<xLgr>RUA PADRAO</xLgr>
+				<nro>100</nro>
+				<xBairro>CENTRO</xBairro>
+				<cMun>1302603</cMun>
+				<UF>AM</UF>
+				<CEP>64000000</CEP>
+			</enderNac>
+			<email>contato@emitente.com.br</email>
+		</emit>
+		<valores>
+			<vCalcDR>0.00</vCalcDR>
+			<vBC>222.11</vBC>
+			<vISSQN>11.11</vISSQN>
+			<vTotalRet>0.00</vTotalRet>
+			<vLiq>222.11</vLiq>
+		</valores>
+		<DPS versao="1.00">
+			<infDPS Id="DPS13026031260986273497000137000000173158395504891953525">
+				<tpAmb>1</tpAmb>
+				<dhEmi>2026-09-17T15:15:43-03:00</dhEmi>
+				<verAplic>1.00</verAplic>
+				<serie>00001</serie>
+				<nDPS>01731583</nDPS>
+				<dCompet>2026-09-17</dCompet>
+				<tpEmit>1</tpEmit>
+				<cLocEmi>1302603</cLocEmi>
+				<prest>
+					<CNPJ>86273497000137</CNPJ>
+					<IM>6100961</IM>
+					<email>contato@emitente.com.br</email>
+					<regTrib>
+						<opSimpNac>3</opSimpNac>
+						<regApTribSN>1</regApTribSN>
+						<regEspTrib>0</regEspTrib>
+					</regTrib>
+				</prest>
+				<toma>
+					<CNPJ>33679200000171</CNPJ>
+					<xNome>NOME TOMADOR PADRAO</xNome>
+					<end>
+						<endNac>
+							<cMun>1302603</cMun>
+							<CEP>00000000</CEP>
+						</endNac>
+						<xLgr>LOGRADOURO TOMADOR</xLgr>
+						<nro>200</nro>
+						<xCpl>COMPLEMENTO</xCpl>
+						<xBairro>BAIRRO TOMADOR</xBairro>
+					</end>
+					<email>tomador@email.com</email>
+				</toma>
+				<serv>
+					<locPrest>
+						<cLocPrestacao>1302603</cLocPrestacao>
+					</locPrest>
+					<cServ>
+						<cTribNac>100901</cTribNac>
+						<cTribMun>003</cTribMun>
+						<xDescServ>Servico padrao Mes</xDescServ>
+						<cNBS>102010000</cNBS>
+					</cServ>
+				</serv>
+				<valores>
+					<vServPrest>
+						<vServ>222.11</vServ>
+					</vServPrest>
+					<vDescCondIncond/>
+					<trib>
+						<tribMun>
+							<tribISSQN>1</tribISSQN>
+							<tpRetISSQN>1</tpRetISSQN>
+						</tribMun>
+						<tribFed>
+							<piscofins>
+								<CST>00</CST>
+								<vPis>1.44</vPis>
+								<vCofins>6.66</vCofins>
+								<tpRetPisCofins>1</tpRetPisCofins>
+							</piscofins>
+							<vRetCP>0.00</vRetCP>
+							<vRetIRRF>0.00</vRetIRRF>
+							<vRetCSLL>0.00</vRetCSLL>
+						</tribFed>
+						<totTrib>
+							<indTotTrib>0</indTotTrib>
+						</totTrib>
+					</trib>
+				</valores>
+			</infDPS>
+		</DPS>
+	</infNFSe>
+	<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+		<SignedInfo>
+			<CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+			<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+			<Reference URI="#NFS13026031260986273497000137000000173158395504891953525">
+				<Transforms>
+					<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+					<Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+				</Transforms>
+				<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+				<DigestValue>dummyDigestValue=</DigestValue>
+			</Reference>
+		</SignedInfo>
+		<SignatureValue>dummySignatureValue=</SignatureValue>
+		<KeyInfo>
+			<X509Data>
+				<X509Certificate>dummyCertificate=</X509Certificate>
+			</X509Data>
+		</KeyInfo>
+	</Signature>
+</NFSe>

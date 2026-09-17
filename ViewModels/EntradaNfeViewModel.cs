@@ -28,6 +28,8 @@ public partial class EntradaNfeViewModel : ViewModelBase
     // === CABEÇALHO FISCAL ===
     [ObservableProperty] public partial string NumeroNota { get; set; } = "000.148.920";
     [ObservableProperty] public partial string SerieNota { get; set; } = "1";
+    [ObservableProperty] public partial string ModeloDocumento { get; set; } = "55";
+    [ObservableProperty] public partial string TipoDocumentoDescricao { get; set; } = "NF-e (Mercantil Eletrônica)";
     [ObservableProperty] public partial string ChaveAcesso { get; set; } = "3526 0912 3456 7800 0190 5500 1000 1489 2018 9283 7461";
     [ObservableProperty] public partial DateTime? DataEmissao { get; set; } = DateTime.Today;
     [ObservableProperty] public partial DateTime? DataEntrada { get; set; } = DateTime.Today;
@@ -81,6 +83,7 @@ public partial class EntradaNfeViewModel : ViewModelBase
 
     // === TOTAIS CALCULADOS ===
     public decimal TotalProdutos => ItensNota.Sum(x => x.TotalBruto);
+    public decimal TotalDespesasRateadas => ValorFrete + OutrasDespesas;
     public decimal ValorTotalNota => TotalProdutos + ValorFrete + OutrasDespesas - DescontoComercial;
 
     [ObservableProperty]
@@ -96,41 +99,38 @@ public partial class EntradaNfeViewModel : ViewModelBase
         RecalcularFinanceiro();
     }
 
-    public async Task CarregarCatalogoAsync()
-    {
-        ProdutosDisponiveis.Clear();
-        var lista = await _service.ObterTodosProdutosAsync();
-        foreach (var p in lista) ProdutosDisponiveis.Add(p);
-    }
-
     private void CarregarExemploPadrao()
     {
         ItensNota.Clear();
         ItensNota.Add(new ItemNotaFiscalVm
         {
             NumeroItem = 1,
-            CodigoFornecedor = "EMB-201",
-            DescricaoFornecedor = "SACOLA BRANCA REFORÇADA 2K (FDO C/500)",
-            Ncm = "3923.21.90",
-            UnidadeFornecedor = "FD",
-            QuantidadeFaturada = 2,
-            FatorConversao = 500,
-            PrecoUnitarioFaturado = 65.00m,
-            RateioDespesas = 5.00m
+            CodigoFornecedor = "CX-CP200",
+            CodigoEan = "7891000200001",
+            DescricaoFornecedor = "COPO TERMICO DESCARTAVEL 200ML CX C/ 2500 UN",
+            UnidadeFornecedor = "CX",
+            QuantidadeFaturada = 5,
+            FatorConversao = 2500,
+            PrecoUnitarioFaturado = 120.00m,
+            RateioDespesas = 15.00m
         });
 
         ItensNota.Add(new ItemNotaFiscalVm
         {
             NumeroItem = 2,
-            CodigoFornecedor = "DESC-55",
-            DescricaoFornecedor = "COPO DESCARTÁVEL 200ML CRISTAL (CX C/2500)",
-            Ncm = "3924.10.00",
-            UnidadeFornecedor = "CX",
-            QuantidadeFaturada = 1,
-            FatorConversao = 2500,
-            PrecoUnitarioFaturado = 120.00m,
-            RateioDespesas = 10.00m
+            CodigoFornecedor = "FD-SC4050",
+            CodigoEan = "7891000300002",
+            DescricaoFornecedor = "SACOLA REFORCADA BRANCA 40X50 FD C/ 1000 UN",
+            UnidadeFornecedor = "FD",
+            QuantidadeFaturada = 10,
+            FatorConversao = 1000,
+            PrecoUnitarioFaturado = 45.00m,
+            RateioDespesas = 30.00m
         });
+
+        ValorFrete = 45.00m;
+        OutrasDespesas = 0m;
+        DescontoComercial = 0m;
 
         AtualizarTotais();
     }
@@ -144,13 +144,26 @@ public partial class EntradaNfeViewModel : ViewModelBase
     partial void OnOutrasDespesasChanged(decimal value) => AtualizarTotais();
     partial void OnDescontoComercialChanged(decimal value) => AtualizarTotais();
 
-    private void AtualizarTotais()
+    public async Task CarregarCatalogoAsync()
     {
-        OnPropertyChanged(nameof(TotalProdutos));
-        OnPropertyChanged(nameof(ValorTotalNota));
-        RecalcularFinanceiro();
+        ProdutosDisponiveis.Clear();
+        var lista = await _service.ObterTodosProdutosAsync();
+        foreach (var p in lista)
+        {
+            ProdutosDisponiveis.Add(p);
+        }
+
+        // Tenta auto-vincular produtos existentes pelo EAN ou Descrição
+        foreach (var item in ItensNota)
+        {
+            if (item.ProdutoVinculado == null && !string.IsNullOrWhiteSpace(item.CodigoEan))
+            {
+                item.ProdutoVinculado = ProdutosDisponiveis.FirstOrDefault(p => p.CodigoBarras == item.CodigoEan);
+            }
+        }
     }
 
+    [RelayCommand]
     private void RecalcularFinanceiro()
     {
         Parcelas.Clear();
@@ -186,6 +199,49 @@ public partial class EntradaNfeViewModel : ViewModelBase
         {
             Parcelas.Add(new ParcelaFinanceiroVm { Numero = 1, Vencimento = DateTime.Today.AddDays(30), Valor = total, Documento = $"{baseDoc}/01" });
         }
+    }
+
+    [RelayCommand]
+    private void RatearCustosLogistica()
+    {
+        var totalBruto = TotalProdutos;
+        var despesasTotais = ValorFrete + OutrasDespesas;
+
+        if (totalBruto <= 0 || despesasTotais <= 0)
+        {
+            foreach (var item in ItensNota) item.RateioDespesas = 0;
+            AtualizarTotais();
+            return;
+        }
+
+        decimal acumulado = 0;
+        for (int i = 0; i < ItensNota.Count; i++)
+        {
+            var item = ItensNota[i];
+            if (i == ItensNota.Count - 1)
+            {
+                // Ultimo item absorve arredondamentos
+                item.RateioDespesas = despesasTotais - acumulado;
+            }
+            else
+            {
+                var proporcao = item.TotalBruto / totalBruto;
+                var rateado = Math.Round(despesasTotais * proporcao, 2);
+                item.RateioDespesas = rateado;
+                acumulado += rateado;
+            }
+        }
+
+        AtualizarTotais();
+        MensagemFeedback = $"Frete e Despesas (R$ {despesasTotais:N2}) rateados proporcionalmente com sucesso!";
+    }
+
+    private void AtualizarTotais()
+    {
+        OnPropertyChanged(nameof(TotalProdutos));
+        OnPropertyChanged(nameof(TotalDespesasRateadas));
+        OnPropertyChanged(nameof(ValorTotalNota));
+        RecalcularFinanceiro();
     }
 
     [RelayCommand]
@@ -230,7 +286,7 @@ public partial class EntradaNfeViewModel : ViewModelBase
         {
             var nfe = _xmlParser.ParseFromStream(stream);
             await AplicarNfeParseadaAsync(nfe);
-            MensagemFeedback = $"✅ NF-e {NumeroNota} ({FornecedorRazao}) importada do XML com sucesso!";
+            MensagemFeedback = $"✅ {nfe.TipoDocumentoDescricao} {NumeroNota} ({FornecedorRazao}) importada do XML com sucesso!";
         }
         catch (Exception ex)
         {
@@ -245,7 +301,7 @@ public partial class EntradaNfeViewModel : ViewModelBase
         {
             var nfe = _xmlParser.ParseFromString(conteudoXml);
             await AplicarNfeParseadaAsync(nfe);
-            MensagemFeedback = $"✅ NF-e {NumeroNota} ({FornecedorRazao}) importada do XML com sucesso!";
+            MensagemFeedback = $"✅ {nfe.TipoDocumentoDescricao} {NumeroNota} ({FornecedorRazao}) importada do XML com sucesso!";
         }
         catch (Exception ex)
         {
@@ -258,6 +314,8 @@ public partial class EntradaNfeViewModel : ViewModelBase
     {
         NumeroNota = nfe.NumeroNota;
         SerieNota = nfe.Serie;
+        ModeloDocumento = nfe.ModeloDocumento;
+        TipoDocumentoDescricao = nfe.TipoDocumentoDescricao;
         ChaveAcesso = nfe.ChaveAcesso;
         DataEmissao = nfe.DataEmissao ?? DateTime.Today;
         NaturezaOperacao = nfe.NaturezaOperacao;

@@ -18,7 +18,7 @@
                                 <TextBlock Text="{Binding StatusDocumento}" Foreground="White" FontWeight="Bold" FontSize="11"/>
                             </Border>
                         </StackPanel>
-                        <TextBlock Text="Documento Fiscal Modelo 55 • Integração Estoque, Custos e Contas a Pagar" FontSize="14" Foreground="#7F8C8D" Margin="0,4,0,0"/>
+                        <TextBlock Text="Documentos Fiscais de Entrada (NF-e Mod. 55 e NFC-e Mod. 65) • Integração de Estoque e Contas a Pagar" FontSize="14" Foreground="#7F8C8D" Margin="0,4,0,0"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,15,0">
@@ -50,7 +50,12 @@
                 <!-- Dados do Fornecedor / Nota -->
                 <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="20" Margin="0,0,10,0" BorderBrush="#BDC3C7" BorderThickness="1">
                     <StackPanel Spacing="15">
-                        <TextBlock Text="🏢 Identificação do Fornecedor &amp; Dados da NF-e" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Grid.Column="0" Text="🏢 Identificação do Fornecedor &amp; Dados Fiscais" FontSize="16" FontWeight="Black" Foreground="#2C3E50" VerticalAlignment="Center"/>
+                            <Border Grid.Column="1" Background="#EBF5FB" BorderBrush="#3498DB" BorderThickness="1" CornerRadius="4" Padding="8,3">
+                                <TextBlock Text="{Binding TipoDocumentoDescricao}" FontSize="12" FontWeight="Bold" Foreground="#2980B9"/>
+                            </Border>
+                        </Grid>
                         
                         <Grid ColumnDefinitions="3*, 1*, 2*">
                             <StackPanel Grid.Column="0" Spacing="5" Margin="0,0,10,0">
@@ -69,7 +74,7 @@
 
                         <Grid ColumnDefinitions="2*, 1*, 3*">
                             <StackPanel Grid.Column="0" Spacing="5" Margin="0,0,10,0">
-                                <TextBlock Text="Número da NF-e:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <TextBlock Text="Número da Nota:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
                                 <TextBox Text="{Binding NumeroNota}" FontWeight="Black" FontSize="16" Foreground="#2980B9" Background="#F8F9F9"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Spacing="5" Margin="0,0,10,0">
