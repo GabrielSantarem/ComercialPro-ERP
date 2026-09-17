@@ -46,24 +46,20 @@ public class PdvService
         if (!await _db.Produtos.AnyAsync())
         {
             _db.Produtos.AddRange(
-                new Produto { Nome = "SACOLA BRANCA 2K (100 unds)", Preco = 12.50m, Estoque = 150 },
-                new Produto { Nome = "SACOLA BRANCA 2K (Meio Milheiro)", Preco = 55.00m, Estoque = 30 },
-                new Produto { Nome = "BOBINA PICOTADA 3x40 (Rolo 500g)", Preco = 18.90m, Estoque = 40 },
-                new Produto { Nome = "COPO DESCARTÁVEL 200ml TRANSPARENTE (100 unds)", Preco = 6.99m, Estoque = 300 }
+                new Produto { Nome = "Sacola Branca 2k", Preco = 0.50m, Estoque = 100 },
+                new Produto { Nome = "Fita Adesiva Marrom", Preco = 7.90m, Estoque = 30 },
+                new Produto { Nome = "Copo Descartável 200ml", Preco = 4.50m, Estoque = 50 },
+                new Produto { Nome = "Papel Filme 30cm", Preco = 12.00m, Estoque = 15 }
             );
             await _db.SaveChangesAsync();
-        }
 
-        // Criar vendas fictícias de "ONTEM" para podermos testar a tela de inventário
-        if (!await _db.Vendas.AnyAsync())
-        {
             var p1 = await _db.Produtos.FirstOrDefaultAsync(p => p.Id == 1);
             var p3 = await _db.Produtos.FirstOrDefaultAsync(p => p.Id == 3);
             if(p1 != null && p3 != null)
             {
                 var vendaOntem = new Venda {
                     VendedorId = 1,
-                    DataHora = DateTime.Now.AddDays(-1).AddHours(-4), // Venda feita ontem
+                    DataHora = DateTime.Now.AddDays(-1).AddHours(-4),
                     ValorTotal = (2 * p1.Preco) + (1 * p3.Preco)
                 };
                 vendaOntem.Itens.Add(new ItemVenda { ProdutoId = p1.Id, Quantidade = 2, PrecoUnitario = p1.Preco });
@@ -93,16 +89,17 @@ public class PdvService
         return produtos.Where(p => terms.All(t => p.Nome.ToLowerInvariant().Contains(t))).ToList();
     }
 
-    public async Task SalvarPedidoAsync(int vendedorId, IEnumerable<(Produto Produto, int Quantidade)> carrinho)
+    public async Task SalvarPedidoAsync(int vendedorId, IEnumerable<(Produto Produto, int Quantidade)> carrinho, string formaPagamento = "Dinheiro")
     {
         using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
+            var valorTotal = carrinho.Sum(x => x.Quantidade * x.Produto.Preco);
             var venda = new Venda
             {
                 VendedorId = vendedorId,
                 DataHora = DateTime.Now,
-                ValorTotal = carrinho.Sum(x => x.Quantidade * x.Produto.Preco)
+                ValorTotal = valorTotal
             };
             _db.Vendas.Add(venda);
             await _db.SaveChangesAsync();
@@ -121,9 +118,24 @@ public class PdvService
                 var produtoDb = await _db.Produtos.FindAsync(item.Produto.Id);
                 if (produtoDb != null) produtoDb.Estoque -= item.Quantidade;
             }
+
+            // Se houver um turno de caixa aberto, acumula o valor da venda na gaveta/turno
+            var turnoAtivo = await _db.CaixasTurno.FirstOrDefaultAsync(c => c.Status == "ABERTO");
+            if (turnoAtivo != null)
+            {
+                if (formaPagamento.Equals("Dinheiro", StringComparison.OrdinalIgnoreCase))
+                {
+                    turnoAtivo.TotalVendasDinheiro += valorTotal;
+                }
+                else
+                {
+                    turnoAtivo.TotalVendasOutros += valorTotal;
+                }
+            }
+
             await _db.SaveChangesAsync();
             await transaction.CommitAsync();
-            _logger.LogInformation("Venda concluída com sucesso! Total: {Total}, VendedorId: {VendedorId}", venda.ValorTotal, vendedorId);
+            _logger.LogInformation("Venda concluída com sucesso! Total: {Total}, VendedorId: {VendedorId}, Pagamento: {Forma}", venda.ValorTotal, vendedorId, formaPagamento);
         }
         catch (Exception ex) { 
             _logger.LogError(ex, "Erro ao salvar o pedido no banco de dados. Fazendo rollback da transação.");
@@ -135,7 +147,6 @@ public class PdvService
     // NOVA FUNÇÃO: INVENTÁRIO
     public async Task<List<RelatorioInventarioDto>> GerarLevantamentoInventarioAsync(DateTime data)
     {
-        // Pega inicio e fim do dia alvo
         var inicio = data.Date;
         var fim = inicio.AddDays(1).AddTicks(-1);
 
@@ -202,7 +213,6 @@ public class PdvService
                 var produto = await _db.Produtos.FindAsync(item.ProdutoId);
                 if (produto != null)
                 {
-                    // Alimenta o estoque físico do produto
                     produto.Estoque += item.Quantidade;
 
                     entrada.Itens.Add(new ItemEntradaMercadoria
@@ -226,5 +236,141 @@ public class PdvService
             _logger.LogError(ex, "Erro ao registrar entrada de mercadorias da NF '{Nota}'", numeroNota);
             throw;
         }
+    }
+
+    // === CONTROLE DE TURNOS DE CAIXA (ABERTURA, SANGRIA, FECHAMENTO) ===
+
+    public async Task<CaixaTurno?> ObterTurnoAtualAsync()
+    {
+        return await _db.CaixasTurno
+            .Include(c => c.Vendedor)
+            .Include(c => c.Movimentacoes)
+            .FirstOrDefaultAsync(c => c.Status == "ABERTO");
+    }
+
+    public async Task<CaixaTurno> AbrirCaixaAsync(int vendedorId, decimal saldoInicial, string observacao = "")
+    {
+        var existente = await _db.CaixasTurno.FirstOrDefaultAsync(c => c.Status == "ABERTO");
+        if (existente != null)
+        {
+            throw new InvalidOperationException($"Já existe um turno de caixa aberto (Turno #{existente.Id}). Feche o turno atual antes de abrir outro.");
+        }
+
+        if (saldoInicial < 0)
+        {
+            throw new ArgumentException("O fundo de troco inicial não pode ser negativo.", nameof(saldoInicial));
+        }
+
+        var turno = new CaixaTurno
+        {
+            VendedorId = vendedorId,
+            DataAbertura = DateTime.Now,
+            SaldoInicial = saldoInicial,
+            Status = "ABERTO",
+            Observacao = observacao
+        };
+
+        _db.CaixasTurno.Add(turno);
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Turno de Caixa #{Id} aberto com saldo inicial de R$ {Saldo:N2} por Vendedor {VendedorId}", turno.Id, saldoInicial, vendedorId);
+        return turno;
+    }
+
+    public async Task<MovimentacaoCaixa> RegistrarSuprimentoAsync(int caixaTurnoId, decimal valor, string motivo)
+    {
+        if (valor <= 0) throw new ArgumentException("O valor do suprimento deve ser maior que zero.", nameof(valor));
+
+        var turno = await _db.CaixasTurno.FindAsync(caixaTurnoId);
+        if (turno == null || turno.Status != "ABERTO")
+        {
+            throw new InvalidOperationException("O turno informado não existe ou não está aberto.");
+        }
+
+        turno.TotalSuprimentos += valor;
+
+        var mov = new MovimentacaoCaixa
+        {
+            CaixaTurnoId = caixaTurnoId,
+            DataHora = DateTime.Now,
+            Tipo = "SUPRIMENTO",
+            Valor = valor,
+            Motivo = motivo
+        };
+
+        _db.MovimentacoesCaixa.Add(mov);
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Suprimento de R$ {Valor:N2} registrado no Caixa #{Id}. Motivo: {Motivo}", valor, caixaTurnoId, motivo);
+        return mov;
+    }
+
+    public async Task<MovimentacaoCaixa> RegistrarSangriaAsync(int caixaTurnoId, decimal valor, string motivo)
+    {
+        if (valor <= 0) throw new ArgumentException("O valor da sangria deve ser maior que zero.", nameof(valor));
+
+        var turno = await _db.CaixasTurno.FindAsync(caixaTurnoId);
+        if (turno == null || turno.Status != "ABERTO")
+        {
+            throw new InvalidOperationException("O turno informado não existe ou não está aberto.");
+        }
+
+        if (valor > turno.SaldoEsperadoEmDinheiro)
+        {
+            throw new InvalidOperationException($"Sangria não permitida! Valor solicitado (R$ {valor:N2}) é maior do que o saldo físico disponível na gaveta (R$ {turno.SaldoEsperadoEmDinheiro:N2}).");
+        }
+
+        turno.TotalSangrias += valor;
+
+        var mov = new MovimentacaoCaixa
+        {
+            CaixaTurnoId = caixaTurnoId,
+            DataHora = DateTime.Now,
+            Tipo = "SANGRIA",
+            Valor = valor,
+            Motivo = motivo
+        };
+
+        _db.MovimentacoesCaixa.Add(mov);
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Sangria de R$ {Valor:N2} registrada no Caixa #{Id}. Motivo: {Motivo}", valor, caixaTurnoId, motivo);
+        return mov;
+    }
+
+    public async Task<CaixaTurno> FecharCaixaAsync(int caixaTurnoId, decimal saldoInformado, string observacao = "")
+    {
+        var turno = await _db.CaixasTurno
+            .Include(c => c.Vendedor)
+            .Include(c => c.Movimentacoes)
+            .FirstOrDefaultAsync(c => c.Id == caixaTurnoId);
+
+        if (turno == null || turno.Status != "ABERTO")
+        {
+            throw new InvalidOperationException("O turno informado não existe ou já foi fechado.");
+        }
+
+        turno.DataFechamento = DateTime.Now;
+        turno.SaldoInformado = saldoInformado;
+        turno.DiferencaQuebra = saldoInformado - turno.SaldoEsperadoEmDinheiro;
+        turno.Status = "FECHADO";
+        if (!string.IsNullOrWhiteSpace(observacao))
+        {
+            turno.Observacao = string.IsNullOrWhiteSpace(turno.Observacao) 
+                ? observacao 
+                : $"{turno.Observacao} | {observacao}";
+        }
+
+        await _db.SaveChangesAsync();
+        _logger.LogInformation("Caixa #{Id} fechado. Esperado: R$ {Esperado:N2}, Informado: R$ {Informado:N2}, Diferença: R$ {Dif:N2}",
+            turno.Id, turno.SaldoEsperadoEmDinheiro, saldoInformado, turno.DiferencaQuebra);
+
+        return turno;
+    }
+
+    public async Task<List<CaixaTurno>> ObterHistoricoTurnosAsync()
+    {
+        return await _db.CaixasTurno
+            .Include(c => c.Vendedor)
+            .Include(c => c.Movimentacoes)
+            .OrderByDescending(c => c.DataAbertura)
+            .ToListAsync();
     }
 }

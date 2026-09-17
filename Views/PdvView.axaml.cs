@@ -32,7 +32,6 @@ public partial class PdvView : UserControl
 
     private void FocarModal()
     {
-        // Ao abrir o modal, coloca o foco no primeiro campo editável (Cliente ou Valor)
         var txtCliente = this.FindControl<TextBox>("TxtCliente");
         txtCliente?.Focus();
     }
@@ -42,7 +41,31 @@ public partial class PdvView : UserControl
         if (this.DataContext is not PdvViewModel vm) return;
 
         // ==========================================
-        // 1. SE O MODAL DE PAGAMENTO ESTIVER ABERTO:
+        // 1. SE O MODAL DE OPERAÇÕES DE CAIXA ESTIVER ABERTO:
+        // ==========================================
+        if (vm.ModalCaixaAberto)
+        {
+            if (e.Key == Key.Escape)
+            {
+                vm.FecharModalCaixaCommand.Execute(null);
+                FocarBusca();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                await vm.ConfirmarAcaoCaixaCommand.ExecuteAsync(null);
+                if (!vm.ModalCaixaAberto) FocarBusca();
+                e.Handled = true;
+                return;
+            }
+
+            return;
+        }
+
+        // ==========================================
+        // 2. SE O MODAL DE PAGAMENTO ESTIVER ABERTO:
         // ==========================================
         if (vm.IsModalAberto)
         {
@@ -80,12 +103,11 @@ public partial class PdvView : UserControl
                 return;
             }
 
-            // Nenhuma outra tecla da tela de trás pode vazar enquanto o modal estiver aberto!
             return;
         }
 
         // ==========================================
-        // 2. SE ESTIVER NA TELA PRINCIPAL DO PDV:
+        // 3. SE ESTIVER NA TELA PRINCIPAL DO PDV:
         // ==========================================
 
         // F12: Abre modal de pagamento / fechamento
@@ -110,7 +132,7 @@ public partial class PdvView : UserControl
         if (e.Key == Key.F8)
         {
             Log.Information("[PDV ATALHO] F8 pressionado -> Remover Item");
-            vm.RemoverItemSelecionadoCommand.Execute(null);
+            vm.CancelarItemSelecionadoCommand.Execute(null);
             e.Handled = true;
             return;
         }
@@ -164,9 +186,9 @@ public partial class PdvView : UserControl
             }
 
             Log.Information("[PDV ATALHO] ENTER pressionado -> Lançando produto com texto '{Texto}'", vm.TextoPesquisa);
-            await vm.LancarProdutoCommand.ExecuteAsync(null);
+            vm.LancarProdutoCommand.Execute(null);
 
-            if (txt != null)
+            if (txt != null && vm.IsCaixaAberto)
             {
                 txt.Text = string.Empty;
                 txt.Focus();

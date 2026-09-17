@@ -18,13 +18,21 @@ public class AppDbContext : DbContext
     public DbSet<Vendedor> Vendedores { get; set; }
     public DbSet<EntradaMercadoria> EntradasMercadoria { get; set; }
     public DbSet<ItemEntradaMercadoria> ItensEntradaMercadoria { get; set; }
+    public DbSet<CaixaTurno> CaixasTurno { get; set; }
+    public DbSet<MovimentacaoCaixa> MovimentacoesCaixa { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite("Data Source=pdv.db");
-        // Suprime o PendingModelChangesWarning para evitar crash se o modelo for alterado antes da migration
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlite("Data Source=pdv.db");
+        }
         optionsBuilder.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
     }
+
+    public AppDbContext() { }
+
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     // === INTERCEPTADOR ANTIFRAUDE (BLOCKCHAIN FISCAL) ===
     public override async Task<int> SaveChangesAsync(CancellationToken cancel = default)
