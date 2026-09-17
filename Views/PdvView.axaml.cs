@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using GetStartedApp.ViewModels;
 using Serilog;
 
@@ -26,14 +27,29 @@ public partial class PdvView : UserControl
 
     private void FocarBusca()
     {
-        var txt = this.FindControl<TextBox>("TxtPesquisa");
-        txt?.Focus();
+        Dispatcher.UIThread.Post(() =>
+        {
+            var txt = this.FindControl<TextBox>("TxtPesquisa");
+            txt?.Focus();
+        });
     }
 
-    private void FocarModal()
+    private void FocarModalPagamento()
     {
-        var txtCliente = this.FindControl<TextBox>("TxtCliente");
-        txtCliente?.Focus();
+        Dispatcher.UIThread.Post(() =>
+        {
+            var numValor = this.FindControl<NumericUpDown>("NumValorRecebido");
+            numValor?.Focus();
+        });
+    }
+
+    private void FocarFiltroFila()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var txt = this.FindControl<TextBox>("TxtFiltroFila");
+            txt?.Focus();
+        });
     }
 
     private async void PdvView_KeyDownTunnel(object? sender, KeyEventArgs e)
@@ -65,7 +81,53 @@ public partial class PdvView : UserControl
         }
 
         // ==========================================
-        // 2. SE O MODAL DE PAGAMENTO ESTIVER ABERTO:
+        // 2. SE O MODAL DA FILA DO BALCÃO [F4] ESTIVER ABERTO:
+        // ==========================================
+        if (vm.ModalFilaBalcaoAberto)
+        {
+            if (e.Key == Key.Escape)
+            {
+                vm.FecharModalFilaBalcaoCommand.Execute(null);
+                FocarBusca();
+                e.Handled = true;
+                return;
+            }
+
+            // SETA PARA BAIXO / CIMA navega entre as comandas na fila
+            if (e.Key == Key.Down && vm.FilaFiltrada.Count > 0)
+            {
+                var lista = vm.FilaFiltrada.ToList();
+                var atualIdx = vm.PedidoFilaSelecionado != null ? lista.IndexOf(vm.PedidoFilaSelecionado) : -1;
+                var proximoIdx = Math.Min(atualIdx + 1, lista.Count - 1);
+                vm.PedidoFilaSelecionado = lista[proximoIdx];
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Up && vm.FilaFiltrada.Count > 0)
+            {
+                var lista = vm.FilaFiltrada.ToList();
+                var atualIdx = vm.PedidoFilaSelecionado != null ? lista.IndexOf(vm.PedidoFilaSelecionado) : 0;
+                var anteriorIdx = Math.Max(atualIdx - 1, 0);
+                vm.PedidoFilaSelecionado = lista[anteriorIdx];
+                e.Handled = true;
+                return;
+            }
+
+            // ENTER: Confirma a comanda selecionada e puxa para pagamento
+            if (e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                vm.ConfirmarSelecaoFilaCommand.Execute(null);
+                FocarModalPagamento();
+                e.Handled = true;
+                return;
+            }
+
+            return;
+        }
+
+        // ==========================================
+        // 3. SE O MODAL DE PAGAMENTO ESTIVER ABERTO:
         // ==========================================
         if (vm.IsModalAberto)
         {
@@ -79,20 +141,9 @@ public partial class PdvView : UserControl
                 return;
             }
 
-            // ENTER: Se o foco estiver no campo de cliente, pula para o próximo campo (ValorRecebido)
+            // ENTER: Confirma pagamento se valor foi atingido
             if (e.Key == Key.Enter || e.Key == Key.Return)
             {
-                var txtCliente = this.FindControl<TextBox>("TxtCliente");
-                if (txtCliente != null && txtCliente.IsFocused)
-                {
-                    // Pula o foco para a caixa de valor recebido
-                    var numValor = this.FindControl<NumericUpDown>("NumValorRecebido");
-                    numValor?.Focus();
-                    e.Handled = true;
-                    return;
-                }
-
-                // Se já estiver no valor ou puder confirmar, conclui o pagamento
                 if (vm.PodeConfirmarPagamento)
                 {
                     Log.Information("[PDV MODAL] ENTER de confirmação -> Concluindo venda");
@@ -107,20 +158,62 @@ public partial class PdvView : UserControl
         }
 
         // ==========================================
-        // 3. SE ESTIVER NA TELA PRINCIPAL DO PDV:
+        // 4. ATALHOS NA TELA PRINCIPAL DO PDV (BOCA DE CAIXA):
         // ==========================================
 
-        // F12: Abre modal de pagamento / fechamento
-        if (e.Key == Key.F12)
+        // F4: Abre o modal de Fila do Balcão
+        if (e.Key == Key.F4)
         {
-            Log.Information("[PDV ATALHO] F12 pressionado -> Abrir Pagamento");
-            vm.AbrirModalPagamentoCommand.Execute(null);
-            FocarModal();
+            Log.Information("[PDV ATALHO] F4 -> Abrir Fila do Balcão");
+            await vm.AbrirModalFilaBalcaoAsync();
+            if (vm.ModalFilaBalcaoAberto) FocarFiltroFila();
             e.Handled = true;
             return;
         }
 
-        // F2: Força o foco no campo de busca
+        // F12: Abre modal de pagamento / recebimento
+        if (e.Key == Key.F12)
+        {
+            Log.Information("[PDV ATALHO] F12 -> Abrir Pagamento");
+            vm.AbrirModalPagamentoCommand.Execute(null);
+            FocarModalPagamento();
+            e.Handled = true;
+            return;
+        }
+
+        // F1: Abertura de Caixa (se fechado)
+        if (e.Key == Key.F1 && !vm.IsCaixaAberto)
+        {
+            vm.AbrirModalAberturaCaixaCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        // F6: Suprimento (se aberto)
+        if (e.Key == Key.F6 && vm.IsCaixaAberto)
+        {
+            vm.AbrirModalSuprimentoCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        // F7: Sangria (se aberto)
+        if (e.Key == Key.F7 && vm.IsCaixaAberto)
+        {
+            vm.AbrirModalSangriaCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        // F9: Fechamento cego de turno (se aberto)
+        if (e.Key == Key.F9 && vm.IsCaixaAberto)
+        {
+            vm.AbrirModalFechamentoCaixaCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        // F2: Força o foco no campo de busca de venda direta
         if (e.Key == Key.F2)
         {
             FocarBusca();
@@ -128,16 +221,16 @@ public partial class PdvView : UserControl
             return;
         }
 
-        // F8: Cancela/Remove o item selecionado do carrinho
-        if (e.Key == Key.F8)
+        // F8 ou Delete: Cancela/Remove o item selecionado do cupom
+        if (e.Key == Key.F8 || e.Key == Key.Delete)
         {
-            Log.Information("[PDV ATALHO] F8 pressionado -> Remover Item");
+            Log.Information("[PDV ATALHO] F8/DEL -> Remover Item");
             vm.CancelarItemSelecionadoCommand.Execute(null);
             e.Handled = true;
             return;
         }
 
-        // ESC: Limpa o carrinho todo (se tiver itens) ou limpa a busca
+        // ESC: Limpa a busca ou o cupom
         if (e.Key == Key.Escape)
         {
             var txt = this.FindControl<TextBox>("TxtPesquisa");
@@ -154,7 +247,7 @@ public partial class PdvView : UserControl
             return;
         }
 
-        // SETA PARA BAIXO (Down): Navega para o próximo produto na lista de sugestões
+        // SETA PARA BAIXO / CIMA: Navega na lista de sugestões de busca
         if (e.Key == Key.Down && vm.ResultadosPesquisa.Count > 0)
         {
             var lista = vm.ResultadosPesquisa.ToList();
@@ -165,7 +258,6 @@ public partial class PdvView : UserControl
             return;
         }
 
-        // SETA PARA CIMA (Up): Navega para o produto anterior na lista de sugestões
         if (e.Key == Key.Up && vm.ResultadosPesquisa.Count > 0)
         {
             var lista = vm.ResultadosPesquisa.ToList();
@@ -176,7 +268,7 @@ public partial class PdvView : UserControl
             return;
         }
 
-        // ENTER: Lança o produto no carrinho com a quantidade especificada
+        // ENTER: Lança o produto no cupom
         if (e.Key == Key.Enter || e.Key == Key.Return)
         {
             var txt = this.FindControl<TextBox>("TxtPesquisa");
@@ -185,7 +277,7 @@ public partial class PdvView : UserControl
                 vm.TextoPesquisa = txt.Text;
             }
 
-            Log.Information("[PDV ATALHO] ENTER pressionado -> Lançando produto com texto '{Texto}'", vm.TextoPesquisa);
+            Log.Information("[PDV ATALHO] ENTER -> Lançando produto com texto '{Texto}'", vm.TextoPesquisa);
             vm.LancarProdutoCommand.Execute(null);
 
             if (txt != null && vm.IsCaixaAberto)

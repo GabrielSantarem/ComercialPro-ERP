@@ -35,7 +35,7 @@ public partial class PdvViewModel : ViewModelBase
     [ObservableProperty]
     private string _textoPesquisa = string.Empty;
 
-    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto;
+    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto || ModalFilaBalcaoAberto;
 
     public PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> logger)
     {
@@ -114,7 +114,7 @@ public partial class PdvViewModel : ViewModelBase
         if (!IsCaixaAberto)
         {
             AbrirModalAberturaCaixa();
-            MensagemCaixaErro = "⚠️ O Caixa está FECHADO! Informe o saldo de abertura antes de iniciar vendas.";
+            MensagemCaixaErro = "⚠️ O Caixa está FECHADO! Abra o caixa antes de iniciar vendas.";
             return;
         }
 
@@ -141,7 +141,7 @@ public partial class PdvViewModel : ViewModelBase
         if (!IsCaixaAberto)
         {
             AbrirModalAberturaCaixa();
-            MensagemCaixaErro = "⚠️ O Caixa está FECHADO! Informe o saldo de abertura antes de iniciar vendas.";
+            MensagemCaixaErro = "⚠️ O Caixa está FECHADO! Abra o caixa antes de iniciar vendas.";
             return;
         }
         AdicionarAoCarrinho(produto, 1);
@@ -180,6 +180,8 @@ public partial class PdvViewModel : ViewModelBase
     {
         _logger.LogInformation("Limpando todo o cupom (carrinho limpo).");
         Carrinho.Clear();
+        ClienteIdentificacao = string.Empty;
+        PedidoBalcaoEmAtendimento = null;
         AtualizarTotal();
     }
 }

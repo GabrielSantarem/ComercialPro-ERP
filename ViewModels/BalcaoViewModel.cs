@@ -21,6 +21,9 @@ public partial class BalcaoViewModel : ViewModelBase
     public ObservableCollection<Vendedor> Vendedores { get; } = [];
 
     [ObservableProperty] public partial Vendedor? VendedorSelecionado { get; set; }
+
+    // === MODAL DE IDENTIFICAÇÃO RÁPIDA (OPCIONAL AO FECHAR) ===
+    [ObservableProperty] public partial bool ModalIdentificacaoAberto { get; set; }
     [ObservableProperty] public partial string ClienteNome { get; set; } = "Cliente Balcão";
     [ObservableProperty] public partial string ClienteCpf { get; set; } = string.Empty;
 
@@ -29,11 +32,13 @@ public partial class BalcaoViewModel : ViewModelBase
     [ObservableProperty] private Produto? _produtoPesquisaSelecionado;
     [ObservableProperty] private string _textoPesquisa = string.Empty;
 
-    // Modal de Sucesso após envio ao Caixa
+    // === MODAL DE SUCESSO / COMANDA GERADA ===
     [ObservableProperty] public partial bool IsModalConfirmacaoAberto { get; set; }
     [ObservableProperty] public partial string MensagemConfirmacao { get; set; } = string.Empty;
     [ObservableProperty] public partial string NumeroComandaGerada { get; set; } = string.Empty;
     [ObservableProperty] public partial decimal ValorComandaGerada { get; set; }
+
+    public bool IsBloqueadoPorModal => ModalIdentificacaoAberto || IsModalConfirmacaoAberto;
 
     public BalcaoViewModel(PdvService service, ILogger<BalcaoViewModel> logger)
     {
@@ -48,6 +53,8 @@ public partial class BalcaoViewModel : ViewModelBase
         var lista = await _service.ObterVendedoresAsync();
         foreach (var v in lista) Vendedores.Add(v);
         VendedorSelecionado = Vendedores.FirstOrDefault();
+        ClienteNome = "Cliente Balcão";
+        ClienteCpf = string.Empty;
     }
 
     private void AtualizarTotal()
@@ -125,26 +132,58 @@ public partial class BalcaoViewModel : ViewModelBase
         Carrinho.Clear();
         ClienteNome = "Cliente Balcão";
         ClienteCpf = string.Empty;
+        ModalIdentificacaoAberto = false;
         AtualizarTotal();
     }
 
     [RelayCommand]
-    private async Task EnviarAoCaixaAsync()
+    public void TrocarVendedorProximo()
+    {
+        if (Vendedores.Count == 0) return;
+        var idx = VendedorSelecionado != null ? Vendedores.IndexOf(VendedorSelecionado) : -1;
+        var proximo = (idx + 1) % Vendedores.Count;
+        VendedorSelecionado = Vendedores[proximo];
+    }
+
+    [RelayCommand]
+    public void SolicitarEnvioAoCaixa()
+    {
+        if (Carrinho.Count == 0) return;
+
+        // Se ainda não definiu nome, sugere o padrão "Cliente Balcão"
+        if (string.IsNullOrWhiteSpace(ClienteNome))
+        {
+            ClienteNome = "Cliente Balcão";
+        }
+
+        ModalIdentificacaoAberto = true;
+    }
+
+    [RelayCommand]
+    public void CancelarIdentificacao()
+    {
+        ModalIdentificacaoAberto = false;
+    }
+
+    [RelayCommand]
+    public async Task ConfirmarEnvioAoCaixaAsync()
     {
         if (Carrinho.Count == 0) return;
         if (VendedorSelecionado == null) return;
 
         var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
 
+        var nomeFinal = string.IsNullOrWhiteSpace(ClienteNome) ? "Cliente Balcão" : ClienteNome.Trim();
+
         var pedido = await _service.CriarPedidoBalcaoAsync(
             VendedorSelecionado.Id,
-            ClienteNome,
+            nomeFinal,
             ClienteCpf,
             itens);
 
         NumeroComandaGerada = pedido.NumeroComanda;
         ValorComandaGerada = pedido.ValorTotal;
-        MensagemConfirmacao = $"Pedido {pedido.NumeroComanda} enviado ao Caixa Central com sucesso!\nOriente o cliente {pedido.ClienteNome} a dirigir-se à boca de caixa para pagamento.";
+        MensagemConfirmacao = $"Pedido {pedido.NumeroComanda} gerado com sucesso!\nCliente: {pedido.ClienteNome} | Vendedor: {VendedorSelecionado.Nome}\n\nOriente o cliente a apresentar o número no Caixa Central.";
 
         Carrinho.Clear();
         ClienteNome = "Cliente Balcão";
@@ -153,6 +192,7 @@ public partial class BalcaoViewModel : ViewModelBase
         ResultadosPesquisa.Clear();
         AtualizarTotal();
 
+        ModalIdentificacaoAberto = false;
         IsModalConfirmacaoAberto = true;
     }
 

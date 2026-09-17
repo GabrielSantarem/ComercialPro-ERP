@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using GetStartedApp.Models;
 using Microsoft.Extensions.Logging;
@@ -12,9 +13,39 @@ public partial class PdvViewModel
 {
     // === FILA DE PRÉ-VENDAS DO BALCÃO ===
     public ObservableCollection<PedidoBalcao> FilaPedidos { get; } = [];
+    public ObservableCollection<PedidoBalcao> FilaFiltrada { get; } = [];
 
     [ObservableProperty]
     public partial PedidoBalcao? PedidoFilaSelecionado { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBloqueadoPorModal))]
+    public partial bool ModalFilaBalcaoAberto { get; set; }
+
+    [ObservableProperty]
+    public partial string FiltroFilaBalcao { get; set; } = string.Empty;
+
+    partial void OnFiltroFilaBalcaoChanged(string value)
+    {
+        AplicarFiltroFila();
+    }
+
+    private void AplicarFiltroFila()
+    {
+        FilaFiltrada.Clear();
+        var termo = FiltroFilaBalcao?.Trim().ToLowerInvariant() ?? string.Empty;
+
+        var filtrados = string.IsNullOrWhiteSpace(termo)
+            ? FilaPedidos
+            : FilaPedidos.Where(p => 
+                p.NumeroComanda.ToLowerInvariant().Contains(termo) ||
+                p.ClienteNome.ToLowerInvariant().Contains(termo) ||
+                p.Vendedor.Nome.ToLowerInvariant().Contains(termo));
+
+        foreach (var p in filtrados) FilaFiltrada.Add(p);
+
+        PedidoFilaSelecionado = FilaFiltrada.FirstOrDefault();
+    }
 
     [RelayCommand]
     public async Task AtualizarFilaPedidosAsync()
@@ -22,6 +53,41 @@ public partial class PdvViewModel
         FilaPedidos.Clear();
         var lista = await _pdvService.ObterPedidosAguardandoPagamentoAsync();
         foreach (var p in lista) FilaPedidos.Add(p);
+        AplicarFiltroFila();
+    }
+
+    [RelayCommand]
+    public async Task AbrirModalFilaBalcaoAsync()
+    {
+        if (!IsCaixaAberto)
+        {
+            AbrirModalAberturaCaixa();
+            MensagemCaixaErro = "⚠️ Abra o caixa antes de atender a fila do balcão!";
+            return;
+        }
+
+        await AtualizarFilaPedidosAsync();
+        FiltroFilaBalcao = string.Empty;
+        AplicarFiltroFila();
+        ModalFilaBalcaoAberto = true;
+    }
+
+    [RelayCommand]
+    public void FecharModalFilaBalcao()
+    {
+        ModalFilaBalcaoAberto = false;
+        FiltroFilaBalcao = string.Empty;
+    }
+
+    [RelayCommand]
+    public void ConfirmarSelecaoFila()
+    {
+        if (PedidoFilaSelecionado != null)
+        {
+            var p = PedidoFilaSelecionado;
+            ModalFilaBalcaoAberto = false;
+            PuxarPedidoFila(p);
+        }
     }
 
     [RelayCommand]

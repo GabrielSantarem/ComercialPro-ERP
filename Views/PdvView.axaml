@@ -8,7 +8,7 @@
              Focusable="True">
 
     <Grid Background="#1E272E">
-        <!-- CAMADA 1: CONTEÚDO PRINCIPAL (BOCA DE CAIXA) - DESABILITADO QUANDO MODAL ESTIVER ABERTO -->
+        <!-- CAMADA 1: CONTEÚDO PRINCIPAL (BOCA DE CAIXA) - DESABILITADO QUANDO QUALQUER MODAL ESTIVER ABERTO -->
         <Grid RowDefinitions="Auto, Auto, *, Auto" IsEnabled="{Binding !IsBloqueadoPorModal}">
             
             <!-- TOPO (LINHA 0): Informações do Caixa e Controle de Turnos -->
@@ -26,27 +26,38 @@
                     <TextBlock Grid.Column="1" Text="Terminal: 01 (BOCA DE CAIXA)" Foreground="White" FontSize="15" FontWeight="Medium" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     <TextBlock Grid.Column="2" Text="{Binding VendedorSelecionado.Nome, StringFormat='{}Operador: {0}'}" Foreground="#95A5A6" FontSize="14" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,15,0"/>
 
-                    <!-- Ações de Turno de Caixa -->
+                    <!-- Ações de Turno com Teclas de Atalho Claras -->
                     <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8">
-                        <Button Command="{Binding AbrirModalAberturaCaixaCommand}" IsVisible="{Binding !IsCaixaAberto}" Content="🟢 Abrir Caixa" Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="12" Padding="10,6" CornerRadius="4" Cursor="Hand"/>
-                        <Button Command="{Binding AbrirModalSuprimentoCommand}" IsVisible="{Binding IsCaixaAberto}" Content="➕ Suprimento" Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand"/>
-                        <Button Command="{Binding AbrirModalSangriaCommand}" IsVisible="{Binding IsCaixaAberto}" Content="➖ Sangria (Cofre)" Background="#E67E22" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand"/>
-                        <Button Command="{Binding AbrirModalFechamentoCaixaCommand}" IsVisible="{Binding IsCaixaAberto}" Content="🔒 Fechar Turno" Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand"/>
+                        <Button Command="{Binding AbrirModalAberturaCaixaCommand}" IsVisible="{Binding !IsCaixaAberto}" Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="12" Padding="10,6" CornerRadius="4" Cursor="Hand">
+                            <TextBlock Text="[F1] Abrir Caixa" FontWeight="Black"/>
+                        </Button>
+                        <Button Command="{Binding AbrirModalSuprimentoCommand}" IsVisible="{Binding IsCaixaAberto}" Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand">
+                            <TextBlock Text="[F6] Suprimento" FontWeight="Bold"/>
+                        </Button>
+                        <Button Command="{Binding AbrirModalSangriaCommand}" IsVisible="{Binding IsCaixaAberto}" Background="#E67E22" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand">
+                            <TextBlock Text="[F7] Sangria" FontWeight="Bold"/>
+                        </Button>
+                        <Button Command="{Binding AbrirModalFechamentoCaixaCommand}" IsVisible="{Binding IsCaixaAberto}" Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand">
+                            <TextBlock Text="[F9] Fechar Turno" FontWeight="Bold"/>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- FILA DE ESPERA (LINHA 1): PRÉ-VENDAS DO BALCÃO -->
+            <!-- FILA DE ESPERA (LINHA 1): PRÉ-VENDAS DO BALCÃO DE ALTO DESTAQUE -->
             <Border Grid.Row="1" Background="#182C3F" Padding="15,8" BorderBrush="#000" BorderThickness="0,0,0,2">
                 <Grid ColumnDefinitions="Auto, *, Auto">
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <Border Background="#E67E22" CornerRadius="4" Padding="6,3">
-                            <TextBlock Text="{Binding FilaPedidos.Count, StringFormat='{}FILA DO BALCÃO ({0})'}" Foreground="White" FontWeight="Black" FontSize="11"/>
-                        </Border>
-                        <TextBlock Text="Clientes aguardando pagamento:" Foreground="#BDC3C7" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <!-- Botão Principal da Fila [F4] -->
+                    <Button Grid.Column="0" Command="{Binding AbrirModalFilaBalcaoCommand}" Background="#E67E22" Foreground="White" FontWeight="Black" FontSize="13" Padding="12,6" CornerRadius="4" Cursor="Hand">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Background="#D35400" CornerRadius="3" Padding="6,2">
+                                <TextBlock Text="[F4]" Foreground="White" FontWeight="Black" FontSize="11"/>
+                            </Border>
+                            <TextBlock Text="{Binding FilaPedidos.Count, StringFormat='{}FILA DO BALCÃO ({0} EM ESPERA)'}" Foreground="White" FontWeight="Black" FontSize="13"/>
+                        </StackPanel>
+                    </Button>
 
-                    <!-- Lista Horizontal com os Pedidos na Fila -->
+                    <!-- Lista Rápida Horizontal dos Últimos Pedidos -->
                     <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="15,0">
                         <ItemsControl ItemsSource="{Binding FilaPedidos}">
                             <ItemsControl.ItemsPanel>
@@ -73,7 +84,7 @@
                     </ScrollViewer>
 
                     <!-- Botão Atualizar Fila -->
-                    <Button Grid.Column="2" Command="{Binding AtualizarFilaPedidosCommand}" Content="🔄 Atualizar Fila" Background="#34495E" Foreground="#ECF0F1" FontWeight="Bold" FontSize="11" Padding="8,5" CornerRadius="4" Cursor="Hand"/>
+                    <Button Grid.Column="2" Command="{Binding AtualizarFilaPedidosCommand}" Content="🔄 Atualizar" Background="#34495E" Foreground="#ECF0F1" FontWeight="Bold" FontSize="11" Padding="8,5" CornerRadius="4" Cursor="Hand"/>
                 </Grid>
             </Border>
 
@@ -119,10 +130,15 @@
                 <!-- Lado Direito: Busca Rápida + Painel de Ações -->
                 <Grid Grid.Column="1" RowDefinitions="Auto, *, Auto" Margin="0,15,15,15">
                     
-                    <!-- Busca e Lançamento Direto (Se o cliente pagar direto no caixa) -->
+                    <!-- Busca e Lançamento Direto (Venda Direta no Caixa) -->
                     <Border Grid.Row="0" Background="#2C3E50" CornerRadius="4" Padding="15" Margin="0,0,0,15">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="VENDA DIRETA / CÓDIGO (Ex: 5*sacola):" Foreground="#F1C40F" FontSize="14" FontWeight="Bold"/>
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="VENDA DIRETA / CÓDIGO (Ex: 5*sacola):" Foreground="#F1C40F" FontSize="13" FontWeight="Bold"/>
+                                <Border Grid.Column="1" Background="#34495E" CornerRadius="3" Padding="5,2">
+                                    <TextBlock Text="[F2] Foco" Foreground="#ECF0F1" FontSize="11" FontWeight="Bold"/>
+                                </Border>
+                            </Grid>
                             
                             <TextBox x:Name="TxtPesquisa" Text="{Binding TextoPesquisa, Mode=TwoWay}" FontSize="20" FontWeight="Bold" Padding="10" Background="White" BorderThickness="0" CornerRadius="4" PlaceholderText="Digite ou bipe o item..."/>
 
@@ -140,7 +156,9 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
 
-                            <Button Command="{Binding LancarProdutoCommand}" Content="ENTER - LANÇAR NO CUPOM" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" CornerRadius="4" Cursor="Hand"/>
+                            <Button Command="{Binding LancarProdutoCommand}" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" CornerRadius="4" Cursor="Hand">
+                                <TextBlock Text="[ENTER] LANÇAR NO CUPOM" FontWeight="Black"/>
+                            </Button>
                         </StackPanel>
                     </Border>
 
@@ -155,8 +173,12 @@
 
                     <!-- Botões de Ação Rápida -->
                     <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0,15,0,0">
-                        <Button Grid.Column="0" Command="{Binding CancelarItemSelecionadoCommand}" Content="[F8] Excluir Item" Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="14" Padding="12" Margin="0,0,5,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
-                        <Button Grid.Column="1" Command="{Binding AbrirModalPagamentoCommand}" Content="[F12] Receber Pagamento" Background="#F39C12" Foreground="White" FontWeight="Black" FontSize="15" Padding="12" Margin="5,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="0" Command="{Binding CancelarItemSelecionadoCommand}" Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="14" Padding="12" Margin="0,0,5,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="[F8] Excluir Item" FontWeight="Bold"/>
+                        </Button>
+                        <Button Grid.Column="1" Command="{Binding AbrirModalPagamentoCommand}" Background="#F39C12" Foreground="White" FontWeight="Black" FontSize="15" Padding="12" Margin="5,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="💰 [F12] RECEBER NOTA" FontWeight="Black"/>
+                        </Button>
                     </Grid>
 
                 </Grid>
@@ -166,17 +188,20 @@
             <!-- RODAPÉ (LINHA 3): Barra de Atalhos -->
             <Border Grid.Row="3" Background="#111" Padding="10">
                 <WrapPanel HorizontalAlignment="Center">
+                    <TextBlock Text="[F4] Fila do Balcão  |  " Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[ENTER] Lançar/Confirmar  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F2] Foco Busca  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F8] Excluir Item  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
-                    <TextBlock Text="[F12] Receber Nota  |  " Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
-                    <TextBlock Text="[Clique na Fila] Puxa Pedido do Balcão  |  " Foreground="#E67E22" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F12] Receber Nota  |  " Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F6] Suprimento  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F7] Sangria  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F9] Fechar Turno  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[ESC] Limpar/Fechar" Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                 </WrapPanel>
             </Border>
         </Grid>
 
-        <!-- CAMADA 2: MODAL DE RECEBIMENTO DE PAGAMENTO -->
+        <!-- CAMADA 2: MODAL DE RECEBIMENTO DE PAGAMENTO [F12] -->
         <Border Background="#F2000000" 
                 IsVisible="{Binding IsModalAberto}" 
                 IsHitTestVisible="{Binding IsModalAberto}"
@@ -229,7 +254,72 @@
             </Border>
         </Border>
 
-        <!-- CAMADA 3: MODAL DE CONTROLE DE TURNO (ABERTURA, SANGRIA, SUPRIMENTO, FECHAMENTO) -->
+        <!-- CAMADA 3: MODAL DE FILA DE PEDIDOS DO BALCÃO [F4] -->
+        <Border Background="#F2000000" 
+                IsVisible="{Binding ModalFilaBalcaoAberto}" 
+                IsHitTestVisible="{Binding ModalFilaBalcaoAberto}"
+                ZIndex="105"
+                KeyboardNavigation.TabNavigation="Cycle">
+            <Border Background="White" Width="820" CornerRadius="12" Padding="25" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AAE67E22">
+                <Grid RowDefinitions="Auto, Auto, *, Auto">
+                    
+                    <!-- Cabeçalho -->
+                    <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,15">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Grid.Column="0" Text="📋 FILA DE PEDIDOS DO BALCÃO" FontSize="22" FontWeight="Black" Foreground="#2C3E50"/>
+                            <Border Grid.Column="1" Background="#E67E22" CornerRadius="4" Padding="8,4">
+                                <TextBlock Text="{Binding FilaFiltrada.Count, StringFormat='{}AGUARDANDO: {0}'}" Foreground="White" FontWeight="Black" FontSize="12"/>
+                            </Border>
+                        </Grid>
+                        <TextBlock Text="Selecione o pedido do cliente com as setas [↑ / ↓] e tecle [ENTER] para cobrar:" FontSize="13" Foreground="#7F8C8D"/>
+                    </StackPanel>
+
+                    <!-- Campo de Busca/Filtro Rápido na Fila -->
+                    <TextBox x:Name="TxtFiltroFila" Grid.Row="1" Text="{Binding FiltroFilaBalcao, Mode=TwoWay}" FontSize="16" Padding="10" Background="#F4F6F7" BorderBrush="#BDC3C7" CornerRadius="6" PlaceholderText="🔍 Filtrar por comanda (#PED-0001), cliente ou vendedor..." Margin="0,0,0,12"/>
+
+                    <!-- Tabela / Lista com os Pedidos na Fila -->
+                    <Border Grid.Row="2" Background="#FAFAFA" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="6" Height="260">
+                        <Grid RowDefinitions="Auto, *">
+                            <Border Grid.Row="0" Background="#EAEDED" Padding="10,8" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                                <Grid ColumnDefinitions="1.2*, 1*, 2.5*, 1.8*, 1*, 1.5*">
+                                    <TextBlock Grid.Column="0" Text="COMANDA" FontWeight="Black" FontSize="12" Foreground="#34495E"/>
+                                    <TextBlock Grid.Column="1" Text="HORA" FontWeight="Black" FontSize="12" Foreground="#34495E"/>
+                                    <TextBlock Grid.Column="2" Text="CLIENTE" FontWeight="Black" FontSize="12" Foreground="#34495E"/>
+                                    <TextBlock Grid.Column="3" Text="VENDEDOR" FontWeight="Black" FontSize="12" Foreground="#34495E"/>
+                                    <TextBlock Grid.Column="4" Text="ITENS" FontWeight="Black" FontSize="12" Foreground="#34495E" HorizontalAlignment="Center"/>
+                                    <TextBlock Grid.Column="5" Text="VALOR TOTAL" FontWeight="Black" FontSize="12" Foreground="#34495E" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </Border>
+
+                            <ListBox x:Name="ListaFilaBalcao" Grid.Row="1" ItemsSource="{Binding FilaFiltrada}" SelectedItem="{Binding PedidoFilaSelecionado}" Background="White">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:PedidoBalcao">
+                                        <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="8,10">
+                                            <Grid ColumnDefinitions="1.2*, 1*, 2.5*, 1.8*, 1*, 1.5*">
+                                                <TextBlock Grid.Column="0" Text="{Binding NumeroComanda}" FontWeight="Black" Foreground="#2980B9" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding DataHora, StringFormat='{}{0:HH:mm}'}" Foreground="#7F8C8D" FontSize="13" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding ClienteNome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding Vendedor.Nome}" Foreground="#7F8C8D" FontSize="13" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="4" Text="{Binding Itens.Count}" FontWeight="Bold" Foreground="#8E44AD" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="5" Text="{Binding ValorTotal, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" Foreground="#27AE60" FontSize="15" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Border>
+
+                    <!-- Ações de Rodapé do Modal de Fila -->
+                    <Grid Grid.Row="3" ColumnDefinitions="*, *" Margin="0,15,0,0">
+                        <Button Grid.Column="0" Command="{Binding FecharModalFilaBalcaoCommand}" Content="[ESC] Fechar Fila" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="14" Padding="12" Margin="0,0,8,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="1" Command="{Binding ConfirmarSelecaoFilaCommand}" Content="✅ [ENTER] Puxar Pedido para Cobrança" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="15" Padding="12" Margin="8,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Border>
+
+        <!-- CAMADA 4: MODAL DE CONTROLE DE TURNO (ABERTURA, SANGRIA, SUPRIMENTO, FECHAMENTO) -->
         <Border Background="#F2000000" 
                 IsVisible="{Binding ModalCaixaAberto}" 
                 IsHitTestVisible="{Binding ModalCaixaAberto}"
@@ -247,7 +337,7 @@
 
                     <StackPanel Spacing="6">
                         <TextBlock Text="Valor em Dinheiro (R$):" FontWeight="Bold" FontSize="14" Foreground="#34495E"/>
-                        <NumericUpDown Value="{Binding ValorModalCaixa}" Minimum="0" Increment="10" FontSize="26" FontWeight="Black" Foreground="#2C3E50" FormatString="N2" HorizontalAlignment="Stretch"/>
+                        <NumericUpDown x:Name="NumValorCaixa" Value="{Binding ValorModalCaixa}" Minimum="0" Increment="10" FontSize="26" FontWeight="Black" Foreground="#2C3E50" FormatString="N2" HorizontalAlignment="Stretch"/>
                     </StackPanel>
 
                     <StackPanel Spacing="6">
@@ -256,8 +346,8 @@
                     </StackPanel>
 
                     <Grid ColumnDefinitions="*, *" Margin="0,15,0,0">
-                        <Button Grid.Column="0" Command="{Binding FecharModalCaixaCommand}" Content="Cancelar" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="15" Padding="12" Margin="0,0,10,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
-                        <Button Grid.Column="1" Command="{Binding ConfirmarAcaoCaixaCommand}" Content="Confirmar" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="15" Padding="12" Margin="10,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="0" Command="{Binding FecharModalCaixaCommand}" Content="[ESC] Cancelar" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="15" Padding="12" Margin="0,0,10,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="1" Command="{Binding ConfirmarAcaoCaixaCommand}" Content="[ENTER] Confirmar" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="15" Padding="12" Margin="10,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
                     </Grid>
                 </StackPanel>
             </Border>

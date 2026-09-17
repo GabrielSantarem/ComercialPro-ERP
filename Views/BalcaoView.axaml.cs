@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using GetStartedApp.ViewModels;
 
 namespace GetStartedApp.Views;
@@ -24,15 +25,31 @@ public partial class BalcaoView : UserControl
 
     private void FocarBusca()
     {
-        var txt = this.FindControl<TextBox>("TxtPesquisa");
-        txt?.Focus();
+        Dispatcher.UIThread.Post(() =>
+        {
+            var txt = this.FindControl<TextBox>("TxtPesquisa");
+            txt?.Focus();
+        });
+    }
+
+    private void FocarIdentificacaoCliente()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var txt = this.FindControl<TextBox>("TxtNomeCliente");
+            if (txt != null)
+            {
+                txt.Focus();
+                txt.SelectAll();
+            }
+        });
     }
 
     private async void BalcaoView_KeyDownTunnel(object? sender, KeyEventArgs e)
     {
         if (this.DataContext is not BalcaoViewModel vm) return;
 
-        // Se modal de confirmação estiver aberto, ENTER ou ESC fecha e foca na busca
+        // 1. Se modal de confirmação final (comanda gerada) estiver aberto
         if (vm.IsModalConfirmacaoAberto)
         {
             if (e.Key == Key.Enter || e.Key == Key.Return || e.Key == Key.Escape)
@@ -44,10 +61,33 @@ public partial class BalcaoView : UserControl
             return;
         }
 
-        // F12: Salvar e Enviar ao Caixa Central
-        if (e.Key == Key.F12)
+        // 2. Se modal de identificação rápida estiver aberto
+        if (vm.ModalIdentificacaoAberto)
         {
-            await vm.EnviarAoCaixaCommand.ExecuteAsync(null);
+            if (e.Key == Key.Escape)
+            {
+                vm.CancelarIdentificacaoCommand.Execute(null);
+                FocarBusca();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter || e.Key == Key.Return || e.Key == Key.F12)
+            {
+                await vm.ConfirmarEnvioAoCaixaCommand.ExecuteAsync(null);
+                e.Handled = true;
+                return;
+            }
+
+            return; // Deixa o usuário digitar o nome / CPF normalmente
+        }
+
+        // === ATALHOS NA TELA PRINCIPAL DO BALCÃO ===
+
+        // F1: Trocar de vendedor rapidamente
+        if (e.Key == Key.F1)
+        {
+            vm.TrocarVendedorProximoCommand.Execute(null);
             e.Handled = true;
             return;
         }
@@ -60,15 +100,27 @@ public partial class BalcaoView : UserControl
             return;
         }
 
-        // F8: Remover item selecionado
-        if (e.Key == Key.F8)
+        // F8 ou Delete: Remover item selecionado no carrinho
+        if (e.Key == Key.F8 || e.Key == Key.Delete)
         {
             vm.CancelarItemSelecionadoCommand.Execute(null);
             e.Handled = true;
             return;
         }
 
-        // ESC: Limpar busca ou carrinho
+        // F12: Solicitar envio ao Caixa (abre identificação rápida)
+        if (e.Key == Key.F12)
+        {
+            if (vm.Carrinho.Count > 0)
+            {
+                vm.SolicitarEnvioAoCaixaCommand.Execute(null);
+                FocarIdentificacaoCliente();
+            }
+            e.Handled = true;
+            return;
+        }
+
+        // ESC: Limpar campo de busca ou carrinho
         if (e.Key == Key.Escape)
         {
             var txt = this.FindControl<TextBox>("TxtPesquisa");
@@ -85,7 +137,7 @@ public partial class BalcaoView : UserControl
             return;
         }
 
-        // SETA PARA BAIXO / CIMA nas sugestões
+        // SETA PARA BAIXO / CIMA nas sugestões flutuantes
         if (e.Key == Key.Down && vm.ResultadosPesquisa.Count > 0)
         {
             var lista = vm.ResultadosPesquisa.ToList();
