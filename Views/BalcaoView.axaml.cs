@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using GetStartedApp.ViewModels;
+using Serilog;
 
 namespace GetStartedApp.Views;
 
@@ -49,6 +50,8 @@ public partial class BalcaoView : UserControl
     {
         if (this.DataContext is not BalcaoViewModel vm) return;
 
+        Log.Information("[BALCÃO KEY TUNNEL] Tecla: {Key}", e.Key);
+
         // 1. Se modal de confirmação final (comanda gerada) estiver aberto
         if (vm.IsModalConfirmacaoAberto)
         {
@@ -84,9 +87,10 @@ public partial class BalcaoView : UserControl
 
         // === ATALHOS NA TELA PRINCIPAL DO BALCÃO ===
 
-        // F1: Trocar de vendedor rapidamente
-        if (e.Key == Key.F1)
+        // F1 ou F3: Trocar de vendedor rapidamente
+        if (e.Key == Key.F1 || e.Key == Key.F3)
         {
+            Log.Information("[BALCÃO ATALHO] F1/F3 detectado -> Alternando Vendedor");
             vm.TrocarVendedorProximoCommand.Execute(null);
             e.Handled = true;
             return;

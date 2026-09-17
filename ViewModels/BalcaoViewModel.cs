@@ -21,6 +21,27 @@ public partial class BalcaoViewModel : ViewModelBase
     public ObservableCollection<Vendedor> Vendedores { get; } = [];
 
     [ObservableProperty] public partial Vendedor? VendedorSelecionado { get; set; }
+    [ObservableProperty] public partial int VendedorIndex { get; set; } = 0;
+
+    partial void OnVendedorIndexChanged(int value)
+    {
+        if (value >= 0 && value < Vendedores.Count)
+        {
+            VendedorSelecionado = Vendedores[value];
+        }
+    }
+
+    partial void OnVendedorSelecionadoChanged(Vendedor? value)
+    {
+        if (value != null)
+        {
+            var idx = Vendedores.IndexOf(value);
+            if (idx >= 0 && idx != VendedorIndex)
+            {
+                VendedorIndex = idx;
+            }
+        }
+    }
 
     // === MODAL DE IDENTIFICAÇÃO RÁPIDA (OPCIONAL AO FECHAR) ===
     [ObservableProperty] public partial bool ModalIdentificacaoAberto { get; set; }
@@ -52,9 +73,12 @@ public partial class BalcaoViewModel : ViewModelBase
         Vendedores.Clear();
         var lista = await _service.ObterVendedoresAsync();
         foreach (var v in lista) Vendedores.Add(v);
+
+        VendedorIndex = 0;
         VendedorSelecionado = Vendedores.FirstOrDefault();
         ClienteNome = "Cliente Balcão";
         ClienteCpf = string.Empty;
+        _logger.LogInformation("[BALCÃO] Vendedor inicializado: #{Id} - '{Nome}'", VendedorSelecionado?.Id, VendedorSelecionado?.Nome);
     }
 
     private void AtualizarTotal()
@@ -140,9 +164,13 @@ public partial class BalcaoViewModel : ViewModelBase
     public void TrocarVendedorProximo()
     {
         if (Vendedores.Count == 0) return;
-        var idx = VendedorSelecionado != null ? Vendedores.IndexOf(VendedorSelecionado) : -1;
-        var proximo = (idx + 1) % Vendedores.Count;
+
+        var proximo = (VendedorIndex + 1) % Vendedores.Count;
+        VendedorIndex = proximo;
         VendedorSelecionado = Vendedores[proximo];
+
+        _logger.LogInformation("[BALCÃO] TrocarVendedorProximo: Vendedor alternado para #{Id} - '{Nome}' (Index {Idx})", 
+            VendedorSelecionado.Id, VendedorSelecionado.Nome, VendedorIndex);
     }
 
     [RelayCommand]

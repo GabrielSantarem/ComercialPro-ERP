@@ -22,13 +22,25 @@
                         <TextBlock Text="Terminal Rápido de Lançamento" Foreground="#BDC3C7" FontSize="13" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- Atendente / Vendedor com Atalho [F1] -->
+                    <!-- Atendente / Vendedor com Atalho [F1] e Alternador Clicável -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,15,0">
-                        <Border Background="#F39C12" CornerRadius="4" Padding="6,2">
-                            <TextBlock Text="[F1]" Foreground="White" FontWeight="Black" FontSize="11"/>
-                        </Border>
-                        <TextBlock Text="Vendedor:" Foreground="#F1C40F" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <ComboBox ItemsSource="{Binding Vendedores}" SelectedItem="{Binding VendedorSelecionado}" Width="190" Background="White">
+                        <Button Command="{Binding TrocarVendedorProximoCommand}" 
+                                Background="#1A252F" BorderBrush="#F39C12" BorderThickness="1.5"
+                                CornerRadius="6" Padding="10,6" Cursor="Hand" ToolTip.Tip="Pressione [F1] ou clique para alternar o atendente">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Border Background="#F39C12" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="[F1]" Foreground="White" FontWeight="Black" FontSize="11"/>
+                                </Border>
+                                <TextBlock Text="Vendedor:" Foreground="#BDC3C7" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding VendedorSelecionado.Nome}" Foreground="#F1C40F" FontSize="15" FontWeight="Black" VerticalAlignment="Center"/>
+                                <TextBlock Text="🔄" FontSize="12" Foreground="#E67E22" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <ComboBox ItemsSource="{Binding Vendedores}" 
+                                  SelectedIndex="{Binding VendedorIndex, Mode=TwoWay}"
+                                  SelectedItem="{Binding VendedorSelecionado, Mode=TwoWay}" 
+                                  Width="180" Background="White" CornerRadius="4">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="models:Vendedor">
                                     <TextBlock Text="{Binding Nome}" FontWeight="SemiBold"/>
