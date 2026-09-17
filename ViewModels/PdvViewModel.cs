@@ -91,9 +91,19 @@ public partial class PdvViewModel : ViewModelBase
         var match = Regex.Match(input.Trim(), @"^(\d+)\s*\*\s*(.*)$");
         if (match.Success)
         {
-            if (int.TryParse(match.Groups[1].Value, out int qtd) && qtd > 0)
+            var termo = match.Groups[2].Value.Trim();
+            if (int.TryParse(match.Groups[1].Value, out int qtd))
             {
-                return (qtd, match.Groups[2].Value.Trim());
+                if (qtd <= 0)
+                {
+                    return (1, termo);
+                }
+                if (qtd > 99999) qtd = 99999;
+                return (qtd, termo);
+            }
+            else
+            {
+                return (99999, termo);
             }
         }
 

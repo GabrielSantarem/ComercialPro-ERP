@@ -140,7 +140,9 @@ public class PedidoBalcaoTests : IDisposable
     [Fact]
     public async Task Nao_Deve_Permitir_Faturar_Pedido_Ja_Faturado()
     {
-        // Arrange
+        // Arrange: Garante turno aberto antes de faturar
+        await _service.AbrirCaixaAsync(1, 100.00m);
+
         var p1 = await _db.Produtos.FirstAsync(p => p.Id == 1);
         var pedido = await _service.CriarPedidoBalcaoAsync(1, "Cliente Duplo", "", [(p1, 1)]);
         await _service.FaturarPedidoBalcaoNoCaixaAsync(pedido.Id, "PIX");

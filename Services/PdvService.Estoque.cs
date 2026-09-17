@@ -55,6 +55,19 @@ public partial class PdvService
     {
         if (itens.Count == 0) return;
 
+        foreach (var item in itens)
+        {
+            if (item.Quantidade <= 0)
+            {
+                throw new ArgumentException($"A quantidade de entrada para o produto #{item.ProdutoId} deve ser maior que zero.", nameof(itens));
+            }
+
+            if (item.CustoUnitario < 0)
+            {
+                throw new ArgumentException($"O custo unitário de entrada para o produto #{item.ProdutoId} não pode ser negativo.", nameof(itens));
+            }
+        }
+
         using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
@@ -101,6 +114,11 @@ public partial class PdvService
     // === CADASTRO AUTOMÁTICO OU VINCULAÇÃO DE PRODUTO VIA XML ===
     public async Task<Produto> ObterOuCriarProdutoPorXmlAsync(string descricao, string ean, string ncm, string unidade, decimal precoVendaSugerido, decimal custoUnitario)
     {
+        if (string.IsNullOrWhiteSpace(descricao))
+        {
+            throw new ArgumentException("A descrição do produto é obrigatória e não pode ser vazia ou nula.", nameof(descricao));
+        }
+
         Produto? produto = null;
 
         // 1. Tenta encontrar por Código de Barras (EAN)
@@ -110,9 +128,10 @@ public partial class PdvService
         }
 
         // 2. Se não achou por EAN, tenta encontrar por Nome exato
-        if (produto == null && !string.IsNullOrWhiteSpace(descricao))
+        if (produto == null)
         {
-            produto = await _db.Produtos.FirstOrDefaultAsync(p => p.Nome.ToLower() == descricao.Trim().ToLower());
+            var descTrim = descricao.Trim().ToLower();
+            produto = await _db.Produtos.FirstOrDefaultAsync(p => p.Nome.ToLower() == descTrim);
         }
 
         // 3. Se não existe, cria o produto automaticamente no catálogo

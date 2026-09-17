@@ -157,15 +157,25 @@ public class NfeXmlParserService
     private static decimal ParseDecimal(string value)
     {
         if (string.IsNullOrWhiteSpace(value)) return 0m;
+        value = value.Trim();
+
+        // Se contiver vírgula e não contiver ponto (formato brasileiro legado "25,00"), substitui por ponto
+        if (value.Contains(',') && !value.Contains('.'))
+        {
+            value = value.Replace(',', '.');
+        }
+
         return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var dec) ? dec : 0m;
     }
 
     private static string NormalizeEan(string ean)
     {
-        if (string.IsNullOrWhiteSpace(ean) || ean.Equals("SEM GTIN", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(ean)) return string.Empty;
+        var trimmed = ean.Trim();
+        if (trimmed.Equals("SEM GTIN", StringComparison.OrdinalIgnoreCase))
         {
             return string.Empty;
         }
-        return ean.Trim();
+        return trimmed;
     }
 }

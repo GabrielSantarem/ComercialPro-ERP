@@ -109,6 +109,11 @@ public partial class PdvService
 
     public async Task<CaixaTurno> FecharCaixaAsync(int caixaTurnoId, decimal saldoInformado, string observacao = "")
     {
+        if (saldoInformado < 0)
+        {
+            throw new ArgumentException("O saldo físico informado não pode ser negativo.", nameof(saldoInformado));
+        }
+
         var turno = await _db.CaixasTurno
             .Include(c => c.Vendedor)
             .Include(c => c.Movimentacoes)

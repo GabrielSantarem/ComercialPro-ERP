@@ -90,10 +90,24 @@ public partial class PdvService
 
     public async Task SalvarPedidoAsync(int vendedorId, IEnumerable<(Produto Produto, int Quantidade)> carrinho, string formaPagamento = "Dinheiro")
     {
+        var itensList = carrinho.ToList();
+        if (itensList.Count == 0)
+        {
+            throw new InvalidOperationException("Não é possível registrar uma venda sem itens no carrinho.");
+        }
+
+        foreach (var item in itensList)
+        {
+            if (item.Quantidade <= 0)
+            {
+                throw new ArgumentException($"A quantidade do produto '{item.Produto.Nome}' deve ser maior que zero.", nameof(carrinho));
+            }
+        }
+
         using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
-            var valorTotal = carrinho.Sum(x => x.Quantidade * x.Produto.Preco);
+            var valorTotal = itensList.Sum(x => x.Quantidade * x.Produto.Preco);
             var venda = new Venda
             {
                 VendedorId = vendedorId,
@@ -103,7 +117,7 @@ public partial class PdvService
             _db.Vendas.Add(venda);
             await _db.SaveChangesAsync();
 
-            foreach (var item in carrinho)
+            foreach (var item in itensList)
             {
                 var itemVenda = new ItemVenda
                 {

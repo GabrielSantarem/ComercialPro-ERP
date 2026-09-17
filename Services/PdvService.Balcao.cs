@@ -24,6 +24,14 @@ public partial class PdvService
             throw new InvalidOperationException("Não é possível gerar um pedido de balcão sem itens.");
         }
 
+        foreach (var item in itensList)
+        {
+            if (item.Quantidade <= 0)
+            {
+                throw new ArgumentException($"A quantidade do produto '{item.Produto.Nome}' deve ser maior que zero.", nameof(itens));
+            }
+        }
+
         var valorTotal = itensList.Sum(x => x.Quantidade * x.Produto.Preco);
 
         var pedido = new PedidoBalcao
@@ -87,6 +95,12 @@ public partial class PdvService
 
     public async Task<Venda> FaturarPedidoBalcaoNoCaixaAsync(int pedidoBalcaoId, string formaPagamento)
     {
+        var turnoAtivo = await _db.CaixasTurno.FirstOrDefaultAsync(c => c.Status == "ABERTO");
+        if (turnoAtivo == null)
+        {
+            throw new InvalidOperationException("Não é possível faturar pedidos no caixa sem um turno de caixa aberto.");
+        }
+
         using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
@@ -138,24 +152,21 @@ public partial class PdvService
             pedido.Status = "FATURADO";
             pedido.VendaId = venda.Id;
 
-            // Se houver um turno de caixa aberto, acumula o dinheiro na gaveta
-            var turnoAtivo = await _db.CaixasTurno.FirstOrDefaultAsync(c => c.Status == "ABERTO");
-            if (turnoAtivo != null)
+            // Acumula o valor no turno de caixa aberto
+            if (formaPagamento.Equals("Dinheiro", StringComparison.OrdinalIgnoreCase))
             {
-                if (formaPagamento.Equals("Dinheiro", StringComparison.OrdinalIgnoreCase))
-                {
-                    turnoAtivo.TotalVendasDinheiro += venda.ValorTotal;
-                }
-                else
-                {
-                    turnoAtivo.TotalVendasOutros += venda.ValorTotal;
-                }
+                turnoAtivo.TotalVendasDinheiro += venda.ValorTotal;
+            }
+            else
+            {
+                turnoAtivo.TotalVendasOutros += venda.ValorTotal;
             }
 
             await _db.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            _logger.LogInformation("Pedido {Comanda} faturado com sucesso no Caixa. Venda #{VendaId} gerada.", pedido.NumeroComanda, venda.Id);
+            _logger.LogInformation("Pedido {Comanda} faturado com sucesso no Caixa #{TurnoId}. Venda #{VendaId} gerada.",
+                pedido.NumeroComanda, turnoAtivo.Id, venda.Id);
             return venda;
         }
         catch (Exception ex)
