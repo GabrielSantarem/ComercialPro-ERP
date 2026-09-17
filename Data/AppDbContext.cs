@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<PedidoBalcao> PedidosBalcao { get; set; }
     public DbSet<ItemPedidoBalcao> ItensPedidoBalcao { get; set; }
     public DbSet<ContaPagar> ContasPagar { get; set; }
+    public DbSet<AjusteEstoque> AjustesEstoque { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

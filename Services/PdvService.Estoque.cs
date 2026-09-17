@@ -203,4 +203,102 @@ public partial class PdvService
 
         return produto;
     }
+
+    // === GESTÃO DE ESTOQUE MÍNIMO & AJUSTES/BAIXAS POR AVARIA ===
+
+    public async Task<AjusteEstoque> RegistrarAjusteEstoqueAsync(
+        int produtoId,
+        int quantidadeDiferenca,
+        string tipoAjuste,
+        string motivo,
+        string responsavel = "Operador Padrão")
+    {
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            throw new ArgumentException("O motivo ou justificativa do ajuste de estoque é obrigatório.", nameof(motivo));
+        }
+
+        if (quantidadeDiferenca == 0)
+        {
+            throw new ArgumentException("A quantidade ajustada não pode ser zero.", nameof(quantidadeDiferenca));
+        }
+
+        var produto = await _db.Produtos.FindAsync(produtoId);
+        if (produto == null)
+        {
+            throw new InvalidOperationException($"Produto #{produtoId} não encontrado.");
+        }
+
+        var estoqueAnterior = produto.Estoque;
+        var estoqueNovo = estoqueAnterior + quantidadeDiferenca;
+
+        if (estoqueNovo < 0)
+        {
+            throw new InvalidOperationException($"O estoque do produto '{produto.Nome}' não pode ficar negativo (Estoque atual: {estoqueAnterior}, Ajuste solicitado: {quantidadeDiferenca}).");
+        }
+
+        produto.Estoque = estoqueNovo;
+
+        var ajuste = new AjusteEstoque
+        {
+            ProdutoId = produtoId,
+            DataHora = DateTime.Now,
+            TipoAjuste = string.IsNullOrWhiteSpace(tipoAjuste) ? "AVARIA" : tipoAjuste.Trim().ToUpper(),
+            QuantidadeDiferenca = quantidadeDiferenca,
+            EstoqueAnterior = estoqueAnterior,
+            EstoqueNovo = estoqueNovo,
+            Motivo = motivo.Trim(),
+            Responsavel = string.IsNullOrWhiteSpace(responsavel) ? "Operador Padrão" : responsavel.Trim()
+        };
+
+        _db.AjustesEstoque.Add(ajuste);
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Ajuste de Estoque #{Id} no produto #{ProdId} ({Nome}). Diferença: {Dif} ({Ant} -> {Novo}). Motivo: {Motivo}",
+            ajuste.Id, produto.Id, produto.Nome, quantidadeDiferenca, estoqueAnterior, estoqueNovo, motivo);
+
+        return ajuste;
+    }
+
+    public async Task<List<Produto>> ObterProdutosComEstoqueCriticoAsync()
+    {
+        return await _db.Produtos
+            .Where(p => p.Estoque <= p.EstoqueMinimo)
+            .OrderBy(p => p.Estoque)
+            .ToListAsync();
+    }
+
+    public async Task<List<AjusteEstoque>> ObterHistoricoAjustesAsync(int? produtoId = null)
+    {
+        var query = _db.AjustesEstoque
+            .Include(a => a.Produto)
+            .AsQueryable();
+
+        if (produtoId.HasValue)
+        {
+            query = query.Where(a => a.ProdutoId == produtoId.Value);
+        }
+
+        return await query.OrderByDescending(a => a.DataHora).ToListAsync();
+    }
+
+    public async Task AtualizarEstoqueMinimoProdutoAsync(int produtoId, int novoMinimo)
+    {
+        if (novoMinimo < 0)
+        {
+            throw new ArgumentException("O estoque mínimo não pode ser negativo.", nameof(novoMinimo));
+        }
+
+        var produto = await _db.Produtos.FindAsync(produtoId);
+        if (produto == null)
+        {
+            throw new InvalidOperationException($"Produto #{produtoId} não encontrado.");
+        }
+
+        produto.EstoqueMinimo = novoMinimo;
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Estoque mínimo do produto #{Id} ('{Nome}') atualizado para {Min} unidades.",
+            produto.Id, produto.Nome, novoMinimo);
+    }
 }

@@ -23,31 +23,53 @@
                         <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="20" Margin="0,0,20,0" BoxShadow="0 4 15 0 #1A000000">
                             <Grid RowDefinitions="Auto, *">
                                 <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,15">
-                                    <TextBlock Grid.Column="0" Text="Inventário Atual" FontSize="22" FontWeight="Bold" Foreground="#34495E" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="1" Text="Status de Caixa Forte" FontSize="14" Foreground="#95A5A6" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <TextBlock Text="Inventário Atual" FontSize="22" FontWeight="Bold" Foreground="#34495E" VerticalAlignment="Center"/>
+                                        <Border Background="#FDEDEC" BorderBrush="#E74C3C" BorderThickness="1" CornerRadius="6" Padding="8,3" VerticalAlignment="Center" IsVisible="{Binding TotalProdutosCriticos}">
+                                            <TextBlock Text="{Binding TotalProdutosCriticos, StringFormat='{}🚨 {0} crítico(s)'}" Foreground="#C0392B" FontWeight="Bold" FontSize="12"/>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Filtro de Estoque Crítico -->
+                                    <CheckBox Grid.Column="1" IsChecked="{Binding SomenteEstoqueCritico}" Content="Ver Apenas Abaixo do Mínimo" FontWeight="Bold" Foreground="#C0392B"/>
                                 </Grid>
                                 
                                 <Border Grid.Row="1" BorderBrush="#ECF0F1" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
                                     <Grid RowDefinitions="Auto, *">
                                         <!-- Header Tabela -->
                                         <Border Grid.Row="0" Background="#F8F9F9" Padding="15,12">
-                                            <Grid ColumnDefinitions="3*, 1*, 1*">
+                                            <Grid ColumnDefinitions="3*, 1*, 1.3*">
                                                 <TextBlock Grid.Column="0" Text="Produto e Variação" FontWeight="Bold" Foreground="#7F8C8D"/>
                                                 <TextBlock Grid.Column="1" Text="Preço Unitário" FontWeight="Bold" Foreground="#7F8C8D" HorizontalAlignment="Right"/>
-                                                <TextBlock Grid.Column="2" Text="Qtd Atual" FontWeight="Bold" Foreground="#7F8C8D" HorizontalAlignment="Right"/>
+                                                <TextBlock Grid.Column="2" Text="Qtd Atual / Mínimo" FontWeight="Bold" Foreground="#7F8C8D" HorizontalAlignment="Right"/>
                                             </Grid>
                                         </Border>
                                         <!-- Corpo Tabela -->
                                         <ListBox Grid.Row="1" ItemsSource="{Binding ProdutosLista}" Background="Transparent" BorderThickness="0">
                                             <ListBox.ItemTemplate>
-                                                <DataTemplate>
+                                                <DataTemplate x:DataType="models:Produto">
                                                     <Border Padding="10" Margin="0,5">
-                                                        <Grid ColumnDefinitions="3*, 1*, 1*">
-                                                            <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="16" FontWeight="Medium" Foreground="#2C3E50" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                                                            <TextBlock Grid.Column="1" Text="{Binding Preco, StringFormat='{}R$ {0:N2}'}" FontSize="16" Foreground="#27AE60" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                                            <Border Grid.Column="2" Background="#FFF3E0" CornerRadius="6" Padding="8,4" HorizontalAlignment="Right">
-                                                                <TextBlock Text="{Binding Estoque, StringFormat='{}{0} Cx/Un'}" FontSize="14" Foreground="#D35400" FontWeight="Bold" VerticalAlignment="Center"/>
-                                                            </Border>
+                                                        <Grid ColumnDefinitions="3*, 1*, 1.3*">
+                                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Nome}" FontSize="15" FontWeight="Medium" Foreground="#2C3E50" TextWrapping="Wrap"/>
+                                                                <TextBlock Text="{Binding CodigoBarras, StringFormat='{}EAN: {0}'}" FontSize="11" Foreground="#95A5A6" IsVisible="{Binding CodigoBarras.Length}"/>
+                                                            </StackPanel>
+                                                            
+                                                            <TextBlock Grid.Column="1" Text="{Binding Preco, StringFormat='{}R$ {0:N2}'}" FontSize="15" Foreground="#27AE60" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                                            
+                                                            <!-- Badge de Estoque (com alerta de mínimo) -->
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                                <Border Background="#FDEDEC" CornerRadius="6" Padding="8,4" IsVisible="{Binding EstaAbaixoDoMinimo}">
+                                                                    <TextBlock Text="{Binding Estoque, StringFormat='{}🚨 {0} un (Mín: '}" FontSize="13" Foreground="#C0392B" FontWeight="Black"/>
+                                                                </Border>
+                                                                <Border Background="#FDEDEC" CornerRadius="6" Padding="0,4,8,4" IsVisible="{Binding EstaAbaixoDoMinimo}">
+                                                                    <TextBlock Text="{Binding EstoqueMinimo, StringFormat='{}{0})'}" FontSize="13" Foreground="#C0392B" FontWeight="Black"/>
+                                                                </Border>
+
+                                                                <Border Background="#E8F8F5" CornerRadius="6" Padding="8,4" IsVisible="{Binding !EstaAbaixoDoMinimo}">
+                                                                    <TextBlock Text="{Binding Estoque, StringFormat='{}✅ {0} un'}" FontSize="13" Foreground="#27AE60" FontWeight="Bold"/>
+                                                                </Border>
+                                                            </StackPanel>
                                                         </Grid>
                                                     </Border>
                                                 </DataTemplate>
@@ -73,10 +95,16 @@
                                     <NumericUpDown Value="{Binding NovoPreco}" Minimum="0" Increment="0.5" FontSize="16" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6" FormatString="N2"/>
                                 </StackPanel>
 
-                                <StackPanel Spacing="5">
-                                    <TextBlock Text="Qtd de Estoque Inicial:" FontSize="14" Foreground="#7F8C8D" FontWeight="SemiBold"/>
-                                    <NumericUpDown Value="{Binding NovoEstoque}" Minimum="0" Increment="1" FontSize="16" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
-                                </StackPanel>
+                                <Grid ColumnDefinitions="*, *">
+                                    <StackPanel Grid.Column="0" Spacing="5" Margin="0,0,6,0">
+                                        <TextBlock Text="Estoque Inicial:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                        <NumericUpDown Value="{Binding NovoEstoque}" Minimum="0" Increment="1" FontSize="15" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Spacing="5" Margin="6,0,0,0">
+                                        <TextBlock Text="Estoque Mínimo:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                        <NumericUpDown Value="{Binding NovoEstoqueMinimo}" Minimum="0" Increment="1" FontSize="15" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                    </StackPanel>
+                                </Grid>
 
                                 <Button Command="{Binding SalvarNovoProdutoCommand}" Content="💾 Salvar no Catálogo" Background="#2ECC71" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15" CornerRadius="8" Cursor="Hand" Margin="0,10,0,0"/>
                             </StackPanel>
@@ -84,7 +112,7 @@
                     </Grid>
                 </TabItem>
 
-                <!-- ABA 2: ENTRADA MANUAL DE NOTAS / MERCADORIAS (NOVO!) -->
+                <!-- ABA 2: ENTRADA MANUAL DE NOTAS / MERCADORIAS -->
                 <TabItem Header="📥 Entrada de Notas / Compras" FontSize="16" FontWeight="SemiBold">
                     <Grid ColumnDefinitions="4*, 2.5*" Margin="0,20,0,0">
                         
@@ -215,7 +243,109 @@
                     </Grid>
                 </TabItem>
 
-                <!-- ABA 3: RELATÓRIO / CONTAGEM FISICA CAIXA -->
+                <!-- ABA 3: PERDAS, AVARIAS E AJUSTES (NOVO!) -->
+                <TabItem Header="⚠️ Avarias &amp; Ajustes de Saldo" FontSize="16" FontWeight="SemiBold">
+                    <Grid ColumnDefinitions="3*, 4*" Margin="0,20,0,0">
+                        
+                        <!-- Lado Esquerdo: Formulário de Ajuste -->
+                        <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="25" Margin="0,0,20,0" BoxShadow="0 4 15 0 #1A000000" VerticalAlignment="Top">
+                            <StackPanel Spacing="15">
+                                <TextBlock Text="📝 Registrar Baixa por Avaria ou Ajuste" FontSize="20" FontWeight="Black" Foreground="#2C3E50"/>
+                                <TextBlock Text="Utilize para descartes de mercadoria rasgada, vencida ou correção de contagem." FontSize="13" Foreground="#7F8C8D"/>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Selecionar Produto:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                    <ComboBox ItemsSource="{Binding ProdutosLista}" SelectedItem="{Binding AjusteProdutoSelecionado}" HorizontalAlignment="Stretch" FontSize="14">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="models:Produto">
+                                                <TextBlock Text="{Binding Nome}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Mostrador do estoque atual -->
+                                <Border Background="#F8F9F9" Padding="12" CornerRadius="6" BorderBrush="#BDC3C7" BorderThickness="1" IsVisible="{Binding AjusteProdutoSelecionado, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                    <Grid ColumnDefinitions="*, Auto">
+                                        <TextBlock Grid.Column="0" Text="Estoque Físico Atual no Sistema:" FontWeight="Bold" Foreground="#34495E" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding AjusteProdutoSelecionado.Estoque, StringFormat='{}{0} un'}" FontWeight="Black" FontSize="16" Foreground="#2980B9" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <Grid ColumnDefinitions="*, *">
+                                    <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,6,0">
+                                        <TextBlock Text="Tipo de Ajuste:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                        <ComboBox ItemsSource="{Binding TiposAjuste}" SelectedItem="{Binding AjusteTipoSelecionado}" HorizontalAlignment="Stretch"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Spacing="4" Margin="6,0,0,0">
+                                        <TextBlock Text="Quantidade:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                        <NumericUpDown Value="{Binding AjusteQuantidade}" Minimum="1" Increment="1" FontSize="15" Padding="8" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Motivo / Justificativa Obrigatória:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding AjusteMotivo}" PlaceholderText="Ex: Fardo molhou na chuva / Embalagem furada" FontSize="14" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Operador / Responsável:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
+                                    <TextBox Text="{Binding AjusteResponsavel}" FontSize="14" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                </StackPanel>
+
+                                <Button Command="{Binding RegistrarAjusteEstoqueCommand}" Content="🚨 Confirmar Baixa / Ajuste" 
+                                        Background="#E74C3C" Foreground="White" FontWeight="Black" FontSize="15" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="14" CornerRadius="8" Cursor="Hand" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Lado Direito: Histórico de Ajustes -->
+                        <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="25" BoxShadow="0 4 15 0 #1A000000">
+                            <Grid RowDefinitions="Auto, *">
+                                <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,15">
+                                    <TextBlock Grid.Column="0" Text="📜 Auditoria de Ajustes &amp; Perdas" FontSize="18" FontWeight="Bold" Foreground="#34495E" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Command="{Binding CarregarHistoricoAjustesCommand}" Content="🔄 Atualizar" Background="#34495E" Foreground="White" FontWeight="Bold" FontSize="12" Padding="10,5" CornerRadius="4" Cursor="Hand"/>
+                                </Grid>
+
+                                <ListBox Grid.Row="1" ItemsSource="{Binding HistoricoAjustes}" Background="Transparent" BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:AjusteEstoque">
+                                            <Border Padding="12" Margin="0,4" Background="#F8F9F9" CornerRadius="8" BorderBrush="#ECF0F1" BorderThickness="1">
+                                                <Grid ColumnDefinitions="Auto, *, Auto" RowDefinitions="Auto, Auto">
+                                                    
+                                                    <!-- Badge do Tipo -->
+                                                    <Border Grid.Row="0" Grid.Column="0" Background="#FDEDEC" CornerRadius="4" Padding="6,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding TipoAjuste}" FontWeight="Black" FontSize="11" Foreground="#C0392B"/>
+                                                    </Border>
+
+                                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Produto.Nome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="14" VerticalAlignment="Center"/>
+
+                                                    <!-- Diferença -->
+                                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding QuantidadeDiferenca, StringFormat='{}{0} un'}" FontWeight="Black" Foreground="#E74C3C" FontSize="15" VerticalAlignment="Center"/>
+
+                                                    <!-- Subdetalhes: Motivo e Operador -->
+                                                    <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="15" Margin="0,6,0,0">
+                                                        <TextBlock Text="{Binding Motivo, StringFormat='Motivo: {0}'}" FontSize="12" Foreground="#7F8C8D"/>
+                                                        <TextBlock Text="{Binding EstoqueAnterior, StringFormat='({0}'}" FontSize="11" Foreground="#95A5A6"/>
+                                                        <TextBlock Text="{Binding EstoqueNovo, StringFormat='-> {0} un)'}" FontSize="11" Foreground="#95A5A6"/>
+                                                        <TextBlock Text="{Binding Responsavel, StringFormat='Resp: {0}'}" FontSize="11" Foreground="#95A5A6"/>
+                                                        <TextBlock Text="{Binding DataHora, StringFormat='{}{0:dd/MM HH:mm}'}" FontSize="11" Foreground="#BDC3C7"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <TextBlock Text="Nenhum ajuste registrado até o momento." 
+                                           Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="20"
+                                           IsVisible="{Binding !HistoricoAjustes.Count}"/>
+                            </Grid>
+                        </Border>
+
+                    </Grid>
+                </TabItem>
+
+                <!-- ABA 4: RELATÓRIO / CONTAGEM FISICA CAIXA -->
                 <TabItem Header="🔄 Fechamento Físico (Giro do Dia)" FontSize="16" FontWeight="SemiBold">
                      <Border Background="White" CornerRadius="12" Padding="25" Margin="0,20,0,0" BoxShadow="0 4 15 0 #1A000000">
                         <Grid RowDefinitions="Auto, *">

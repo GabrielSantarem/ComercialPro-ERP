@@ -19,7 +19,20 @@ public partial class EstoqueViewModel : ViewModelBase
     public ObservableCollection<Produto> ProdutosLista { get; } = [];
     public ObservableCollection<RelatorioInventarioDto> Relatorio { get; } = [];
 
-    // === ABA 3: ENTRADA MANUAL DE NOTAS / MERCADORIAS ===
+    // === FILTRO DE ESTOQUE MÍNIMO ===
+    [ObservableProperty]
+    public partial bool SomenteEstoqueCritico { get; set; }
+
+    [ObservableProperty]
+    public partial int TotalProdutosCriticos { get; set; }
+
+    // === CADASTRO RÁPIDO ===
+    [ObservableProperty] private string _novoNome = string.Empty;
+    [ObservableProperty] private decimal _novoPreco;
+    [ObservableProperty] private int _novoEstoque;
+    [ObservableProperty] private int _novoEstoqueMinimo = 5;
+
+    // === ABA: ENTRADA MANUAL DE NOTAS / MERCADORIAS ===
     [ObservableProperty] public partial string EntradaNumeroNota { get; set; } = string.Empty;
     [ObservableProperty] public partial string EntradaFornecedor { get; set; } = string.Empty;
     [ObservableProperty] public partial string EntradaObservacao { get; set; } = string.Empty;
@@ -33,13 +46,19 @@ public partial class EstoqueViewModel : ViewModelBase
 
     public decimal TotalNotaEntrada => ItensEntrada.Sum(x => x.CustoTotal);
 
+    // === ABA: PERDAS, AVARIAS E AJUSTES DE INVENTÁRIO ===
+    [ObservableProperty] public partial Produto? AjusteProdutoSelecionado { get; set; }
+    [ObservableProperty] public partial string AjusteTipoSelecionado { get; set; } = "AVARIA";
+    public ObservableCollection<string> TiposAjuste { get; } = ["AVARIA", "VENCIMENTO", "BALANCO_FISICO", "OUTROS"];
+
+    [ObservableProperty] public partial int AjusteQuantidade { get; set; } = 1;
+    [ObservableProperty] public partial string AjusteMotivo { get; set; } = string.Empty;
+    [ObservableProperty] public partial string AjusteResponsavel { get; set; } = "Operador Padrão";
+
+    public ObservableCollection<AjusteEstoque> HistoricoAjustes { get; } = [];
+
     [ObservableProperty]
     private string _mensagemAviso = string.Empty;
-
-    // Campos form novo Cadastro rápido
-    [ObservableProperty] private string _novoNome = string.Empty;
-    [ObservableProperty] private decimal _novoPreco;
-    [ObservableProperty] private int _novoEstoque;
 
     public EstoqueViewModel(PdvService service)
     {
@@ -47,22 +66,44 @@ public partial class EstoqueViewModel : ViewModelBase
         _ = CarregarProdutosAsync();
         _ = BuscarGiroEstoqueAsync();
         _ = CarregarHistoricoEntradasAsync();
+        _ = CarregarHistoricoAjustesAsync();
+    }
+
+    partial void OnSomenteEstoqueCriticoChanged(bool value)
+    {
+        _ = CarregarProdutosAsync();
     }
 
     [RelayCommand]
-    private async Task CarregarProdutosAsync()
+    public async Task CarregarProdutosAsync()
     {
         ProdutosLista.Clear();
         var lista = await _service.ObterTodosProdutosAsync();
+        
+        TotalProdutosCriticos = lista.Count(p => p.EstaAbaixoDoMinimo);
+
+        if (SomenteEstoqueCritico)
+        {
+            lista = lista.Where(p => p.EstaAbaixoDoMinimo).ToList();
+        }
+
         foreach (var p in lista) ProdutosLista.Add(p);
     }
 
     [RelayCommand]
-    private async Task CarregarHistoricoEntradasAsync()
+    public async Task CarregarHistoricoEntradasAsync()
     {
         HistoricoEntradas.Clear();
         var lista = await _service.ObterHistoricoEntradasAsync();
         foreach (var e in lista) HistoricoEntradas.Add(e);
+    }
+
+    [RelayCommand]
+    public async Task CarregarHistoricoAjustesAsync()
+    {
+        HistoricoAjustes.Clear();
+        var lista = await _service.ObterHistoricoAjustesAsync();
+        foreach (var a in lista) HistoricoAjustes.Add(a);
     }
 
     [RelayCommand]
@@ -74,16 +115,18 @@ public partial class EstoqueViewModel : ViewModelBase
         {
             Nome = NovoNome,
             Preco = NovoPreco,
-            Estoque = NovoEstoque
+            Estoque = NovoEstoque,
+            EstoqueMinimo = NovoEstoqueMinimo >= 0 ? NovoEstoqueMinimo : 5
         };
         await _service.SalvarProdutoAsync(pro);
 
         NovoNome = string.Empty;
         NovoPreco = 0;
         NovoEstoque = 0;
+        NovoEstoqueMinimo = 5;
 
         await CarregarProdutosAsync();
-        MensagemAviso = "Produto salvo com sucesso!";
+        MensagemAviso = "✅ Produto salvo com sucesso!";
         _ = LimparAvisoDepoisAsync();
     }
 
@@ -126,7 +169,6 @@ public partial class EstoqueViewModel : ViewModelBase
 
         OnPropertyChanged(nameof(TotalNotaEntrada));
 
-        // Reseta campos do item para o próximo
         EntradaQtdItem = 1;
         EntradaCustoItem = 0m;
     }
@@ -143,14 +185,14 @@ public partial class EstoqueViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(EntradaNumeroNota))
         {
-            MensagemAviso = "Informe o Número da Nota ou Pedido!";
+            MensagemAviso = "⚠️ Informe o Número da Nota ou Pedido!";
             _ = LimparAvisoDepoisAsync();
             return;
         }
 
         if (ItensEntrada.Count == 0)
         {
-            MensagemAviso = "Adicione pelo menos 1 item na nota para dar entrada!";
+            MensagemAviso = "⚠️ Adicione pelo menos 1 item na nota para dar entrada!";
             _ = LimparAvisoDepoisAsync();
             return;
         }
@@ -163,18 +205,71 @@ public partial class EstoqueViewModel : ViewModelBase
             EntradaObservacao,
             lista);
 
-        // Limpa campos da nota
         EntradaNumeroNota = string.Empty;
         EntradaFornecedor = string.Empty;
         EntradaObservacao = string.Empty;
         ItensEntrada.Clear();
         OnPropertyChanged(nameof(TotalNotaEntrada));
 
-        // Recarrega o estoque atualizado e o histórico de entradas
         await CarregarProdutosAsync();
         await CarregarHistoricoEntradasAsync();
 
         MensagemAviso = "✅ Entrada de mercadoria registrada e estoque alimentado com sucesso!";
+        _ = LimparAvisoDepoisAsync();
+    }
+
+    // === COMANDOS DE BAIXA / AJUSTE POR AVARIA / BALANÇO ===
+    [RelayCommand]
+    private async Task RegistrarAjusteEstoqueAsync()
+    {
+        if (AjusteProdutoSelecionado == null)
+        {
+            MensagemAviso = "⚠️ Selecione o produto para realizar o ajuste!";
+            _ = LimparAvisoDepoisAsync();
+            return;
+        }
+
+        if (AjusteQuantidade <= 0)
+        {
+            MensagemAviso = "⚠️ A quantidade a ajustar deve ser maior que zero!";
+            _ = LimparAvisoDepoisAsync();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(AjusteMotivo))
+        {
+            MensagemAviso = "⚠️ Informe o motivo ou justificativa do ajuste!";
+            _ = LimparAvisoDepoisAsync();
+            return;
+        }
+
+        // Para perdas (Avaria ou Vencimento), a diferença é negativa (-Qtd)
+        int diferenca = (AjusteTipoSelecionado == "AVARIA" || AjusteTipoSelecionado == "VENCIMENTO")
+            ? -AjusteQuantidade
+            : AjusteQuantidade;
+
+        try
+        {
+            var ajuste = await _service.RegistrarAjusteEstoqueAsync(
+                AjusteProdutoSelecionado.Id,
+                diferenca,
+                AjusteTipoSelecionado,
+                AjusteMotivo,
+                AjusteResponsavel);
+
+            MensagemAviso = $"✅ Ajuste de estoque #{ajuste.Id} registrado com sucesso!";
+            
+            AjusteMotivo = string.Empty;
+            AjusteQuantidade = 1;
+
+            await CarregarProdutosAsync();
+            await CarregarHistoricoAjustesAsync();
+        }
+        catch (Exception ex)
+        {
+            MensagemAviso = $"❌ Erro ao ajustar: {ex.Message}";
+        }
+
         _ = LimparAvisoDepoisAsync();
     }
 
