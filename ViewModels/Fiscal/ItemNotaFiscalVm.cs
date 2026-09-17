@@ -11,10 +11,16 @@ public partial class ItemNotaFiscalVm : ObservableObject
     public partial string CodigoFornecedor { get; set; } = string.Empty;
 
     [ObservableProperty]
+    public partial string CodigoEan { get; set; } = string.Empty;
+
+    [ObservableProperty]
     public partial string DescricaoFornecedor { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string Ncm { get; set; } = "0000.00.00";
+
+    [ObservableProperty]
+    public partial string Cfop { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string UnidadeFornecedor { get; set; } = "UN";
@@ -52,4 +58,6 @@ public partial class ItemNotaFiscalVm : ObservableObject
 
     [ObservableProperty]
     public partial Produto? ProdutoVinculado { get; set; }
+
+    public bool IsProdutoNovo => ProdutoVinculado == null;
 }

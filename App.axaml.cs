@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using GetStartedApp.Data;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Fiscal;
 using GetStartedApp.ViewModels;
 using GetStartedApp.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,6 +50,7 @@ public partial class App : Application
 
             collection.AddDbContext<AppDbContext>();
             collection.AddSingleton<PdvService>();
+            collection.AddSingleton<NfeXmlParserService>();
             
             // Nossas ViewModels
             collection.AddTransient<MainViewModel>();           // O Navigation Shell (Janela)

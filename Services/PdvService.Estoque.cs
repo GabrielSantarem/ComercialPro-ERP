@@ -73,6 +73,7 @@ public partial class PdvService
                 if (produto != null)
                 {
                     produto.Estoque += item.Quantidade;
+                    produto.CustoUltimaCompra = item.CustoUnitario;
 
                     entrada.Itens.Add(new ItemEntradaMercadoria
                     {
@@ -95,5 +96,63 @@ public partial class PdvService
             _logger.LogError(ex, "Erro ao registrar entrada de mercadorias da NF '{Nota}'", numeroNota);
             throw;
         }
+    }
+
+    // === CADASTRO AUTOMÁTICO OU VINCULAÇÃO DE PRODUTO VIA XML ===
+    public async Task<Produto> ObterOuCriarProdutoPorXmlAsync(string descricao, string ean, string ncm, string unidade, decimal precoVendaSugerido, decimal custoUnitario)
+    {
+        Produto? produto = null;
+
+        // 1. Tenta encontrar por Código de Barras (EAN)
+        if (!string.IsNullOrWhiteSpace(ean))
+        {
+            produto = await _db.Produtos.FirstOrDefaultAsync(p => p.CodigoBarras == ean);
+        }
+
+        // 2. Se não achou por EAN, tenta encontrar por Nome exato
+        if (produto == null && !string.IsNullOrWhiteSpace(descricao))
+        {
+            produto = await _db.Produtos.FirstOrDefaultAsync(p => p.Nome.ToLower() == descricao.Trim().ToLower());
+        }
+
+        // 3. Se não existe, cria o produto automaticamente no catálogo
+        if (produto == null)
+        {
+            var margemPadrao = 1.40m; // 40% de margem padrão caso não informada
+            var precoFinal = precoVendaSugerido > 0 
+                ? precoVendaSugerido 
+                : Math.Round(custoUnitario * margemPadrao, 2);
+
+            produto = new Produto
+            {
+                Nome = descricao.Trim(),
+                CodigoBarras = string.IsNullOrWhiteSpace(ean) ? null : ean.Trim(),
+                Ncm = string.IsNullOrWhiteSpace(ncm) ? "0000.00.00" : ncm.Trim(),
+                UnidadeMedida = string.IsNullOrWhiteSpace(unidade) ? "UN" : unidade.Trim().ToUpper(),
+                Preco = precoFinal > 0 ? precoFinal : 1.00m,
+                CustoUltimaCompra = custoUnitario,
+                Estoque = 0 // Estoque será incrementado pelo faturamento da nota
+            };
+
+            _db.Produtos.Add(produto);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("[PRODUTO NOVO CRIADO VIA XML] #{Id} - '{Nome}' (EAN: {Ean}) - Custo: R$ {Custo:N2}",
+                produto.Id, produto.Nome, produto.CodigoBarras, produto.CustoUltimaCompra);
+        }
+        else
+        {
+            // Atualiza campos fiscais caso estejam em branco
+            if (string.IsNullOrWhiteSpace(produto.CodigoBarras) && !string.IsNullOrWhiteSpace(ean))
+                produto.CodigoBarras = ean;
+
+            if (string.IsNullOrWhiteSpace(produto.Ncm) && !string.IsNullOrWhiteSpace(ncm))
+                produto.Ncm = ncm;
+
+            produto.CustoUltimaCompra = custoUnitario;
+            await _db.SaveChangesAsync();
+        }
+
+        return produto;
     }
 }

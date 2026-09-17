@@ -2,10 +2,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using GetStartedApp.Models;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Fiscal;
 using Microsoft.Extensions.Logging;
 
 namespace GetStartedApp.ViewModels;
@@ -13,6 +15,7 @@ namespace GetStartedApp.ViewModels;
 public partial class EntradaNfeViewModel : ViewModelBase
 {
     private readonly PdvService _service;
+    private readonly NfeXmlParserService _xmlParser;
     private readonly ILogger<EntradaNfeViewModel> _logger;
 
     // === STATUS DO DOCUMENTO FISCAL ===
@@ -83,9 +86,10 @@ public partial class EntradaNfeViewModel : ViewModelBase
     [ObservableProperty]
     public partial string MensagemFeedback { get; set; } = string.Empty;
 
-    public EntradaNfeViewModel(PdvService service, ILogger<EntradaNfeViewModel> logger)
+    public EntradaNfeViewModel(PdvService service, NfeXmlParserService xmlParser, ILogger<EntradaNfeViewModel> logger)
     {
         _service = service;
+        _xmlParser = xmlParser;
         _logger = logger;
         _ = CarregarCatalogoAsync();
         CarregarExemploPadrao();
@@ -219,49 +223,126 @@ public partial class EntradaNfeViewModel : ViewModelBase
         AtualizarTotais();
     }
 
-    [RelayCommand]
-    private void SimularImportacaoXml()
+    // === PROCESSAMENTO REAL DE ARQUIVO XML DA SEFAZ ===
+    public async Task CarregarXmlAsync(Stream stream)
     {
-        NumeroNota = "000.582.114";
-        SerieNota = "2";
-        ChaveAcesso = "4126 0900 1122 3300 0144 5500 2000 5821 1419 8271 9283";
-        FornecedorCnpj = "00.112.233/0001-44";
-        FornecedorRazao = "BRASIL ATACADISTA E DISTRIBUIDOR DE ALIMENTOS LTDA";
-        FornecedorUf = "PR";
-        NaturezaOperacao = "1.102 - Compra para Comercialização";
-        ValorFrete = 35.00m;
+        try
+        {
+            var nfe = _xmlParser.ParseFromStream(stream);
+            await AplicarNfeParseadaAsync(nfe);
+            MensagemFeedback = $"✅ NF-e {NumeroNota} ({FornecedorRazao}) importada do XML com sucesso!";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao importar arquivo XML");
+            MensagemFeedback = $"❌ Erro ao ler XML: {ex.Message}";
+        }
+    }
+
+    public async Task CarregarXmlStringAsync(string conteudoXml)
+    {
+        try
+        {
+            var nfe = _xmlParser.ParseFromString(conteudoXml);
+            await AplicarNfeParseadaAsync(nfe);
+            MensagemFeedback = $"✅ NF-e {NumeroNota} ({FornecedorRazao}) importada do XML com sucesso!";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao interpretar string XML");
+            MensagemFeedback = $"❌ Erro ao ler XML: {ex.Message}";
+        }
+    }
+
+    private async Task AplicarNfeParseadaAsync(NfeParsedDto nfe)
+    {
+        NumeroNota = nfe.NumeroNota;
+        SerieNota = nfe.Serie;
+        ChaveAcesso = nfe.ChaveAcesso;
+        DataEmissao = nfe.DataEmissao ?? DateTime.Today;
+        NaturezaOperacao = nfe.NaturezaOperacao;
+        FornecedorCnpj = nfe.EmitenteCnpj;
+        FornecedorRazao = nfe.EmitenteRazaoSocial;
+        FornecedorUf = nfe.EmitenteUf;
+        FornecedorIe = nfe.EmitenteInscricaoEstadual;
+
+        ValorFrete = nfe.ValorFrete;
+        OutrasDespesas = nfe.OutrasDespesas + nfe.ValorSeguro;
+        DescontoComercial = nfe.ValorDesconto;
+
+        // Atualiza catálogo de produtos para correlação
+        await CarregarCatalogoAsync();
 
         ItensNota.Clear();
-        ItensNota.Add(new ItemNotaFiscalVm
-        {
-            NumeroItem = 1,
-            CodigoFornecedor = "SKOL-LATA-12",
-            DescricaoFornecedor = "CERVEJA SKOL LATA 350ML (PACK C/12)",
-            Ncm = "2203.00.00",
-            UnidadeFornecedor = "PK",
-            QuantidadeFaturada = 10,
-            FatorConversao = 12,
-            PrecoUnitarioFaturado = 38.40m,
-            RateioDespesas = 15.00m
-        });
 
-        ItensNota.Add(new ItemNotaFiscalVm
+        // Rateio proporcional de frete/outras despesas se os itens não trouxerem rateio explícito
+        var totalItensBruto = nfe.Itens.Sum(i => i.ValorTotalBruto);
+        var despesasGlobais = ValorFrete + OutrasDespesas;
+
+        foreach (var itemXml in nfe.Itens)
         {
-            NumeroItem = 2,
-            CodigoFornecedor = "GUAR-2L-6",
-            DescricaoFornecedor = "REFRIGERANTE GUARANA 2L (FARDO C/6)",
-            Ncm = "2202.10.00",
-            UnidadeFornecedor = "FD",
-            QuantidadeFaturada = 8,
-            FatorConversao = 6,
-            PrecoUnitarioFaturado = 42.00m,
-            RateioDespesas = 20.00m
-        });
+            // Tenta localizar produto já cadastrado por EAN ou por Descrição
+            Produto? correspondente = null;
+            if (!string.IsNullOrWhiteSpace(itemXml.CodigoEan))
+            {
+                correspondente = ProdutosDisponiveis.FirstOrDefault(p => p.CodigoBarras == itemXml.CodigoEan);
+            }
+
+            if (correspondente == null)
+            {
+                correspondente = ProdutosDisponiveis.FirstOrDefault(p => p.Nome.Trim().ToLower() == itemXml.Descricao.Trim().ToLower());
+            }
+
+            // Rateio de despesas do item
+            decimal rateio = itemXml.ValorFreteRateado + itemXml.OutrasDespesasRateadas;
+            if (rateio == 0 && totalItensBruto > 0 && despesasGlobais > 0)
+            {
+                rateio = Math.Round((itemXml.ValorTotalBruto / totalItensBruto) * despesasGlobais, 2);
+            }
+
+            var itemVm = new ItemNotaFiscalVm
+            {
+                NumeroItem = itemXml.NumeroItem,
+                CodigoFornecedor = itemXml.CodigoProduto,
+                CodigoEan = itemXml.CodigoEan,
+                DescricaoFornecedor = itemXml.Descricao,
+                Ncm = itemXml.Ncm,
+                Cfop = itemXml.Cfop,
+                UnidadeFornecedor = itemXml.UnidadeComercial,
+                QuantidadeFaturada = (int)Math.Max(1, Math.Round(itemXml.QuantidadeComercial)),
+                FatorConversao = 1,
+                PrecoUnitarioFaturado = itemXml.ValorUnitario,
+                RateioDespesas = rateio,
+                ProdutoVinculado = correspondente
+            };
+
+            ItensNota.Add(itemVm);
+        }
+
+        // Se o XML possuir duplicatas/cobrança no cabeçalho, carrega direto
+        if (nfe.Duplicatas.Count > 0)
+        {
+            Parcelas.Clear();
+            int seq = 1;
+            foreach (var d in nfe.Duplicatas)
+            {
+                Parcelas.Add(new ParcelaFinanceiroVm
+                {
+                    Numero = seq++,
+                    Documento = string.IsNullOrWhiteSpace(d.Numero) ? $"{NumeroNota}/{seq:D2}" : d.Numero,
+                    Vencimento = d.Vencimento ?? DateTime.Today.AddDays(30 * seq),
+                    Valor = d.Valor
+                });
+            }
+        }
+        else
+        {
+            RecalcularFinanceiro();
+        }
 
         StatusDocumento = "XML IMPORTADO (AGUARDANDO CONFERÊNCIA)";
         StatusCor = "#2980B9";
         AtualizarTotais();
-        MensagemFeedback = "✅ Arquivo XML processado com sucesso! Grade preenchida.";
     }
 
     [RelayCommand]
@@ -273,18 +354,27 @@ public partial class EntradaNfeViewModel : ViewModelBase
             return;
         }
 
-        var listaRegistro = ItensNota
-            .Where(i => i.ProdutoVinculado != null)
-            .Select(i => (i.ProdutoVinculado!.Id, i.QuantidadeEstoque, i.CustoUnitarioEstoque))
-            .ToList();
+        var listaRegistro = new System.Collections.Generic.List<(int ProdutoId, int Quantidade, decimal CustoUnitario)>();
 
-        if (listaRegistro.Count == 0 && ProdutosDisponiveis.Count > 0)
+        // Para cada item da nota, garante que o produto existe ou cria no catálogo
+        foreach (var item in ItensNota)
         {
-            for (int i = 0; i < ItensNota.Count; i++)
+            var prod = item.ProdutoVinculado;
+            if (prod == null)
             {
-                var p = ProdutosDisponiveis[i % ProdutosDisponiveis.Count];
-                listaRegistro.Add((p.Id, ItensNota[i].QuantidadeEstoque, ItensNota[i].CustoUnitarioEstoque));
+                // Criação automática no catálogo via metadados do XML
+                prod = await _service.ObterOuCriarProdutoPorXmlAsync(
+                    item.DescricaoFornecedor,
+                    item.CodigoEan,
+                    item.Ncm,
+                    item.UnidadeFornecedor,
+                    precoVendaSugerido: 0,
+                    custoUnitario: item.CustoUnitarioEstoque);
+
+                item.ProdutoVinculado = prod;
             }
+
+            listaRegistro.Add((prod.Id, item.QuantidadeEstoque, item.CustoUnitarioEstoque));
         }
 
         await _service.RegistrarEntradaMercadoriaAsync(
@@ -293,9 +383,11 @@ public partial class EntradaNfeViewModel : ViewModelBase
             $"Chave: {ChaveAcesso} | Frete: R$ {ValorFrete:N2}",
             listaRegistro);
 
+        await CarregarCatalogoAsync();
+
         StatusDocumento = "LANÇADA NO ESTOQUE & INTEGRADA AO FINANCEIRO";
         StatusCor = "#27AE60";
-        MensagemFeedback = "🚀 NOTA FISCAL PROCESSADA COM SUCESSO! Estoque alimentado e duplicatas geradas.";
-        _logger.LogInformation("NF-e {Numero} do fornecedor {Fornecedor} processada.", NumeroNota, FornecedorRazao);
+        MensagemFeedback = "🚀 NOTA FISCAL PROCESSADA COM SUCESSO! Estoque alimentado e catálogo atualizado.";
+        _logger.LogInformation("NF-e {Numero} do fornecedor {Fornecedor} processada com sucesso.", NumeroNota, FornecedorRazao);
     }
 }

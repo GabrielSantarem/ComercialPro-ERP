@@ -5,27 +5,27 @@
              x:Class="GetStartedApp.Views.EntradaNfeView"
              x:DataType="vm:EntradaNfeViewModel">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="#F1F4F6">
-        <StackPanel Margin="25" Spacing="20">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="20" Margin="25">
             
-            <!-- 1. BARRA SUPERIOR DE AÇÕES & STATUS FISCAL -->
-            <Border Background="White" CornerRadius="10" Padding="20" BoxShadow="0 4 12 0 #15000000">
+            <!-- HEADER DA PÁGINA COM AÇÕES -->
+            <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
                 <Grid ColumnDefinitions="*, Auto, Auto">
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <TextBlock Text="🏢 Entrada de Mercadorias &amp; NF-e" FontSize="26" FontWeight="Black" Foreground="#2C3E50"/>
-                            <Border Background="{Binding StatusCor}" CornerRadius="6" Padding="10,4" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding StatusDocumento}" Foreground="White" FontWeight="Black" FontSize="12"/>
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="RECEBIMENTO FISCAL (ENTRADA DE NOTAS)" FontSize="24" FontWeight="Black" Foreground="#2C3E50"/>
+                            <Border Background="{Binding StatusCor}" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding StatusDocumento}" Foreground="White" FontWeight="Bold" FontSize="11"/>
                             </Border>
                         </StackPanel>
                         <TextBlock Text="Documento Fiscal Modelo 55 • Integração Estoque, Custos e Contas a Pagar" FontSize="14" Foreground="#7F8C8D" Margin="0,4,0,0"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,15,0">
-                        <Button Command="{Binding SimularImportacaoXmlCommand}" Background="#34495E" Foreground="White" FontWeight="Bold" FontSize="14" Padding="15,10" CornerRadius="6" Cursor="Hand">
+                        <Button Click="BtnImportarXml_Click" Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="14" Padding="15,10" CornerRadius="6" Cursor="Hand" ToolTip.Tip="Abre caixa de diálogo para escolher arquivo .xml físico">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="📂"/>
-                                <TextBlock Text="Importar XML da SEFAZ"/>
+                                <TextBlock Text="Selecionar Arquivo .XML"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -33,86 +33,92 @@
                     <Button Grid.Column="2" Command="{Binding ProcessarEntradaFiscalCommand}" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="15" Padding="20,10" CornerRadius="6" Cursor="Hand" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Text="🚀"/>
-                            <TextBlock Text="Processar Entrada &amp; Atualizar Estoque"/>
+                            <TextBlock Text="LANÇAR ESTOQUE &amp; CUSTOS"/>
                         </StackPanel>
                     </Button>
                 </Grid>
             </Border>
 
-            <!-- AVISO DE FEEDBACK -->
-            <Border Background="#E8F8F5" BorderBrush="#2ECC71" BorderThickness="1" CornerRadius="8" Padding="12" IsVisible="{Binding MensagemFeedback, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                <TextBlock Text="{Binding MensagemFeedback}" Foreground="#16A085" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center"/>
+            <!-- FEEDBACK / ALERTA -->
+            <Border Background="#EBF5FB" BorderBrush="#3498DB" BorderThickness="1" CornerRadius="6" Padding="15,10" IsVisible="{Binding MensagemFeedback.Length}">
+                <TextBlock Text="{Binding MensagemFeedback}" FontSize="14" FontWeight="Bold" Foreground="#2980B9"/>
             </Border>
 
-            <!-- 2. SEÇÃO CABEÇALHO FISCAL E FORNECEDOR (MASTER) -->
-            <Border Background="White" CornerRadius="10" Padding="20" BoxShadow="0 4 12 0 #15000000">
-                <StackPanel Spacing="15">
-                    <Grid ColumnDefinitions="*, Auto">
-                        <TextBlock Grid.Column="0" Text="📋 Dados do Documento Fiscal e Emitente" FontSize="16" FontWeight="Bold" Foreground="#34495E"/>
-                        <TextBlock Grid.Column="1" Text="Tipo: Entrada Própria / Terceiros" FontSize="12" Foreground="#95A5A6"/>
-                    </Grid>
-
-                    <Grid ColumnDefinitions="1.5*, 0.8*, 2.5*, 1.2*, 1.2*" RowDefinitions="Auto, Auto">
-                        <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" Margin="0,0,10,0">
-                            <TextBlock Text="Nº da NF-e:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <TextBox Text="{Binding NumeroNota}" FontSize="14" Padding="8" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" Margin="0,0,10,0">
-                            <TextBlock Text="Série:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <TextBox Text="{Binding SerieNota}" FontSize="14" Padding="8" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="0" Grid.Column="2" Spacing="4" Margin="0,0,10,0">
-                            <TextBlock Text="Natureza da Operação (CFOP):" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <TextBox Text="{Binding NaturezaOperacao}" FontSize="14" Padding="8" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="0" Grid.Column="3" Spacing="4" Margin="0,0,10,0">
-                            <TextBlock Text="Data Emissão:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <CalendarDatePicker SelectedDate="{Binding DataEmissao}" HorizontalAlignment="Stretch" FontSize="13"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="0" Grid.Column="4" Spacing="4">
-                            <TextBlock Text="Data Entrada Física:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <CalendarDatePicker SelectedDate="{Binding DataEntrada}" HorizontalAlignment="Stretch" FontSize="13"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <Grid ColumnDefinitions="2*, 3.5*, 0.8*, 1.5*" Margin="0,5,0,0">
-                        <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,10,0">
-                            <TextBlock Text="CNPJ / CPF do Fornecedor:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <TextBox Text="{Binding FornecedorCnpj}" FontSize="14" Padding="8" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="1" Spacing="4" Margin="0,0,10,0">
-                            <TextBlock Text="Razão Social / Emitente:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <TextBox Text="{Binding FornecedorRazao}" FontSize="14" Padding="8" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2" Spacing="4" Margin="0,0,10,0">
-                            <TextBlock Text="UF:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <TextBox Text="{Binding FornecedorUf}" FontSize="14" Padding="8" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="3" Spacing="4">
-                            <TextBlock Text="Inscrição Estadual:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
-                            <TextBox Text="{Binding FornecedorIe}" FontSize="14" Padding="8" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Chave de Acesso Monospace -->
-                    <Border Background="#F4F6F7" CornerRadius="6" Padding="12,8">
-                        <Grid ColumnDefinitions="Auto, *">
-                            <TextBlock Grid.Column="0" Text="🔑 Chave de Acesso SEFAZ:" FontWeight="Bold" FontSize="12" Foreground="#34495E" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBox Grid.Column="1" Text="{Binding ChaveAcesso}" FontFamily="Monospace" FontSize="13" FontWeight="Bold" Foreground="#2980B9" Background="Transparent" BorderThickness="0"/>
+            <!-- SEÇÃO 1: CABEÇALHO DA NF-e & EMITENTE -->
+            <Grid ColumnDefinitions="6*, 4*" Margin="0,5">
+                
+                <!-- Dados do Fornecedor / Nota -->
+                <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="20" Margin="0,0,10,0" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <TextBlock Text="🏢 Identificação do Fornecedor &amp; Dados da NF-e" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
+                        
+                        <Grid ColumnDefinitions="3*, 1*, 2*">
+                            <StackPanel Grid.Column="0" Spacing="5" Margin="0,0,10,0">
+                                <TextBlock Text="Razão Social do Emitente:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <TextBox Text="{Binding FornecedorRazao}" FontWeight="Bold" Background="#F8F9F9"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="5" Margin="0,0,10,0">
+                                <TextBlock Text="UF:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <TextBox Text="{Binding FornecedorUf}" HorizontalContentAlignment="Center" Background="#F8F9F9"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="5">
+                                <TextBlock Text="CNPJ:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <TextBox Text="{Binding FornecedorCnpj}" Background="#F8F9F9"/>
+                            </StackPanel>
                         </Grid>
-                    </Border>
-                </StackPanel>
-            </Border>
 
-            <!-- 3. GRADE DE ITENS (CONFERÊNCIA, DE/PARA E FORMAÇÃO DE CUSTO REAL) -->
-            <Border Background="White" CornerRadius="10" Padding="20" BoxShadow="0 4 12 0 #15000000">
+                        <Grid ColumnDefinitions="2*, 1*, 3*">
+                            <StackPanel Grid.Column="0" Spacing="5" Margin="0,0,10,0">
+                                <TextBlock Text="Número da NF-e:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <TextBox Text="{Binding NumeroNota}" FontWeight="Black" FontSize="16" Foreground="#2980B9" Background="#F8F9F9"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="5" Margin="0,0,10,0">
+                                <TextBlock Text="Série:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <TextBox Text="{Binding SerieNota}" HorizontalContentAlignment="Center" Background="#F8F9F9"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="5">
+                                <TextBlock Text="Chave de Acesso (44 dígitos):" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <TextBox Text="{Binding ChaveAcesso}" FontFamily="Monospace" FontSize="12" Background="#F8F9F9"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Despesas Acessórias & Rateio de Frete -->
+                <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="20" Margin="10,0,0,0" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="🚚 Logística &amp; Rateio de Despesas" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
+                        
+                        <Grid ColumnDefinitions="*, *">
+                            <StackPanel Grid.Column="0" Spacing="5" Margin="0,0,5,0">
+                                <TextBlock Text="Frete (R$):" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <NumericUpDown Value="{Binding ValorFrete}" FormatString="C2" Increment="5" Background="#F8F9F9"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="5" Margin="5,0,0,0">
+                                <TextBlock Text="Outras Despesas (R$):" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                <NumericUpDown Value="{Binding OutrasDespesas}" FormatString="C2" Increment="5" Background="#F8F9F9"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Background="#F4F6F7" CornerRadius="6" Padding="12" Margin="0,5,0,0">
+                            <Grid ColumnDefinitions="*, *">
+                                <StackPanel Grid.Column="0" Spacing="3">
+                                    <TextBlock Text="Total dos Produtos:" FontSize="12" Foreground="#7F8C8D"/>
+                                    <TextBlock Text="{Binding TotalProdutos, StringFormat='{}R$ {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#2C3E50"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="3" HorizontalAlignment="Right">
+                                    <TextBlock Text="TOTAL DA NOTA:" FontSize="12" FontWeight="Black" Foreground="#E67E22"/>
+                                    <TextBlock Text="{Binding ValorTotalNota, StringFormat='{}R$ {0:N2}'}" FontSize="20" FontWeight="Black" Foreground="#27AE60"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+            </Grid>
+
+            <!-- SEÇÃO 2: ITENS DA NOTA COM DE/PARA E FATOR DE CONVERSÃO -->
+            <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
                 <StackPanel Spacing="15">
                     
                     <Grid ColumnDefinitions="*, Auto">
@@ -154,7 +160,12 @@
                                             <Grid ColumnDefinitions="0.4*, 1.2*, 2.5*, 0.8*, 0.6*, 0.8*, 0.8*, 1*, 1*, 1*, 1*, 1.8*, Auto">
                                                 <TextBlock Grid.Column="0" Text="{Binding NumeroItem}" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding CodigoFornecedor}" FontFamily="Monospace" FontSize="12" Foreground="#34495E" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding DescricaoFornecedor}" FontWeight="SemiBold" Foreground="#2C3E50" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                                    <TextBlock Text="{Binding DescricaoFornecedor}" FontWeight="SemiBold" Foreground="#2C3E50" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding CodigoEan, StringFormat='{}EAN: {0}'}" FontSize="11" Foreground="#7F8C8D" IsVisible="{Binding CodigoEan.Length}"/>
+                                                </StackPanel>
+
                                                 <TextBlock Grid.Column="3" Text="{Binding Ncm}" FontSize="12" Foreground="#7F8C8D" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="4" Text="{Binding UnidadeFornecedor}" FontWeight="Bold" Foreground="#8E44AD" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 
@@ -169,18 +180,19 @@
                                                 <TextBlock Grid.Column="10" Text="{Binding CustoUnitarioEstoque, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" Foreground="#E67E22" HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
                                                 <!-- Vínculo De/Para com Produto do ERP -->
-                                                <ComboBox Grid.Column="11" 
-                                                          ItemsSource="{Binding $parent[UserControl].((vm:EntradaNfeViewModel)DataContext).ProdutosDisponiveis}" 
-                                                          SelectedItem="{Binding ProdutoVinculado}" 
-                                                          HorizontalAlignment="Stretch" 
-                                                          Margin="10,0,0,0" 
-                                                          FontSize="12">
-                                                    <ComboBox.ItemTemplate>
-                                                        <DataTemplate x:DataType="models:Produto">
-                                                            <TextBlock Text="{Binding Nome}"/>
-                                                        </DataTemplate>
-                                                    </ComboBox.ItemTemplate>
-                                                </ComboBox>
+                                                <StackPanel Grid.Column="11" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                    <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:EntradaNfeViewModel)DataContext).ProdutosDisponiveis}" 
+                                                              SelectedItem="{Binding ProdutoVinculado}" 
+                                                              HorizontalAlignment="Stretch" 
+                                                              FontSize="12">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate x:DataType="models:Produto">
+                                                                <TextBlock Text="{Binding Nome}"/>
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
+                                                    <TextBlock Text="✨ Será criado novo item no catálogo" FontSize="10" Foreground="#27AE60" FontWeight="Bold" Margin="0,2,0,0" IsVisible="{Binding IsProdutoNovo}"/>
+                                                </StackPanel>
 
                                                 <Button Grid.Column="12" Command="{Binding $parent[UserControl].((vm:EntradaNfeViewModel)DataContext).RemoverItemCommand}" CommandParameter="{Binding}" Content="❌" Background="Transparent" Foreground="#E74C3C" Margin="10,0,0,0" Padding="5" Cursor="Hand"/>
                                             </Grid>
@@ -192,123 +204,44 @@
                         </Grid>
                     </Border>
 
-                    <!-- Formulário Rápido de Inserção Manual de Item -->
-                    <Border Background="#F8F9F9" CornerRadius="6" Padding="15" BorderBrush="#E5E8E8" BorderThickness="1">
-                        <Grid ColumnDefinitions="2*, 0.6*, 0.8*, 0.8*, 1*, 2*, Auto" VerticalAlignment="Center">
-                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                <TextBlock Text="Descrição Manual do Item:" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
-                                <TextBox Text="{Binding ItemDescricaoFornecedor}" FontSize="13" Padding="6" Background="White" BorderBrush="#BDC3C7" CornerRadius="4" PlaceholderText="Ex: FITA ADESIVA 45X100 (CX C/36)"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="1" Margin="0,0,8,0">
-                                <TextBlock Text="Unidade:" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
-                                <TextBox Text="{Binding ItemUnidade}" FontSize="13" Padding="6" Background="White" BorderBrush="#BDC3C7" CornerRadius="4" HorizontalContentAlignment="Center"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2" Margin="0,0,8,0">
-                                <TextBlock Text="Qtd Nota:" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
-                                <NumericUpDown Value="{Binding ItemQtdFaturada}" Minimum="1" Increment="1" FontSize="13" Padding="6" Background="White"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="3" Margin="0,0,8,0">
-                                <TextBlock Text="Fator Conversão:" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
-                                <NumericUpDown Value="{Binding ItemFatorConversao}" Minimum="1" Increment="1" FontSize="13" Padding="6" Background="White"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="4" Margin="0,0,8,0">
-                                <TextBlock Text="Preço Nota (R$):" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
-                                <NumericUpDown Value="{Binding ItemPrecoFaturado}" Minimum="0" Increment="1" FontSize="13" Padding="6" Background="White" FormatString="N2"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="5" Margin="0,0,10,0">
-                                <TextBlock Text="Vincular a Produto do ERP:" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
-                                <ComboBox ItemsSource="{Binding ProdutosDisponiveis}" SelectedItem="{Binding ItemSelecionadoCatalogo}" HorizontalAlignment="Stretch" FontSize="13">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="models:Produto">
-                                            <TextBlock Text="{Binding Nome}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                            </StackPanel>
-
-                            <Button Grid.Column="6" Command="{Binding AdicionarItemManualCommand}" Content="➕ Inserir Item" Background="#3498DB" Foreground="White" FontWeight="Bold" FontSize="13" Padding="15,8" CornerRadius="4" Cursor="Hand" VerticalAlignment="Bottom"/>
-                        </Grid>
-                    </Border>
                 </StackPanel>
             </Border>
 
-            <!-- 4. SEÇÃO DUPLA: CONTAS A PAGAR & TOTAIS FISCAIS -->
-            <Grid ColumnDefinitions="5*, 4*" Margin="0,0,0,10">
-                
-                <!-- Lado Esquerdo: Fechamento Financeiro (Contas a Pagar / Boletos) -->
-                <Border Grid.Column="0" Background="White" CornerRadius="10" Padding="20" Margin="0,0,15,0" BoxShadow="0 4 12 0 #15000000">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="💳 Fechamento Financeiro (Contas a Pagar)" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
+            <!-- SEÇÃO 3: FINANCEIRO & DUPLICATAS DA NOTA -->
+            <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                <StackPanel Spacing="15">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="💳 Integração com Contas a Pagar (Duplicatas)" FontSize="18" FontWeight="Black" Foreground="#2C3E50"/>
+                            <TextBlock Text="Parcelas apuradas a partir do XML ou condição de pagamento" FontSize="13" Foreground="#7F8C8D"/>
+                        </StackPanel>
                         
-                        <Grid ColumnDefinitions="Auto, *">
-                            <TextBlock Grid.Column="0" Text="Condição de Pagamento:" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <ComboBox Grid.Column="1" ItemsSource="{Binding CondicoesPagamento}" SelectedItem="{Binding CondicaoPagamentoSelecionada}" HorizontalAlignment="Stretch" FontSize="14"/>
-                        </Grid>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Condição:" VerticalAlignment="Center" FontWeight="Bold" Foreground="#7F8C8D"/>
+                            <ComboBox ItemsSource="{Binding CondicoesPagamento}" SelectedItem="{Binding CondicaoPagamentoSelecionada}" Width="230"/>
+                        </StackPanel>
+                    </Grid>
 
-                        <TextBlock Text="Duplicatas e Vencimentos Programados:" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D" Margin="0,5,0,0"/>
-
-                        <!-- Tabela de Parcelas -->
-                        <Border BorderBrush="#ECF0F1" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
-                            <ListBox ItemsSource="{Binding Parcelas}" Background="Transparent" BorderThickness="0">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:ParcelaFinanceiroVm">
-                                        <Border Padding="10,6" BorderBrush="#F4F6F7" BorderThickness="0,0,0,1">
-                                            <Grid ColumnDefinitions="Auto, *, Auto, Auto">
-                                                <Border Grid.Column="0" Background="#34495E" CornerRadius="4" Padding="6,2" Margin="0,0,10,0">
-                                                    <TextBlock Text="{Binding Numero, StringFormat='{}Parc {0}'}" Foreground="White" FontSize="12" FontWeight="Bold"/>
-                                                </Border>
-                                                <TextBlock Grid.Column="1" Text="{Binding Documento, StringFormat='{}Doc: {0}'}" FontSize="13" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding Vencimento, StringFormat='{}Venc: {0:dd/MM/yyyy}'}" FontSize="13" FontWeight="SemiBold" Foreground="#2C3E50" Margin="15,0" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="3" Text="{Binding Valor, StringFormat='{}R$ {0:N2}'}" FontSize="15" FontWeight="Black" Foreground="#E74C3C" VerticalAlignment="Center"/>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </Border>
-                    </StackPanel>
-                </Border>
-
-                <!-- Lado Direito: Totalizadores Fiscais e Despesas Rateadas -->
-                <Border Grid.Column="1" Background="White" CornerRadius="10" Padding="20" BoxShadow="0 4 12 0 #15000000">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="📊 Totalizadores do Documento Fiscal" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
-
-                        <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto, Auto, Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Valor dos Produtos:" FontSize="14" Foreground="#7F8C8D"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding TotalProdutos, StringFormat='{}R$ {0:N2}'}" FontSize="15" FontWeight="SemiBold" Foreground="#333"/>
-
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Valor do Frete (Rateado):" FontSize="14" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                            <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding ValorFrete}" Minimum="0" Increment="5" FontSize="13" Padding="4" Width="140" FormatString="N2" Margin="0,4"/>
-
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Outras Despesas / IPI:" FontSize="14" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                            <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding OutrasDespesas}" Minimum="0" Increment="5" FontSize="13" Padding="4" Width="140" FormatString="N2" Margin="0,4"/>
-
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Descontos Fiscais:" FontSize="14" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                            <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding DescontoComercial}" Minimum="0" Increment="5" FontSize="13" Padding="4" Width="140" FormatString="N2" Margin="0,4"/>
-                        </Grid>
-
-                        <Border Height="1" Background="#ECF0F1" Margin="0,5"/>
-
-                        <!-- Total Final em Destaque -->
-                        <Border Background="#2C3E50" CornerRadius="8" Padding="15">
-                            <Grid ColumnDefinitions="*, Auto">
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="VALOR TOTAL DA NOTA" FontSize="13" FontWeight="Bold" Foreground="#BDC3C7"/>
-                                    <TextBlock Text="Total Líquido Faturado" FontSize="11" Foreground="#95A5A6"/>
-                                </StackPanel>
-                                <TextBlock Grid.Column="1" Text="{Binding ValorTotalNota, StringFormat='{}R$ {0:N2}'}" FontSize="28" FontWeight="Black" Foreground="#2ECC71" VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </Border>
-
-            </Grid>
+                    <ItemsControl ItemsSource="{Binding Parcelas}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ParcelaFinanceiroVm">
+                                <Border Background="#F4F6F7" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="6" Padding="15,10" Margin="0,0,12,10" Width="200">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Documento}" FontWeight="Bold" Foreground="#2980B9" FontSize="13"/>
+                                        <TextBlock Text="{Binding Vencimento, StringFormat='{}Vencimento: {0:dd/MM/yyyy}'}" FontSize="12" Foreground="#7F8C8D"/>
+                                        <TextBlock Text="{Binding Valor, StringFormat='{}R$ {0:N2}'}" FontSize="18" FontWeight="Black" Foreground="#27AE60"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
 
         </StackPanel>
     </ScrollViewer>
