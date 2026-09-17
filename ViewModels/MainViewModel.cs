@@ -30,10 +30,10 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void NavigateToDashboard() 
+    private void NavigateToBalcao()
     {
-        var vm = _services.GetRequiredService<DashboardViewModel>();
-        _ = vm.CarregarMetricasAsync();
+        var vm = _services.GetRequiredService<BalcaoViewModel>();
+        _ = vm.InicializarAsync();
         CurrentPage = vm;
         IsHome = false;
     }
@@ -43,6 +43,15 @@ public partial class MainViewModel : ViewModelBase
     {
         var vm = _services.GetRequiredService<PdvViewModel>();
         _ = vm.InicializarAsync();
+        CurrentPage = vm;
+        IsHome = false;
+    }
+
+    [RelayCommand]
+    private void NavigateToDashboard() 
+    {
+        var vm = _services.GetRequiredService<DashboardViewModel>();
+        _ = vm.CarregarMetricasAsync();
         CurrentPage = vm;
         IsHome = false;
     }

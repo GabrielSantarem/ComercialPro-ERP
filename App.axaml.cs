@@ -53,7 +53,8 @@ public partial class App : Application
             // Nossas ViewModels
             collection.AddTransient<MainViewModel>();           // O Navigation Shell (Janela)
             collection.AddTransient<HomeModulesViewModel>();    // A Tela Inicial (Hub de App)
-            collection.AddTransient<PdvViewModel>();            // A Pagina de Venda
+            collection.AddTransient<BalcaoViewModel>();         // Terminal Balcao (Pre-Venda)
+            collection.AddTransient<PdvViewModel>();            // Boca de Caixa (Recebimento)
             collection.AddTransient<DashboardViewModel>();      // Dashboard
             collection.AddTransient<EstoqueViewModel>();        // Estoque
             collection.AddTransient<EntradaNfeViewModel>();      // Entrada de Notas (NF-e)

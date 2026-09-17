@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using GetStartedApp.Models;
 using Microsoft.Extensions.Logging;
 
 namespace GetStartedApp.ViewModels;
@@ -16,6 +17,9 @@ public partial class PdvViewModel
 
     [ObservableProperty]
     public partial string ClienteIdentificacao { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial PedidoBalcao? PedidoBalcaoEmAtendimento { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Acrescimo))]
@@ -37,7 +41,7 @@ public partial class PdvViewModel
     public bool PodeConfirmarPagamento => ValorRecebido >= TotalComTaxa && TotalComTaxa > 0;
 
     [RelayCommand]
-    private void AbrirModalPagamento()
+    public void AbrirModalPagamento()
     {
         if (Carrinho.Count == 0)
         {
@@ -62,6 +66,7 @@ public partial class PdvViewModel
     {
         _logger.LogInformation("Fechando modal de pagamento (cancelado pelo usuário via ESC/Botão).");
         IsModalAberto = false;
+        PedidoBalcaoEmAtendimento = null;
     }
 
     [RelayCommand]
@@ -70,9 +75,20 @@ public partial class PdvViewModel
         if (!PodeConfirmarPagamento) return;
 
         _logger.LogInformation("Confirmando Checkout do Carrinho. Itens: {Qtd}, Cliente: {Cliente}", Carrinho.Count, ClienteIdentificacao);
-        var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
 
-        await _pdvService.SalvarPedidoAsync(VendedorSelecionado!.Id, itens, FormaPagamentoSelecionada);
+        if (PedidoBalcaoEmAtendimento != null)
+        {
+            // Fatura o pedido que veio da fila do balcão
+            await _pdvService.FaturarPedidoBalcaoNoCaixaAsync(PedidoBalcaoEmAtendimento.Id, FormaPagamentoSelecionada);
+            PedidoBalcaoEmAtendimento = null;
+        }
+        else
+        {
+            // Venda direta lançada pelo caixa
+            var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
+            var vendedorId = VendedorSelecionado?.Id ?? 1;
+            await _pdvService.SalvarPedidoAsync(vendedorId, itens, FormaPagamentoSelecionada);
+        }
 
         Carrinho.Clear();
         TextoPesquisa = string.Empty;
@@ -81,6 +97,7 @@ public partial class PdvViewModel
         AtualizarTotal();
         IsModalAberto = false;
         await AtualizarEstadoTurnoAsync();
-        _logger.LogInformation("Venda processada com sucesso. Modal fechado.");
+        await AtualizarFilaPedidosAsync();
+        _logger.LogInformation("Venda processada com sucesso. Modal fechado e fila atualizada.");
     }
 }

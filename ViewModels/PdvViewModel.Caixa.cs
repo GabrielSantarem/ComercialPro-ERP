@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using GetStartedApp.Models;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,57 @@ namespace GetStartedApp.ViewModels;
 
 public partial class PdvViewModel
 {
+    // === FILA DE PRÉ-VENDAS DO BALCÃO ===
+    public ObservableCollection<PedidoBalcao> FilaPedidos { get; } = [];
+
+    [ObservableProperty]
+    public partial PedidoBalcao? PedidoFilaSelecionado { get; set; }
+
+    [RelayCommand]
+    public async Task AtualizarFilaPedidosAsync()
+    {
+        FilaPedidos.Clear();
+        var lista = await _pdvService.ObterPedidosAguardandoPagamentoAsync();
+        foreach (var p in lista) FilaPedidos.Add(p);
+    }
+
+    [RelayCommand]
+    public void PuxarPedidoFila(PedidoBalcao pedido)
+    {
+        if (pedido == null) return;
+        if (!IsCaixaAberto)
+        {
+            AbrirModalAberturaCaixa();
+            MensagemCaixaErro = "⚠️ Abra o caixa antes de receber pedidos da fila!";
+            return;
+        }
+
+        _logger.LogInformation("Puxando pedido {Comanda} da fila para recebimento no caixa...", pedido.NumeroComanda);
+        PedidoBalcaoEmAtendimento = pedido;
+        ClienteIdentificacao = $"{pedido.ClienteNome} ({pedido.NumeroComanda})";
+
+        Carrinho.Clear();
+        foreach (var item in pedido.Itens)
+        {
+            Carrinho.Add(new ProdutoItem
+            {
+                Produto = item.Produto,
+                Quantidade = item.Quantidade
+            });
+        }
+
+        AtualizarTotal();
+        AbrirModalPagamento();
+    }
+
+    [RelayCommand]
+    public async Task CancelarPedidoFilaAsync(PedidoBalcao pedido)
+    {
+        if (pedido == null) return;
+        await _pdvService.CancelarPedidoBalcaoAsync(pedido.Id, "Cancelado no Caixa");
+        await AtualizarFilaPedidosAsync();
+    }
+
     // === CONTROLE DE TURNOS DE CAIXA (ABERTURA, SANGRIA, FECHAMENTO) ===
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusCaixaTexto))]

@@ -52,6 +52,7 @@ public partial class PdvViewModel : ViewModelBase
 
         VendedorSelecionado = Vendedores.FirstOrDefault();
         await AtualizarEstadoTurnoAsync();
+        await AtualizarFilaPedidosAsync();
     }
 
     private void AtualizarTotal()

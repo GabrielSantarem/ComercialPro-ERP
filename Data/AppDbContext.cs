@@ -20,6 +20,8 @@ public class AppDbContext : DbContext
     public DbSet<ItemEntradaMercadoria> ItensEntradaMercadoria { get; set; }
     public DbSet<CaixaTurno> CaixasTurno { get; set; }
     public DbSet<MovimentacaoCaixa> MovimentacoesCaixa { get; set; }
+    public DbSet<PedidoBalcao> PedidosBalcao { get; set; }
+    public DbSet<ItemPedidoBalcao> ItensPedidoBalcao { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

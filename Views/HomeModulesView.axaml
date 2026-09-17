@@ -7,63 +7,91 @@
     <Border Background="#ECF0F1" Padding="40">
         <Grid RowDefinitions="Auto, *">
             
-            <StackPanel Grid.Row="0" Margin="0,0,0,30" HorizontalAlignment="Center">
-                <TextBlock Text="Navegação de Módulos" FontSize="36" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center"/>
-                <TextBlock Text="Selecione o aplicativo que deseja inicializar" FontSize="18" Foreground="#7F8C8D" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+            <StackPanel Grid.Row="0" Margin="0,0,0,25" HorizontalAlignment="Center">
+                <TextBlock Text="Navegação de Módulos ERP" FontSize="34" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center"/>
+                <TextBlock Text="Selecione o terminal ou módulo operacional desta estação" FontSize="16" Foreground="#7F8C8D" HorizontalAlignment="Center" Margin="0,5,0,0"/>
             </StackPanel>
 
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
                     
-                    <!-- Módulo PDV -->
-                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToPdvCommand}" 
-                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
-                        <StackPanel VerticalAlignment="Center" Spacing="15">
-                            <TextBlock Text="🖥️" FontSize="55" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Frente de Caixa (PDV)" FontSize="20" FontWeight="Bold" Foreground="#2980B9" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Sistema de Vendas Rápido" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Módulo 1: Terminal Balcão (Pré-Venda do Vendedor) -->
+                    <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
+                            BorderBrush="#3498DB" BorderThickness="2" BoxShadow="0 4 12 0 #20000000">
+                        <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToBalcaoCommand}" 
+                                Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" Padding="15">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                <TextBlock Text="🛍️" FontSize="46" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Terminal Balcão" FontSize="19" FontWeight="Black" Foreground="#2980B9" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Pré-Venda para Vendedores Lançarem Pedidos e Comandas" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
 
-                    <!-- Módulo Entrada de Notas (NF-e) -->
-                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToEntradaNfeCommand}" 
-                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
-                        <StackPanel VerticalAlignment="Center" Spacing="15">
-                            <TextBlock Text="🏢" FontSize="55" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Entrada de NF-e" FontSize="20" FontWeight="Bold" Foreground="#16A085" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Suprimentos, Custos &amp; XML" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Módulo 2: Boca de Caixa Central (Recebimento & Gaveta) -->
+                    <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
+                            BorderBrush="#27AE60" BorderThickness="2" BoxShadow="0 4 12 0 #20000000">
+                        <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToPdvCommand}" 
+                                Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" Padding="15">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                <TextBlock Text="🏦" FontSize="46" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Boca de Caixa Central" FontSize="19" FontWeight="Black" Foreground="#27AE60" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Fila de Balcão, Recebimento em Dinheiro/Cartão, Troco &amp; Turno" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
 
-                    <!-- Módulo Estoque -->
-                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToEstoqueCommand}" 
-                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
-                        <StackPanel VerticalAlignment="Center" Spacing="15">
-                            <TextBlock Text="📦" FontSize="55" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Gestão de Estoque" FontSize="20" FontWeight="Bold" Foreground="#27AE60" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Inventário e Cadastros" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Módulo 3: Entrada de Notas (NF-e) -->
+                    <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
+                            BorderBrush="#16A085" BorderThickness="1" BoxShadow="0 4 12 0 #15000000">
+                        <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToEntradaNfeCommand}" 
+                                Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" Padding="15">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                <TextBlock Text="🏢" FontSize="46" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Entrada de NF-e" FontSize="19" FontWeight="Black" Foreground="#16A085" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Suprimentos, Custos, Fator de Conversão e Rateio" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
 
-                    <!-- Módulo Gerencial -->
-                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToDashboardCommand}" 
-                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
-                        <StackPanel VerticalAlignment="Center" Spacing="15">
-                            <TextBlock Text="📊" FontSize="55" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Painel Gerencial" FontSize="20" FontWeight="Bold" Foreground="#8E44AD" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Faturamento e Relatórios" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Módulo 4: Estoque -->
+                    <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
+                            BorderBrush="#F39C12" BorderThickness="1" BoxShadow="0 4 12 0 #15000000">
+                        <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToEstoqueCommand}" 
+                                Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" Padding="15">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                <TextBlock Text="📦" FontSize="46" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Gestão de Estoque" FontSize="19" FontWeight="Black" Foreground="#D35400" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Inventário Físico e Ajuste de Saldo" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
 
-                    <!-- Módulo Configurações -->
-                    <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToConfiguracoesCommand}" 
-                            Background="White" CornerRadius="12" Margin="15" Width="260" Height="220" Cursor="Hand">
-                        <StackPanel VerticalAlignment="Center" Spacing="15">
-                            <TextBlock Text="⚙️" FontSize="55" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Configurações (RH)" FontSize="20" FontWeight="Bold" Foreground="#E67E22" HorizontalAlignment="Center"/>
-                            <TextBlock Text="Vendedores e Permissões" FontSize="14" Foreground="#95A5A6" HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Módulo 5: Gerencial -->
+                    <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
+                            BorderBrush="#8E44AD" BorderThickness="1" BoxShadow="0 4 12 0 #15000000">
+                        <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToDashboardCommand}" 
+                                Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" Padding="15">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                <TextBlock Text="📊" FontSize="46" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Painel Gerencial" FontSize="19" FontWeight="Black" Foreground="#8E44AD" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Faturamento, Métricas e Relatórios" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <!-- Módulo 6: Configurações -->
+                    <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
+                            BorderBrush="#7F8C8D" BorderThickness="1" BoxShadow="0 4 12 0 #15000000">
+                        <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToConfiguracoesCommand}" 
+                                Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" Padding="15">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                <TextBlock Text="⚙️" FontSize="46" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Configurações" FontSize="19" FontWeight="Black" Foreground="#34495E" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Vendedores, Estação e Parâmetros" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
 
                 </WrapPanel>
             </ScrollViewer>

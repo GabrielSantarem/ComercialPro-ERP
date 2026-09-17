@@ -1,0 +1,176 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GetStartedApp.ViewModels"
+             xmlns:models="using:GetStartedApp.Models"
+             x:Class="GetStartedApp.Views.BalcaoView"
+             x:DataType="vm:BalcaoViewModel"
+             x:Name="RootBalcaoWindow"
+             Focusable="True">
+
+    <Grid Background="#1E272E">
+        <!-- CAMADA 1: INTERFACE PRINCIPAL DO BALCÃO -->
+        <Grid RowDefinitions="Auto, *, Auto" IsEnabled="{Binding !IsModalConfirmacaoAberto}">
+            
+            <!-- TOPO: Identificação do Terminal e Dados do Cliente -->
+            <Border Grid.Row="0" Background="#2C3E50" Padding="15,10" BorderBrush="#000" BorderThickness="0,0,0,3">
+                <Grid ColumnDefinitions="Auto, *, Auto, Auto">
+                    <!-- Badge do Modo Balcão -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Border Background="#3498DB" CornerRadius="4" Padding="10,5">
+                            <TextBlock Text="🛍️ BALCÃO DE VENDAS (PRÉ-VENDA)" Foreground="White" FontWeight="Black" FontSize="13"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Identificação do Cliente -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="Cliente:" Foreground="#BDC3C7" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding ClienteNome}" Width="200" FontSize="14" Padding="6,4" Background="White" CornerRadius="4" PlaceholderText="Nome do cliente"/>
+                        <TextBlock Text="CPF/Tel:" Foreground="#BDC3C7" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        <TextBox Text="{Binding ClienteCpf}" Width="150" FontSize="14" Padding="6,4" Background="White" CornerRadius="4" PlaceholderText="Opcional"/>
+                    </StackPanel>
+
+                    <!-- Vendedor Atendente -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,15,0">
+                        <TextBlock Text="Vendedor:" Foreground="#F1C40F" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <ComboBox ItemsSource="{Binding Vendedores}" SelectedItem="{Binding VendedorSelecionado}" Width="180" Background="White">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:Vendedor">
+                                    <TextBlock Text="{Binding Nome}" FontWeight="SemiBold"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Botão Limpar -->
+                    <Button Grid.Column="3" Command="{Binding LimparCarrinhoCommand}" Content="Novo Pedido" Background="#7F8C8D" Foreground="White" FontWeight="Bold" FontSize="12" Padding="10,6" CornerRadius="4" Cursor="Hand"/>
+                </Grid>
+            </Border>
+
+            <!-- MEIO: Divisão Itens + Painel de Lançamento -->
+            <Grid Grid.Row="1" ColumnDefinitions="6*, 4*">
+                
+                <!-- Lado Esquerdo: Itens da Pré-Venda -->
+                <Border Grid.Column="0" Background="White" Margin="15" CornerRadius="4" BorderBrush="#BDC3C7" BorderThickness="2" ClipToBounds="True">
+                    <Grid RowDefinitions="Auto, *, Auto">
+                        <Border Grid.Row="0" Background="#F4F6F7" Padding="10,12" BorderBrush="#BDC3C7" BorderThickness="0,0,0,2">
+                            <Grid ColumnDefinitions="3*, 1*, 1.5*, 1.5*">
+                                <TextBlock Grid.Column="0" Text="PRODUTO / DESCRIÇÃO" FontWeight="Black" Foreground="#2C3E50" FontSize="14"/>
+                                <TextBlock Grid.Column="1" Text="QTD" FontWeight="Black" Foreground="#2C3E50" FontSize="14" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="V. UNIT (R$)" FontWeight="Black" Foreground="#2C3E50" FontSize="14" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="TOTAL (R$)" FontWeight="Black" Foreground="#2C3E50" FontSize="14" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
+                        
+                        <ListBox x:Name="ListaCarrinho" Grid.Row="1" ItemsSource="{Binding Carrinho}" SelectedItem="{Binding ItemSelecionado}" Background="White" BorderThickness="0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ProdutoItem">
+                                    <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="5,8">
+                                        <Grid ColumnDefinitions="3*, 1*, 1.5*, 1.5*">
+                                            <TextBlock Grid.Column="0" Text="{Binding Produto.Nome}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Quantidade}" FontSize="16" FontWeight="Bold" Foreground="#2980B9" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Produto.Preco, StringFormat='{}{0:N2}'}" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding Total, StringFormat='{}{0:N2}'}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Border Grid.Row="2" Background="#EAEDED" Padding="15,10" BorderBrush="#BDC3C7" BorderThickness="0,2,0,0">
+                            <Grid ColumnDefinitions="*, *">
+                                <TextBlock Grid.Column="0" Text="TOTAL DO PEDIDO:" FontSize="20" FontWeight="Black" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding TotalVenda, StringFormat='{}R$ {0:N2}'}" FontSize="28" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Lado Direito: Busca Rápida + Ação de Enviar ao Caixa -->
+                <Grid Grid.Column="1" RowDefinitions="Auto, *, Auto" Margin="0,15,15,15">
+                    
+                    <!-- Busca e Lançamento -->
+                    <Border Grid.Row="0" Background="#2C3E50" CornerRadius="4" Padding="15" Margin="0,0,0,15">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="CÓDIGO / CONSULTA (Ex: 5*sacola):" Foreground="#F1C40F" FontSize="14" FontWeight="Bold"/>
+                            
+                            <TextBox x:Name="TxtPesquisa" Text="{Binding TextoPesquisa, Mode=TwoWay}" FontSize="20" FontWeight="Bold" Padding="10" Background="White" BorderThickness="0" CornerRadius="4" PlaceholderText="Digite ou bipe o item..."/>
+
+                            <!-- Sugestões da Busca Flutuante -->
+                            <ListBox x:Name="ListaSugestoes" ItemsSource="{Binding ResultadosPesquisa}" SelectedItem="{Binding ProdutoPesquisaSelecionado}" MaxHeight="180" Background="White" CornerRadius="4" BorderThickness="0" IsVisible="{Binding ResultadosPesquisa.Count}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:Produto">
+                                        <Border Padding="8,6" BorderBrush="#ECF0F1" BorderThickness="0,0,0,1">
+                                            <Grid ColumnDefinitions="*, Auto, Auto">
+                                                <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="14" FontWeight="SemiBold" Foreground="#2C3E50"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Estoque, StringFormat='{}Est: {0}'}" FontSize="12" Foreground="#7F8C8D" Margin="10,0"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Preco, StringFormat='{}R$ {0:N2}'}" FontSize="14" FontWeight="Bold" Foreground="#27AE60"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <Button Command="{Binding LancarProdutoCommand}" Content="ENTER - LANÇAR NO PEDIDO" Background="#2980B9" Foreground="White" FontWeight="Black" FontSize="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" CornerRadius="4" Cursor="Hand"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Painel de Destaque -->
+                    <Border Grid.Row="1" Background="#2C3E50" CornerRadius="4" Padding="20" VerticalAlignment="Stretch">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+                            <TextBlock Text="SUBTOTAL DA PRÉ-VENDA" Foreground="#BDC3C7" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding TotalVenda, StringFormat='{}R$ {0:N2}'}" Foreground="#2ECC71" FontSize="50" FontWeight="Black" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding Carrinho.Count, StringFormat='{}Itens adicionados: {0}'}" Foreground="#95A5A6" FontSize="15" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Ação Principal: Enviar ao Caixa Central -->
+                    <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0,15,0,0">
+                        <Button Grid.Column="0" Command="{Binding CancelarItemSelecionadoCommand}" Content="[F8] Excluir Item" Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="14" Padding="12" Margin="0,0,5,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="1" Command="{Binding EnviarAoCaixaCommand}" Content="🚀 [F12] ENVIAR AO CAIXA" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="16" Padding="12" Margin="5,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                    </Grid>
+
+                </Grid>
+
+            </Grid>
+
+            <!-- RODAPÉ: Atalhos -->
+            <Border Grid.Row="2" Background="#111" Padding="10">
+                <WrapPanel HorizontalAlignment="Center">
+                    <TextBlock Text="[ENTER] Lançar Item  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[↓ / ↑] Navegar Itens  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[5*item] Multiplicador  |  " Foreground="#F1C40F" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F2] Focar Busca  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F8] Excluir Item  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F12] Salvar e Enviar ao Caixa Central  |  " Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[ESC] Limpar Pedido" Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                </WrapPanel>
+            </Border>
+        </Grid>
+
+        <!-- CAMADA 2: MODAL DE SUCESSO / COMANDA GERADA -->
+        <Border Background="#F2000000" 
+                IsVisible="{Binding IsModalConfirmacaoAberto}" 
+                IsHitTestVisible="{Binding IsModalConfirmacaoAberto}"
+                ZIndex="100"
+                KeyboardNavigation.TabNavigation="Cycle">
+            <Border Background="White" Width="550" CornerRadius="12" Padding="35" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AA27AE60">
+                <StackPanel Spacing="18" HorizontalAlignment="Center">
+                    <TextBlock Text="✅ PRÉ-VENDA ENVIADA AO CAIXA!" FontSize="22" FontWeight="Black" Foreground="#27AE60" HorizontalAlignment="Center"/>
+                    
+                    <Border Background="#E8F8F5" BorderBrush="#A3E4D7" BorderThickness="2" CornerRadius="8" Padding="20">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <TextBlock Text="NÚMERO DA COMANDA / PEDIDO:" FontSize="13" FontWeight="Bold" Foreground="#16A085" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding NumeroComandaGerada}" FontSize="42" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding ValorComandaGerada, StringFormat='{}Valor a Pagar: R$ {0:N2}'}" FontSize="20" FontWeight="Bold" Foreground="#27AE60" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="{Binding MensagemConfirmacao}" FontSize="15" Foreground="#34495E" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
+
+                    <Button Command="{Binding FecharModalConfirmacaoCommand}" Content="[ENTER] Atender Próximo Cliente" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="16" Padding="14,24" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </Border>
+
+    </Grid>
+</UserControl>
