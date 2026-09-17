@@ -9,169 +9,353 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="20" Margin="25">
                 
-                <!-- HEADER DA PÁGINA COM AÇÕES -->
+                <!-- HEADER DA PÁGINA COM AÇÕES E TÍTULO -->
                 <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
                     <Grid ColumnDefinitions="*, Auto">
                         <StackPanel Grid.Column="0">
                             <StackPanel Orientation="Horizontal" Spacing="10">
-                                <TextBlock Text="GESTÃO FINANCEIRA (CONTAS A PAGAR)" FontSize="24" FontWeight="Black" Foreground="#2C3E50"/>
+                                <TextBlock Text="GESTÃO FINANCEIRA INTEGRADA" FontSize="24" FontWeight="Black" Foreground="#2C3E50"/>
                                 <Border Background="#8E44AD" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
                                     <TextBlock Text="MÓDULO ERP" Foreground="White" FontWeight="Bold" FontSize="11"/>
                                 </Border>
                             </StackPanel>
-                            <TextBlock Text="Controle de Títulos e Duplicatas Fiscais de Fornecedores, Prazos de Vencimento e Liquidação Bancária" 
+                            <TextBlock Text="Contas a Pagar (Fornecedores/NF-e), Contas a Receber (Crediário/Fiado) e Fluxo de Caixa Consolidado" 
                                        FontSize="14" Foreground="#7F8C8D" Margin="0,4,0,0"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                            <Button Command="{Binding AbrirModalNovoTituloCommand}" Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="14" Padding="15,10" CornerRadius="6" Cursor="Hand">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="➕"/>
-                                    <TextBlock Text="Novo Título Manual"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding CarregarTitulosCommand}" Background="#34495E" Foreground="White" FontWeight="Bold" FontSize="14" Padding="15,10" CornerRadius="6" Cursor="Hand">
+                            <Button Command="{Binding RecarregarTudoCommand}" Background="#34495E" Foreground="White" FontWeight="Bold" FontSize="13" Padding="14,10" CornerRadius="6" Cursor="Hand">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="🔄"/>
-                                    <TextBlock Text="Atualizar"/>
+                                    <TextBlock Text="Recarregar Dados"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- FEEDBACK / ALERTA -->
+                <!-- FEEDBACK / ALERTA GLOBAL -->
                 <Border Background="#EBF5FB" BorderBrush="#3498DB" BorderThickness="1" CornerRadius="6" Padding="15,10" IsVisible="{Binding MensagemFeedback.Length}">
                     <TextBlock Text="{Binding MensagemFeedback}" FontSize="14" FontWeight="Bold" Foreground="#2980B9"/>
                 </Border>
 
-                <!-- CARDS DE RESUMO FINANCEIRO (KPIs) -->
-                <Grid ColumnDefinitions="*, *, *">
-                    <!-- Card 1: Vencidos -->
-                    <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="18" Margin="0,0,10,0" BorderBrush="#E74C3C" BorderThickness="2">
-                        <StackPanel Spacing="5">
-                            <TextBlock Text="⚠️ TÍTULOS VENCIDOS" FontSize="12" FontWeight="Black" Foreground="#C0392B"/>
-                            <TextBlock Text="{Binding Resumo.TotalVencido, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#E74C3C"/>
-                            <TextBlock Text="{Binding Resumo.QuantidadeVencidos, StringFormat='{}{0} boleto(s) em atraso'}" FontSize="12" Foreground="#7F8C8D"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Card 2: A Vencer / Pendentes -->
-                    <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="18" Margin="5,0,5,0" BorderBrush="#F39C12" BorderThickness="2">
-                        <StackPanel Spacing="5">
-                            <TextBlock Text="⏳ TOTAL A PAGAR (PENDENTE)" FontSize="12" FontWeight="Black" Foreground="#D35400"/>
-                            <TextBlock Text="{Binding Resumo.TotalPendente, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#F39C12"/>
-                            <TextBlock Text="{Binding Resumo.QuantidadePendentes, StringFormat='{}{0} boleto(s) em aberto'}" FontSize="12" Foreground="#7F8C8D"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Card 3: Pagos no Mês -->
-                    <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="18" Margin="10,0,0,0" BorderBrush="#27AE60" BorderThickness="2">
-                        <StackPanel Spacing="5">
-                            <TextBlock Text="✅ LIQUIDADOS NESTE MÊS" FontSize="12" FontWeight="Black" Foreground="#27AE60"/>
-                            <TextBlock Text="{Binding Resumo.TotalPagoNoMes, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#27AE60"/>
-                            <TextBlock Text="Pagamentos baixados com comprovante" FontSize="12" Foreground="#7F8C8D"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <!-- BARRA DE FILTRO E LISTAGEM DE TÍTULOS -->
-                <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
-                    <StackPanel Spacing="15">
-                        
-                        <Grid ColumnDefinitions="Auto, Auto, *">
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                                <TextBlock Text="Filtrar por Status:" FontWeight="Bold" VerticalAlignment="Center" Foreground="#34495E"/>
-                                <ComboBox ItemsSource="{Binding FiltrosStatus}" 
-                                          SelectedItem="{Binding FiltroStatusSelecionado}" 
-                                          Width="160" Height="36"/>
+                <!-- ========================================================================= -->
+                <!-- SELETOR DE ABAS DO MÓDULO FINANCEIRO                                      -->
+                <!-- ========================================================================= -->
+                <Border Background="White" CornerRadius="8" Padding="6" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <Grid ColumnDefinitions="*, *, *">
+                        <!-- Aba 1: Contas a Pagar -->
+                        <Button Grid.Column="0" Command="{Binding SelecionarAbaCommand}" CommandParameter="0"
+                                Background="{Binding CorAbaPagar}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15,12" CornerRadius="6" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="🔴" FontSize="16"/>
+                                <TextBlock Text="1. Contas a Pagar (Fornecedores)" FontWeight="Black" FontSize="14" Foreground="#2C3E50"/>
                             </StackPanel>
-                        </Grid>
+                        </Button>
 
-                        <Separator Background="#ECF0F1" Height="1"/>
+                        <!-- Aba 2: Contas a Receber / Crediário -->
+                        <Button Grid.Column="1" Command="{Binding SelecionarAbaCommand}" CommandParameter="1"
+                                Background="{Binding CorAbaReceber}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15,12" CornerRadius="6" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="🟢" FontSize="16"/>
+                                <TextBlock Text="2. Contas a Receber &amp; Crediário (Fiado)" FontWeight="Black" FontSize="14" Foreground="#2C3E50"/>
+                            </StackPanel>
+                        </Button>
 
-                        <!-- CABEÇALHO DA TABELA -->
-                        <Border Background="#F8F9F9" Padding="12,8" CornerRadius="4">
-                            <Grid ColumnDefinitions="110, 2*, 1.2*, 70, 110, 110, 110, 150">
-                                <TextBlock Grid.Column="0" Text="STATUS" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
-                                <TextBlock Grid.Column="1" Text="FORNECEDOR / EMITENTE" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
-                                <TextBlock Grid.Column="2" Text="DOCUMENTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
-                                <TextBlock Grid.Column="3" Text="PARC." FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
-                                <TextBlock Grid.Column="4" Text="VENCIMENTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
-                                <TextBlock Grid.Column="5" Text="VALOR (R$)" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
-                                <TextBlock Grid.Column="6" Text="PGTO / FORMA" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
-                                <TextBlock Grid.Column="7" Text="AÇÃO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
-                            </Grid>
+                        <!-- Aba 3: Fluxo de Caixa -->
+                        <Button Grid.Column="2" Command="{Binding SelecionarAbaCommand}" CommandParameter="2"
+                                Background="{Binding CorAbaFluxoCaixa}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15,12" CornerRadius="6" Cursor="Hand">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="📊" FontSize="16"/>
+                                <TextBlock Text="3. Projeção de Fluxo de Caixa" FontWeight="Black" FontSize="14" Foreground="#2C3E50"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- ABA 1: CONTAS A PAGAR                                                     -->
+                <!-- ========================================================================= -->
+                <StackPanel Spacing="20" IsVisible="{Binding IsAbaPagar}">
+                    <!-- CARDS DE RESUMO FINANCEIRO (PAGAR) -->
+                    <Grid ColumnDefinitions="*, *, *">
+                        <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="18" Margin="0,0,10,0" BorderBrush="#E74C3C" BorderThickness="2">
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="⚠️ BOLETOS VENCIDOS" FontSize="12" FontWeight="Black" Foreground="#C0392B"/>
+                                <TextBlock Text="{Binding Resumo.TotalVencido, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#E74C3C"/>
+                                <TextBlock Text="{Binding Resumo.QuantidadeVencidos, StringFormat='{}{0} título(s) em atraso'}" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
                         </Border>
 
-                        <!-- LISTAGEM DE DUPLICATAS / TÍTULOS -->
-                        <ItemsControl ItemsSource="{Binding Titulos}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="models:ContaPagar">
-                                    <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="12,12">
-                                        <Grid ColumnDefinitions="110, 2*, 1.2*, 70, 110, 110, 110, 150" VerticalAlignment="Center">
-                                            
-                                            <!-- Status Badge -->
-                                            <Border Grid.Column="0" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
-                                                <TextBlock Text="{Binding Status}" FontWeight="Black" FontSize="11" Foreground="#2C3E50"/>
-                                            </Border>
+                        <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="18" Margin="5,0,5,0" BorderBrush="#F39C12" BorderThickness="2">
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="⏳ TOTAL A PAGAR (PENDENTE)" FontSize="12" FontWeight="Black" Foreground="#D35400"/>
+                                <TextBlock Text="{Binding Resumo.TotalPendente, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#F39C12"/>
+                                <TextBlock Text="{Binding Resumo.QuantidadePendentes, StringFormat='{}{0} título(s) em aberto'}" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                        </Border>
 
-                                            <!-- Fornecedor -->
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding FornecedorNome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="13" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding FornecedorCnpj}" Foreground="#95A5A6" FontSize="11"/>
-                                            </StackPanel>
+                        <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="18" Margin="10,0,0,0" BorderBrush="#27AE60" BorderThickness="2">
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="✅ TOTAL PAGO NESTE MÊS" FontSize="12" FontWeight="Black" Foreground="#27AE60"/>
+                                <TextBlock Text="{Binding Resumo.TotalPagoNoMes, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#27AE60"/>
+                                <TextBlock Text="Títulos liquidados com comprovante" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
-                                            <!-- Documento -->
-                                            <TextBlock Grid.Column="2" Text="{Binding NumeroDocumento}" FontWeight="SemiBold" Foreground="#34495E" VerticalAlignment="Center" FontSize="13"/>
+                    <!-- BARRA DE AÇÕES E LISTAGEM DE TÍTULOS A PAGAR -->
+                    <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                        <StackPanel Spacing="15">
+                            
+                            <Grid ColumnDefinitions="Auto, Auto, *, Auto">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                    <TextBlock Text="Filtrar por Status:" FontWeight="Bold" VerticalAlignment="Center" Foreground="#34495E"/>
+                                    <ComboBox ItemsSource="{Binding FiltrosStatus}" SelectedItem="{Binding FiltroStatusSelecionado}" Width="160" Height="36"/>
+                                </StackPanel>
 
-                                            <!-- Parcela -->
-                                            <TextBlock Grid.Column="3" Text="{Binding NumeroParcela}" Foreground="#7F8C8D" VerticalAlignment="Center" FontSize="12"/>
+                                <Button Grid.Column="3" Command="{Binding AbrirModalNovoTituloCommand}" Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="13" Padding="14,9" CornerRadius="6" Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="➕"/>
+                                        <TextBlock Text="Lançar Despesa / Título Avulso"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
 
-                                            <!-- Vencimento -->
-                                            <TextBlock Grid.Column="4" Text="{Binding DataVencimento, StringFormat='{}{0:dd/MM/yyyy}'}" 
-                                                       FontWeight="Bold" Foreground="#2C3E50" VerticalAlignment="Center" FontSize="13"/>
+                            <Separator Background="#ECF0F1" Height="1"/>
 
-                                            <!-- Valor -->
-                                            <TextBlock Grid.Column="5" Text="{Binding Valor, StringFormat='R$ {0:N2}'}" 
-                                                       FontWeight="Black" Foreground="#2C3E50" VerticalAlignment="Center" FontSize="14"/>
+                            <!-- CABEÇALHO DA TABELA -->
+                            <Border Background="#F8F9F9" Padding="12,8" CornerRadius="4">
+                                <Grid ColumnDefinitions="110, 2*, 1.2*, 70, 110, 110, 110, 150">
+                                    <TextBlock Grid.Column="0" Text="STATUS" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="1" Text="FORNECEDOR / EMITENTE" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="2" Text="DOCUMENTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="3" Text="PARC." FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="4" Text="VENCIMENTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="5" Text="VALOR (R$)" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="6" Text="PGTO / FORMA" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="7" Text="AÇÃO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </Border>
 
-                                            <!-- Pagamento Realizado -->
-                                            <StackPanel Grid.Column="6" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding FormaPagamento}" FontWeight="Bold" Foreground="#27AE60" FontSize="12"/>
-                                                <TextBlock Text="{Binding DataPagamento, StringFormat='{}{0:dd/MM/yyyy}'}" Foreground="#95A5A6" FontSize="11"/>
-                                            </StackPanel>
+                            <!-- LISTAGEM DE DUPLICATAS / TÍTULOS -->
+                            <ItemsControl ItemsSource="{Binding Titulos}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="models:ContaPagar">
+                                        <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="12,12">
+                                            <Grid ColumnDefinitions="110, 2*, 1.2*, 70, 110, 110, 110, 150" VerticalAlignment="Center">
+                                                <Border Grid.Column="0" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding Status}" FontWeight="Black" FontSize="11" Foreground="#2C3E50"/>
+                                                </Border>
 
-                                            <!-- Botão de Ação -->
-                                            <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
-                                                <Button Content="💳 Pagar" 
-                                                        Command="{Binding $parent[ItemsControl].((vm:FinanceiroViewModel)DataContext).AbrirModalLiquidarCommand}" 
-                                                        CommandParameter="{Binding .}"
-                                                        Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="12" Padding="10,6" CornerRadius="4" Cursor="Hand"/>
-                                                
-                                                <Button Content="❌" 
-                                                        Command="{Binding $parent[ItemsControl].((vm:FinanceiroViewModel)DataContext).CancelarTituloCommand}" 
-                                                        CommandParameter="{Binding .}"
-                                                        Background="#BDC3C7" Foreground="#2C3E50" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Cancelar Título"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding FornecedorNome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding FornecedorCnpj}" Foreground="#95A5A6" FontSize="11"/>
+                                                </StackPanel>
 
-                        <!-- Mensagem quando vazio -->
-                        <TextBlock Text="Nenhum título encontrado para o filtro selecionado." 
-                                   Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="20"
-                                   IsVisible="{Binding !Titulos.Count}"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding NumeroDocumento}" FontWeight="SemiBold" Foreground="#34495E" VerticalAlignment="Center" FontSize="13"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding NumeroParcela}" Foreground="#7F8C8D" VerticalAlignment="Center" FontSize="12"/>
 
-                    </StackPanel>
-                </Border>
+                                                <TextBlock Grid.Column="4" Text="{Binding DataVencimento, StringFormat='{}{0:dd/MM/yyyy}'}" 
+                                                           FontWeight="Bold" Foreground="#2C3E50" VerticalAlignment="Center" FontSize="13"/>
+
+                                                <TextBlock Grid.Column="5" Text="{Binding Valor, StringFormat='R$ {0:N2}'}" 
+                                                           FontWeight="Black" Foreground="#2C3E50" VerticalAlignment="Center" FontSize="14"/>
+
+                                                <StackPanel Grid.Column="6" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding FormaPagamento}" FontWeight="Bold" Foreground="#27AE60" FontSize="12"/>
+                                                    <TextBlock Text="{Binding DataPagamento, StringFormat='{}{0:dd/MM/yyyy}'}" Foreground="#95A5A6" FontSize="11"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+                                                    <Button Content="💳 Pagar" 
+                                                            Command="{Binding $parent[ItemsControl].((vm:FinanceiroViewModel)DataContext).AbrirModalLiquidarCommand}" 
+                                                            CommandParameter="{Binding .}"
+                                                            Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="12" Padding="10,6" CornerRadius="4" Cursor="Hand"/>
+                                                    
+                                                    <Button Content="❌" 
+                                                            Command="{Binding $parent[ItemsControl].((vm:FinanceiroViewModel)DataContext).CancelarTituloCommand}" 
+                                                            CommandParameter="{Binding .}"
+                                                            Background="#BDC3C7" Foreground="#2C3E50" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Cancelar Título"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="Nenhum título a pagar encontrado para o filtro selecionado." 
+                                       Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="20"
+                                       IsVisible="{Binding !Titulos.Count}"/>
+
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ========================================================================= -->
+                <!-- ABA 2: CONTAS A RECEBER & CREDIÁRIO (FIADO)                               -->
+                <!-- ========================================================================= -->
+                <StackPanel Spacing="20" IsVisible="{Binding IsAbaReceber}">
+                    <!-- CARDS DE RESUMO (RECEBER) -->
+                    <Grid ColumnDefinitions="*, *, *">
+                        <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="18" Margin="0,0,10,0" BorderBrush="#E74C3C" BorderThickness="2">
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="⚠️ CLIENTES EM ATRASO (VENCIDOS)" FontSize="12" FontWeight="Black" Foreground="#C0392B"/>
+                                <TextBlock Text="{Binding FluxoCaixa.TotalReceberVencido, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#E74C3C"/>
+                                <TextBlock Text="Cobrança prioritária de inadimplentes" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="18" Margin="5,0,5,0" BorderBrush="#27AE60" BorderThickness="2">
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="⏳ CREDIÁRIO TOTAL A RECEBER" FontSize="12" FontWeight="Black" Foreground="#27AE60"/>
+                                <TextBlock Text="{Binding FluxoCaixa.TotalReceberPendente, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#27AE60"/>
+                                <TextBlock Text="Vendas a prazo e carteira de clientes" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="18" Margin="10,0,0,0" BorderBrush="#2980B9" BorderThickness="2">
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="💵 RECEBIDO NESTE MÊS" FontSize="12" FontWeight="Black" Foreground="#2980B9"/>
+                                <TextBlock Text="{Binding FluxoCaixa.TotalRecebidoMes, StringFormat='R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#2980B9"/>
+                                <TextBlock Text="Parcelas de fiado recebidas no caixa" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- BARRA DE BUSCA E LISTAGEM DE CREDIÁRIO -->
+                    <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                        <StackPanel Spacing="15">
+                            
+                            <Grid ColumnDefinitions="2*, Auto, Auto, *, Auto">
+                                <TextBox Grid.Column="0" Text="{Binding BuscaClienteReceber}" PlaceholderText="🔍 Buscar por nome do cliente, CPF ou nº documento..." Height="36"/>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="15,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Status:" FontWeight="Bold" VerticalAlignment="Center" Foreground="#34495E"/>
+                                    <ComboBox ItemsSource="{Binding FiltrosStatusReceber}" SelectedItem="{Binding FiltroStatusReceberSelecionado}" Width="150" Height="36"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="4" Command="{Binding AbrirModalNovoCrediarioCommand}" Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="13" Padding="14,9" CornerRadius="6" Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="➕"/>
+                                        <TextBlock Text="Novo Lançamento de Crediário"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <Separator Background="#ECF0F1" Height="1"/>
+
+                            <!-- CABEÇALHO TABELA RECEBER -->
+                            <Border Background="#F8F9F9" Padding="12,8" CornerRadius="4">
+                                <Grid ColumnDefinitions="110, 2*, 1.2*, 70, 110, 110, 110, 150">
+                                    <TextBlock Grid.Column="0" Text="STATUS" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="1" Text="CLIENTE (NOME / CPF)" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="2" Text="DOCUMENTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="3" Text="PARC." FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="4" Text="VENCIMENTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="5" Text="VALOR (R$)" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="6" Text="RECEBIDO EM" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                    <TextBlock Grid.Column="7" Text="AÇÃO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- LISTAGEM RECEBER -->
+                            <ItemsControl ItemsSource="{Binding TitulosReceber}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="models:ContaReceber">
+                                        <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="12,12">
+                                            <Grid ColumnDefinitions="110, 2*, 1.2*, 70, 110, 110, 110, 150" VerticalAlignment="Center">
+                                                <Border Grid.Column="0" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding Status}" FontWeight="Black" FontSize="11" Foreground="#2C3E50"/>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding ClienteNome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding ClienteCpfCnpj}" Foreground="#95A5A6" FontSize="11"/>
+                                                </StackPanel>
+
+                                                <TextBlock Grid.Column="2" Text="{Binding NumeroDocumento}" FontWeight="SemiBold" Foreground="#34495E" VerticalAlignment="Center" FontSize="13"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding NumeroParcela}" Foreground="#7F8C8D" VerticalAlignment="Center" FontSize="12"/>
+
+                                                <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding DataVencimento, StringFormat='{}{0:dd/MM/yyyy}'}" 
+                                                               FontWeight="Bold" Foreground="#2C3E50" FontSize="13"/>
+                                                    <TextBlock Text="{Binding DiasAtraso, StringFormat='{}{0} dias atraso'}" 
+                                                               Foreground="#E74C3C" FontSize="11" FontWeight="Bold" IsVisible="{Binding IsVencido}"/>
+                                                </StackPanel>
+
+                                                <TextBlock Grid.Column="5" Text="{Binding ValorFinal, StringFormat='R$ {0:N2}'}" 
+                                                           FontWeight="Black" Foreground="#27AE60" VerticalAlignment="Center" FontSize="14"/>
+
+                                                <StackPanel Grid.Column="6" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding FormaRecebimento}" FontWeight="Bold" Foreground="#2980B9" FontSize="12"/>
+                                                    <TextBlock Text="{Binding DataRecebimento, StringFormat='{}{0:dd/MM/yyyy}'}" Foreground="#95A5A6" FontSize="11"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+                                                    <Button Content="💰 Receber" 
+                                                            Command="{Binding $parent[ItemsControl].((vm:FinanceiroViewModel)DataContext).AbrirModalReceberCommand}" 
+                                                            CommandParameter="{Binding .}"
+                                                            Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="12" Padding="10,6" CornerRadius="4" Cursor="Hand"/>
+                                                    
+                                                    <Button Content="❌" 
+                                                            Command="{Binding $parent[ItemsControl].((vm:FinanceiroViewModel)DataContext).CancelarTituloReceberCommand}" 
+                                                            CommandParameter="{Binding .}"
+                                                            Background="#BDC3C7" Foreground="#2C3E50" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Cancelar Título a Receber"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="Nenhum título de crediário ou conta a receber encontrado." 
+                                       Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="20"
+                                       IsVisible="{Binding !TitulosReceber.Count}"/>
+
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ========================================================================= -->
+                <!-- ABA 3: FLUXO DE CAIXA & BALANÇO PROJETADO                                 -->
+                <!-- ========================================================================= -->
+                <StackPanel Spacing="20" IsVisible="{Binding IsAbaFluxoCaixa}">
+                    <Border Background="White" CornerRadius="8" Padding="25" BorderBrush="#BDC3C7" BorderThickness="1">
+                        <StackPanel Spacing="20">
+                            <TextBlock Text="📈 Balanço Consolidado &amp; Projeção de Fluxo de Caixa" FontSize="18" FontWeight="Black" Foreground="#2C3E50"/>
+                            
+                            <Grid ColumnDefinitions="*, *">
+                                <!-- Card Projeção Líquida -->
+                                <Border Grid.Column="0" Background="#F8F9F9" BorderBrush="#3498DB" BorderThickness="2" CornerRadius="8" Padding="20" Margin="0,0,10,0">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="SALDO LÍQUIDO PROJETADO (A RECEBER - A PAGAR)" FontWeight="Black" FontSize="12" Foreground="#2980B9"/>
+                                        <TextBlock Text="{Binding FluxoCaixa.SaldoProjetado, StringFormat='R$ {0:N2}'}" FontSize="28" FontWeight="Black" Foreground="#2C3E50"/>
+                                        <TextBlock Text="Capital de giro líquido com base nas obrigações e direitos pendentes." FontSize="12" Foreground="#7F8C8D"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Card Realizado no Mês -->
+                                <Border Grid.Column="1" Background="#F8F9F9" BorderBrush="#27AE60" BorderThickness="2" CornerRadius="8" Padding="20" Margin="10,0,0,0">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Text="SALDO REALIZADO NO MÊS (ENTRADAS - SAÍDAS)" FontWeight="Black" FontSize="12" Foreground="#27AE60"/>
+                                        <TextBlock Text="{Binding FluxoCaixa.SaldoRealizadoMes, StringFormat='R$ {0:N2}'}" FontSize="28" FontWeight="Black" Foreground="#27AE60"/>
+                                        <TextBlock Text="Evolução financeira efetivamente quitada no período corrente." FontSize="12" Foreground="#7F8C8D"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
             </StackPanel>
         </ScrollViewer>
 
         <!-- ========================================================================= -->
-        <!-- MODAL 1: LIQUIDAÇÃO / BAIXA DO TÍTULO COM SELEÇÃO BANCÁRIA                -->
+        <!-- MODAL 1: LIQUIDAÇÃO DE CONTAS A PAGAR                                     -->
         <!-- ========================================================================= -->
         <Border Background="#80000000" IsVisible="{Binding IsModalLiquidarAberto}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Border Background="White" CornerRadius="12" Padding="25" Width="460" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 30 0 #50000000">
@@ -213,7 +397,7 @@
         </Border>
 
         <!-- ========================================================================= -->
-        <!-- MODAL 2: NOVO TÍTULO MANUAL AVULSO                                        -->
+        <!-- MODAL 2: NOVO TÍTULO A PAGAR AVULSO                                       -->
         <!-- ========================================================================= -->
         <Border Background="#80000000" IsVisible="{Binding IsModalNovoTituloAberto}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Border Background="White" CornerRadius="12" Padding="25" Width="500" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 30 0 #50000000">
@@ -262,6 +446,117 @@
                         <Button Grid.Column="0" Content="Voltar" Command="{Binding FecharModalNovoTituloCommand}" 
                                 Background="#BDC3C7" Foreground="#2C3E50" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Height="40"/>
                         <Button Grid.Column="1" Content="Salvar Título" Command="{Binding SalvarNovoTituloCommand}" 
+                                Background="#27AE60" Foreground="White" FontWeight="Black" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" Height="40"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ========================================================================= -->
+        <!-- MODAL 3: RECEBIMENTO DE CREDIÁRIO (BAIXA COM JUROS / DESCONTO)           -->
+        <!-- ========================================================================= -->
+        <Border Background="#80000000" IsVisible="{Binding IsModalReceberAberto}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border Background="White" CornerRadius="12" Padding="25" Width="500" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 30 0 #50000000">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="💰 Recebimento de Crediário / Fiado" FontSize="20" FontWeight="Black" Foreground="#2C3E50"/>
+                    <TextBlock Text="Baixa de parcela a prazo na boca do caixa ou tesouraria." FontSize="13" Foreground="#7F8C8D"/>
+
+                    <Border Background="#F8F9F9" Padding="12" CornerRadius="6" BorderBrush="#BDC3C7" BorderThickness="1">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding TituloSelecionadoParaReceber.ClienteNome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="14"/>
+                            <TextBlock Text="{Binding TituloSelecionadoParaReceber.NumeroDocumento, StringFormat='Documento: {0}'}" FontSize="12" Foreground="#7F8C8D"/>
+                            <TextBlock Text="{Binding TituloSelecionadoParaReceber.ValorOriginal, StringFormat='Valor Original: R$ {0:N2}'}" FontWeight="Black" Foreground="#27AE60" FontSize="15"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*, *">
+                        <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,6,0">
+                            <TextBlock Text="Juros / Multa por Atraso (R$):" FontWeight="Bold" Foreground="#C0392B"/>
+                            <NumericUpDown Value="{Binding JurosRecebimento}" FormatString="N2" Minimum="0"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4" Margin="6,0,0,0">
+                            <TextBlock Text="Desconto Concedido (R$):" FontWeight="Bold" Foreground="#27AE60"/>
+                            <NumericUpDown Value="{Binding DescontoRecebimento}" FormatString="N2" Minimum="0"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Background="#E8F8F5" Padding="12" CornerRadius="6" BorderBrush="#2ECC71" BorderThickness="1">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Grid.Column="0" Text="TOTAL A COBRAR DO CLIENTE:" FontWeight="Black" Foreground="#16A085" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding ValorFinalRecebimento, StringFormat='R$ {0:N2}'}" FontWeight="Black" FontSize="20" Foreground="#27AE60"/>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Forma de Recebimento:" FontWeight="Bold" Foreground="#34495E"/>
+                        <ComboBox ItemsSource="{Binding FormasRecebimento}" SelectedItem="{Binding FormaRecebimentoSelecionada}" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Observação:" FontWeight="Bold" Foreground="#34495E"/>
+                        <TextBox Text="{Binding ObservacaoRecebimento}" PlaceholderText="Ex: Recebido no balcão em dinheiro com troco"/>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*, *" Margin="0,10,0,0">
+                        <Button Grid.Column="0" Content="Cancelar" Command="{Binding FecharModalReceberCommand}" 
+                                Background="#BDC3C7" Foreground="#2C3E50" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Height="40"/>
+                        <Button Grid.Column="1" Content="Confirmar Recebimento" Command="{Binding ConfirmarRecebimentoCommand}" 
+                                Background="#27AE60" Foreground="White" FontWeight="Black" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" Height="40"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ========================================================================= -->
+        <!-- MODAL 4: NOVO LANÇAMENTO DE CREDIÁRIO MANUAL                              -->
+        <!-- ========================================================================= -->
+        <Border Background="#80000000" IsVisible="{Binding IsModalNovoCrediarioAberto}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border Background="White" CornerRadius="12" Padding="25" Width="500" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 30 0 #50000000">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="➕ Lançar Crediário / Fiado Manual" FontSize="20" FontWeight="Black" Foreground="#2C3E50"/>
+                    <TextBlock Text="Gere uma nova parcela a receber na ficha financeira do cliente." FontSize="13" Foreground="#7F8C8D"/>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Nome Completo do Cliente:" FontWeight="Bold" Foreground="#34495E"/>
+                        <TextBox Text="{Binding NovoClienteCrediarioNome}" PlaceholderText="Ex: João da Silva Santos"/>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*, *">
+                        <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,6,0">
+                            <TextBlock Text="CPF / CNPJ:" FontWeight="Bold" Foreground="#34495E"/>
+                            <TextBox Text="{Binding NovoClienteCrediarioCpf}" PlaceholderText="000.000.000-00"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4" Margin="6,0,0,0">
+                            <TextBlock Text="Telefone / WhatsApp:" FontWeight="Bold" Foreground="#34495E"/>
+                            <TextBox Text="{Binding NovoClienteCrediarioTelefone}" PlaceholderText="(00) 00000-0000"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*, *">
+                        <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,6,0">
+                            <TextBlock Text="Valor Original (R$):" FontWeight="Bold" Foreground="#34495E"/>
+                            <NumericUpDown Value="{Binding NovoValorReceber}" FormatString="N2" Minimum="0.01"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4" Margin="6,0,0,0">
+                            <TextBlock Text="Documento / Ref:" FontWeight="Bold" Foreground="#34495E"/>
+                            <TextBox Text="{Binding NovoDocumentoReceber}" PlaceholderText="CREDIARIO"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Data de Vencimento:" FontWeight="Bold" Foreground="#34495E"/>
+                        <DatePicker SelectedDate="{Binding NovoVencimentoReceber}" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Observação:" FontWeight="Bold" Foreground="#34495E"/>
+                        <TextBox Text="{Binding NovaObservacaoReceber}" PlaceholderText="Ex: Compra autorizada pelo gerente"/>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*, *" Margin="0,10,0,0">
+                        <Button Grid.Column="0" Content="Voltar" Command="{Binding FecharModalNovoCrediarioCommand}" 
+                                Background="#BDC3C7" Foreground="#2C3E50" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,5,0" Height="40"/>
+                        <Button Grid.Column="1" Content="Salvar Crediário" Command="{Binding SalvarNovoCrediarioCommand}" 
                                 Background="#27AE60" Foreground="White" FontWeight="Black" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="5,0,0,0" Height="40"/>
                     </Grid>
                 </StackPanel>
