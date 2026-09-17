@@ -209,28 +209,87 @@
             </Border>
         </Border>
 
-        <!-- CAMADA 3: MODAL DE COMANDA GERADA (SUCESSO) -->
+        <!-- CAMADA 3: MODAL DE COMANDA GERADA (PROTÓTIPO DE CUPOM TÉRMICO 80MM / 58MM) -->
         <Border Background="#F2000000" 
                 IsVisible="{Binding IsModalConfirmacaoAberto}" 
                 IsHitTestVisible="{Binding IsModalConfirmacaoAberto}"
                 ZIndex="100"
                 KeyboardNavigation.TabNavigation="Cycle">
-            <Border Background="White" Width="550" CornerRadius="12" Padding="35" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AA27AE60">
-                <StackPanel Spacing="18" HorizontalAlignment="Center">
-                    <TextBlock Text="✅ PRÉ-VENDA ENVIADA AO CAIXA!" FontSize="22" FontWeight="Black" Foreground="#27AE60" HorizontalAlignment="Center"/>
+            <Border Background="White" Width="860" MaxHeight="680" CornerRadius="14" Padding="25" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 15 40 0 #60000000">
+                <Grid ColumnDefinitions="1.1*, 1*">
                     
-                    <Border Background="#E8F8F5" BorderBrush="#A3E4D7" BorderThickness="2" CornerRadius="8" Padding="20">
-                        <StackPanel Spacing="8" HorizontalAlignment="Center">
-                            <TextBlock Text="NÚMERO DA COMANDA / PEDIDO:" FontSize="13" FontWeight="Bold" Foreground="#16A085" HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding NumeroComandaGerada}" FontSize="44" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center"/>
-                            <TextBlock Text="{Binding ValorComandaGerada, StringFormat='{}Valor a Pagar: R$ {0:N2}'}" FontSize="20" FontWeight="Bold" Foreground="#27AE60" HorizontalAlignment="Center"/>
+                    <!-- LADO ESQUERDO: CONTROLES E RESUMO -->
+                    <StackPanel Grid.Column="0" Spacing="16" Margin="0,0,25,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="✅" FontSize="24"/>
+                            <TextBlock Text="PRÉ-VENDA ENVIADA AO CAIXA" FontSize="20" FontWeight="Black" Foreground="#27AE60" VerticalAlignment="Center"/>
                         </StackPanel>
+
+                        <!-- Box do Pedido -->
+                        <Border Background="#E8F8F5" BorderBrush="#A3E4D7" BorderThickness="2" CornerRadius="8" Padding="18">
+                            <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                <TextBlock Text="NÚMERO DA COMANDA BALCÃO" FontSize="12" FontWeight="Bold" Foreground="#16A085" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding NumeroComandaGerada}" FontSize="42" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding ValorComandaGerada, StringFormat='{}Total a Pagar: R$ {0:N2}'}" FontSize="20" FontWeight="Black" Foreground="#27AE60" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{Binding MensagemConfirmacao}" FontSize="13" Foreground="#34495E" TextWrapping="Wrap" LineHeight="18"/>
+
+                        <!-- Seleção de Largura da Bobina -->
+                        <Border Background="#F8F9F9" Padding="12" CornerRadius="6" BorderBrush="#BDC3C7" BorderThickness="1">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Formato da Impressora:" FontWeight="Bold" FontSize="12" Foreground="#34495E"/>
+                                    <TextBlock Text="Simulação de corte e largura" FontSize="11" Foreground="#7F8C8D"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding LargurasDisponiveis}" SelectedItem="{Binding LarguraCupomSelecionada}" Width="110" Height="34"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Feedback de Impressão -->
+                        <Border Background="#D4EFDF" BorderBrush="#27AE60" BorderThickness="1" CornerRadius="4" Padding="8" IsVisible="{Binding StatusImpressaoFeedback.Length}">
+                            <TextBlock Text="{Binding StatusImpressaoFeedback}" Foreground="#196F3D" FontWeight="Bold" FontSize="11" TextWrapping="Wrap"/>
+                        </Border>
+
+                        <!-- Botões de Ação -->
+                        <StackPanel Spacing="8">
+                            <Button Command="{Binding SimularImpressaoEscPosCommand}" 
+                                    Content="🖨️ Simular Impressão Térmica (ESC/POS)" 
+                                    Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="14" Padding="12" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
+                            
+                            <Button Command="{Binding FecharModalConfirmacaoCommand}" 
+                                    Content="⏎ [ENTER] Novo Atendimento" 
+                                    Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="15" Padding="14" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- LADO DIREITO: VISUALIZADOR REALISTA DE BOBINA TÉRMICA -->
+                    <Border Grid.Column="1" Background="#FFFDF7" BorderBrush="#D5D8DC" BorderThickness="1" CornerRadius="6" Padding="16,14" BoxShadow="0 6 18 0 #25000000" VerticalAlignment="Stretch">
+                        <Grid RowDefinitions="Auto, *, Auto">
+                            
+                            <!-- Serrilha Topo -->
+                            <TextBlock Grid.Row="0" Text="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -" 
+                                       Foreground="#BDC3C7" FontSize="10" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+                            <!-- Conteúdo do Cupom -->
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="500">
+                                <TextBlock Text="{Binding TextoCupomTermico}" 
+                                           FontFamily="Consolas, Cascadia Mono, Courier New, monospace" 
+                                           FontSize="11" 
+                                           Foreground="#1B2631" 
+                                           LineHeight="16"
+                                           TextWrapping="NoWrap"
+                                           HorizontalAlignment="Center"/>
+                            </ScrollViewer>
+
+                            <!-- Serrilha Base -->
+                            <TextBlock Grid.Row="2" Text="- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -" 
+                                       Foreground="#BDC3C7" FontSize="10" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                        </Grid>
                     </Border>
 
-                    <TextBlock Text="{Binding MensagemConfirmacao}" FontSize="15" Foreground="#34495E" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
-
-                    <Button Command="{Binding FecharModalConfirmacaoCommand}" Content="[ENTER] Atender Próximo Cliente" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="16" Padding="14,24" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
-                </StackPanel>
+                </Grid>
             </Border>
         </Border>
 

@@ -7,13 +7,16 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using GetStartedApp.Models;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Impressao;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GetStartedApp.ViewModels;
 
 public partial class BalcaoViewModel : ViewModelBase
 {
     private readonly PdvService _service;
+    private readonly CupomTermicoService _cupomService;
     private readonly ILogger<BalcaoViewModel> _logger;
 
     public ObservableCollection<ProdutoItem> Carrinho { get; } = [];
@@ -53,18 +56,35 @@ public partial class BalcaoViewModel : ViewModelBase
     [ObservableProperty] private Produto? _produtoPesquisaSelecionado;
     [ObservableProperty] private string _textoPesquisa = string.Empty;
 
-    // === MODAL DE SUCESSO / COMANDA GERADA ===
+    // === MODAL DE COMANDA GERADA COM CUPOM TÉRMICO (PROTÓTIPO ESC/POS) ===
     [ObservableProperty] public partial bool IsModalConfirmacaoAberto { get; set; }
     [ObservableProperty] public partial string MensagemConfirmacao { get; set; } = string.Empty;
     [ObservableProperty] public partial string NumeroComandaGerada { get; set; } = string.Empty;
     [ObservableProperty] public partial decimal ValorComandaGerada { get; set; }
 
+    [ObservableProperty] public partial PedidoBalcao? UltimoPedidoGerado { get; set; }
+    [ObservableProperty] public partial string TextoCupomTermico { get; set; } = string.Empty;
+
+    [ObservableProperty] public partial string LarguraCupomSelecionada { get; set; } = "80mm";
+    public ObservableCollection<string> LargurasDisponiveis { get; } = ["80mm", "58mm"];
+
+    [ObservableProperty] public partial string StatusImpressaoFeedback { get; set; } = string.Empty;
+
     public bool IsBloqueadoPorModal => ModalIdentificacaoAberto || IsModalConfirmacaoAberto;
 
-    public BalcaoViewModel(PdvService service, ILogger<BalcaoViewModel> logger)
+    public BalcaoViewModel(
+        PdvService service, 
+        CupomTermicoService? cupomService = null, 
+        ILogger<BalcaoViewModel>? logger = null)
     {
         _service = service;
-        _logger = logger;
+        _cupomService = cupomService ?? new CupomTermicoService();
+        _logger = logger ?? NullLogger<BalcaoViewModel>.Instance;
+    }
+
+    public BalcaoViewModel(PdvService service, ILogger<BalcaoViewModel> logger)
+        : this(service, null, logger)
+    {
     }
 
     public async Task InicializarAsync()
@@ -79,6 +99,14 @@ public partial class BalcaoViewModel : ViewModelBase
         ClienteNome = "Cliente Balcão";
         ClienteCpf = string.Empty;
         _logger.LogInformation("[BALCÃO] Vendedor inicializado: #{Id} - '{Nome}'", VendedorSelecionado?.Id, VendedorSelecionado?.Nome);
+    }
+
+    partial void OnLarguraCupomSelecionadaChanged(string value)
+    {
+        if (UltimoPedidoGerado != null)
+        {
+            TextoCupomTermico = _cupomService.GerarCupomComandaTexto(UltimoPedidoGerado, largura: value);
+        }
     }
 
     private void AtualizarTotal()
@@ -178,7 +206,6 @@ public partial class BalcaoViewModel : ViewModelBase
     {
         if (Carrinho.Count == 0) return;
 
-        // Se ainda não definiu nome, sugere o padrão "Cliente Balcão"
         if (string.IsNullOrWhiteSpace(ClienteNome))
         {
             ClienteNome = "Cliente Balcão";
@@ -209,9 +236,14 @@ public partial class BalcaoViewModel : ViewModelBase
             ClienteCpf,
             itens);
 
+        UltimoPedidoGerado = pedido;
         NumeroComandaGerada = pedido.NumeroComanda;
         ValorComandaGerada = pedido.ValorTotal;
-        MensagemConfirmacao = $"Pedido {pedido.NumeroComanda} gerado com sucesso!\nCliente: {pedido.ClienteNome} | Vendedor: {VendedorSelecionado.Nome}\n\nOriente o cliente a apresentar o número no Caixa Central.";
+        StatusImpressaoFeedback = string.Empty;
+
+        TextoCupomTermico = _cupomService.GerarCupomComandaTexto(pedido, largura: LarguraCupomSelecionada);
+
+        MensagemConfirmacao = $"Pedido {pedido.NumeroComanda} gerado com sucesso!\nCliente: {pedido.ClienteNome} | Vendedor: {VendedorSelecionado.Nome}\n\nOriente o cliente a apresentar esta comanda no Caixa Central.";
 
         Carrinho.Clear();
         ClienteNome = "Cliente Balcão";
@@ -225,8 +257,17 @@ public partial class BalcaoViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void SimularImpressaoEscPos()
+    {
+        StatusImpressaoFeedback = $"🖨️ Comando ESC/POS enviado para bobina térmica ({LarguraCupomSelecionada}) com guilhotina!";
+        _logger.LogInformation("Comanda {Comanda} impressa com sucesso no formato {Largura}", NumeroComandaGerada, LarguraCupomSelecionada);
+    }
+
+    [RelayCommand]
     private void FecharModalConfirmacao()
     {
         IsModalConfirmacaoAberto = false;
+        UltimoPedidoGerado = null;
+        StatusImpressaoFeedback = string.Empty;
     }
 }
