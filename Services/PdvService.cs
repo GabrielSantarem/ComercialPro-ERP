@@ -3,21 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using GetStartedApp.Data;
 using GetStartedApp.Models;
-using Microsoft.Extensions.Logging;
 
 namespace GetStartedApp.Services;
 
-public class RelatorioInventarioDto
-{
-    public int ProdutoId { get; set; }
-    public string Nome { get; set; } = string.Empty;
-    public int QuantidadeVendida { get; set; }
-    public int EstoqueAtualSistema { get; set; }
-}
-
-public class PdvService
+public partial class PdvService
 {
     private readonly AppDbContext _db;
     private readonly ILogger<PdvService> _logger;
@@ -78,6 +70,13 @@ public class PdvService
     {
         if (p.Id == 0) _db.Produtos.Add(p);
         else _db.Produtos.Update(p);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task AdicionarVendedorAsync(string nome)
+    {
+        if(string.IsNullOrWhiteSpace(nome)) return;
+        _db.Vendedores.Add(new Vendedor { Nome = nome });
         await _db.SaveChangesAsync();
     }
 
@@ -142,235 +141,5 @@ public class PdvService
             await transaction.RollbackAsync(); 
             throw; 
         }
-    }
-
-    // NOVA FUNÇÃO: INVENTÁRIO
-    public async Task<List<RelatorioInventarioDto>> GerarLevantamentoInventarioAsync(DateTime data)
-    {
-        var inicio = data.Date;
-        var fim = inicio.AddDays(1).AddTicks(-1);
-
-        var itensVendidos = await _db.ItensVenda
-            .Include(i => i.Venda)
-            .Include(i => i.Produto)
-            .Where(i => i.Venda.DataHora >= inicio && i.Venda.DataHora <= fim)
-            .ToListAsync();
-
-        var relatorio = itensVendidos
-            .GroupBy(i => i.Produto)
-            .Select(g => new RelatorioInventarioDto
-            {
-                ProdutoId = g.Key.Id,
-                Nome = g.Key.Nome,
-                EstoqueAtualSistema = g.Key.Estoque,
-                QuantidadeVendida = g.Sum(x => x.Quantidade)
-            })
-            .OrderByDescending(r => r.QuantidadeVendida)
-            .ToList();
-
-        return relatorio;
-    }
-
-    public async Task AdicionarVendedorAsync(string nome)
-    {
-        if(string.IsNullOrWhiteSpace(nome)) return;
-        _db.Vendedores.Add(new Vendedor { Nome = nome });
-        await _db.SaveChangesAsync();
-    }
-
-    // === GESTÃO DE ENTRADA MANUAL DE MERCADORIAS ===
-    public async Task<List<EntradaMercadoria>> ObterHistoricoEntradasAsync()
-    {
-        return await _db.EntradasMercadoria
-            .Include(e => e.Itens)
-            .ThenInclude(i => i.Produto)
-            .OrderByDescending(e => e.DataEntrada)
-            .ToListAsync();
-    }
-
-    public async Task RegistrarEntradaMercadoriaAsync(
-        string numeroNota, 
-        string fornecedor, 
-        string observacao, 
-        List<(int ProdutoId, int Quantidade, decimal CustoUnitario)> itens)
-    {
-        if (itens.Count == 0) return;
-
-        using var transaction = await _db.Database.BeginTransactionAsync();
-        try
-        {
-            var entrada = new EntradaMercadoria
-            {
-                NumeroNota = numeroNota,
-                Fornecedor = fornecedor,
-                Observacao = observacao,
-                DataEntrada = DateTime.Now,
-                ValorTotal = itens.Sum(x => x.Quantidade * x.CustoUnitario)
-            };
-
-            foreach (var item in itens)
-            {
-                var produto = await _db.Produtos.FindAsync(item.ProdutoId);
-                if (produto != null)
-                {
-                    produto.Estoque += item.Quantidade;
-
-                    entrada.Itens.Add(new ItemEntradaMercadoria
-                    {
-                        ProdutoId = item.ProdutoId,
-                        QuantidadeEntrada = item.Quantidade,
-                        CustoUnitario = item.CustoUnitario
-                    });
-                }
-            }
-
-            _db.EntradasMercadoria.Add(entrada);
-            await _db.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Entrada de Mercadoria NF '{Nota}' registrada com sucesso. Total: R$ {Total}", numeroNota, entrada.ValorTotal);
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Erro ao registrar entrada de mercadorias da NF '{Nota}'", numeroNota);
-            throw;
-        }
-    }
-
-    // === CONTROLE DE TURNOS DE CAIXA (ABERTURA, SANGRIA, FECHAMENTO) ===
-
-    public async Task<CaixaTurno?> ObterTurnoAtualAsync()
-    {
-        return await _db.CaixasTurno
-            .Include(c => c.Vendedor)
-            .Include(c => c.Movimentacoes)
-            .FirstOrDefaultAsync(c => c.Status == "ABERTO");
-    }
-
-    public async Task<CaixaTurno> AbrirCaixaAsync(int vendedorId, decimal saldoInicial, string observacao = "")
-    {
-        var existente = await _db.CaixasTurno.FirstOrDefaultAsync(c => c.Status == "ABERTO");
-        if (existente != null)
-        {
-            throw new InvalidOperationException($"Já existe um turno de caixa aberto (Turno #{existente.Id}). Feche o turno atual antes de abrir outro.");
-        }
-
-        if (saldoInicial < 0)
-        {
-            throw new ArgumentException("O fundo de troco inicial não pode ser negativo.", nameof(saldoInicial));
-        }
-
-        var turno = new CaixaTurno
-        {
-            VendedorId = vendedorId,
-            DataAbertura = DateTime.Now,
-            SaldoInicial = saldoInicial,
-            Status = "ABERTO",
-            Observacao = observacao
-        };
-
-        _db.CaixasTurno.Add(turno);
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Turno de Caixa #{Id} aberto com saldo inicial de R$ {Saldo:N2} por Vendedor {VendedorId}", turno.Id, saldoInicial, vendedorId);
-        return turno;
-    }
-
-    public async Task<MovimentacaoCaixa> RegistrarSuprimentoAsync(int caixaTurnoId, decimal valor, string motivo)
-    {
-        if (valor <= 0) throw new ArgumentException("O valor do suprimento deve ser maior que zero.", nameof(valor));
-
-        var turno = await _db.CaixasTurno.FindAsync(caixaTurnoId);
-        if (turno == null || turno.Status != "ABERTO")
-        {
-            throw new InvalidOperationException("O turno informado não existe ou não está aberto.");
-        }
-
-        turno.TotalSuprimentos += valor;
-
-        var mov = new MovimentacaoCaixa
-        {
-            CaixaTurnoId = caixaTurnoId,
-            DataHora = DateTime.Now,
-            Tipo = "SUPRIMENTO",
-            Valor = valor,
-            Motivo = motivo
-        };
-
-        _db.MovimentacoesCaixa.Add(mov);
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Suprimento de R$ {Valor:N2} registrado no Caixa #{Id}. Motivo: {Motivo}", valor, caixaTurnoId, motivo);
-        return mov;
-    }
-
-    public async Task<MovimentacaoCaixa> RegistrarSangriaAsync(int caixaTurnoId, decimal valor, string motivo)
-    {
-        if (valor <= 0) throw new ArgumentException("O valor da sangria deve ser maior que zero.", nameof(valor));
-
-        var turno = await _db.CaixasTurno.FindAsync(caixaTurnoId);
-        if (turno == null || turno.Status != "ABERTO")
-        {
-            throw new InvalidOperationException("O turno informado não existe ou não está aberto.");
-        }
-
-        if (valor > turno.SaldoEsperadoEmDinheiro)
-        {
-            throw new InvalidOperationException($"Sangria não permitida! Valor solicitado (R$ {valor:N2}) é maior do que o saldo físico disponível na gaveta (R$ {turno.SaldoEsperadoEmDinheiro:N2}).");
-        }
-
-        turno.TotalSangrias += valor;
-
-        var mov = new MovimentacaoCaixa
-        {
-            CaixaTurnoId = caixaTurnoId,
-            DataHora = DateTime.Now,
-            Tipo = "SANGRIA",
-            Valor = valor,
-            Motivo = motivo
-        };
-
-        _db.MovimentacoesCaixa.Add(mov);
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Sangria de R$ {Valor:N2} registrada no Caixa #{Id}. Motivo: {Motivo}", valor, caixaTurnoId, motivo);
-        return mov;
-    }
-
-    public async Task<CaixaTurno> FecharCaixaAsync(int caixaTurnoId, decimal saldoInformado, string observacao = "")
-    {
-        var turno = await _db.CaixasTurno
-            .Include(c => c.Vendedor)
-            .Include(c => c.Movimentacoes)
-            .FirstOrDefaultAsync(c => c.Id == caixaTurnoId);
-
-        if (turno == null || turno.Status != "ABERTO")
-        {
-            throw new InvalidOperationException("O turno informado não existe ou já foi fechado.");
-        }
-
-        turno.DataFechamento = DateTime.Now;
-        turno.SaldoInformado = saldoInformado;
-        turno.DiferencaQuebra = saldoInformado - turno.SaldoEsperadoEmDinheiro;
-        turno.Status = "FECHADO";
-        if (!string.IsNullOrWhiteSpace(observacao))
-        {
-            turno.Observacao = string.IsNullOrWhiteSpace(turno.Observacao) 
-                ? observacao 
-                : $"{turno.Observacao} | {observacao}";
-        }
-
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Caixa #{Id} fechado. Esperado: R$ {Esperado:N2}, Informado: R$ {Informado:N2}, Diferença: R$ {Dif:N2}",
-            turno.Id, turno.SaldoEsperadoEmDinheiro, saldoInformado, turno.DiferencaQuebra);
-
-        return turno;
-    }
-
-    public async Task<List<CaixaTurno>> ObterHistoricoTurnosAsync()
-    {
-        return await _db.CaixasTurno
-            .Include(c => c.Vendedor)
-            .Include(c => c.Movimentacoes)
-            .OrderByDescending(c => c.DataAbertura)
-            .ToListAsync();
     }
 }

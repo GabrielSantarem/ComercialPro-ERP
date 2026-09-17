@@ -10,65 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace GetStartedApp.ViewModels;
 
-public partial class ItemNotaFiscalVm : ObservableObject
-{
-    public int NumeroItem { get; set; }
-    
-    [ObservableProperty]
-    public partial string CodigoFornecedor { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial string DescricaoFornecedor { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial string Ncm { get; set; } = "0000.00.00";
-
-    [ObservableProperty]
-    public partial string UnidadeFornecedor { get; set; } = "UN";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(QuantidadeEstoque))]
-    [NotifyPropertyChangedFor(nameof(TotalBruto))]
-    [NotifyPropertyChangedFor(nameof(CustoRealTotal))]
-    [NotifyPropertyChangedFor(nameof(CustoUnitarioEstoque))]
-    public partial int QuantidadeFaturada { get; set; } = 1;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(QuantidadeEstoque))]
-    [NotifyPropertyChangedFor(nameof(CustoUnitarioEstoque))]
-    public partial int FatorConversao { get; set; } = 1;
-
-    public int QuantidadeEstoque => QuantidadeFaturada * (FatorConversao > 0 ? FatorConversao : 1);
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TotalBruto))]
-    [NotifyPropertyChangedFor(nameof(CustoRealTotal))]
-    [NotifyPropertyChangedFor(nameof(CustoUnitarioEstoque))]
-    public partial decimal PrecoUnitarioFaturado { get; set; }
-
-    public decimal TotalBruto => QuantidadeFaturada * PrecoUnitarioFaturado;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CustoRealTotal))]
-    [NotifyPropertyChangedFor(nameof(CustoUnitarioEstoque))]
-    public partial decimal RateioDespesas { get; set; }
-
-    public decimal CustoRealTotal => TotalBruto + RateioDespesas;
-
-    public decimal CustoUnitarioEstoque => QuantidadeEstoque > 0 ? CustoRealTotal / QuantidadeEstoque : 0;
-
-    [ObservableProperty]
-    public partial Produto? ProdutoVinculado { get; set; }
-}
-
-public partial class ParcelaFinanceiroVm : ObservableObject
-{
-    public int Numero { get; set; }
-    public DateTime Vencimento { get; set; }
-    public decimal Valor { get; set; }
-    public string Documento { get; set; } = string.Empty;
-}
-
 public partial class EntradaNfeViewModel : ViewModelBase
 {
     private readonly PdvService _service;
@@ -169,7 +110,7 @@ public partial class EntradaNfeViewModel : ViewModelBase
             Ncm = "3923.21.90",
             UnidadeFornecedor = "FD",
             QuantidadeFaturada = 2,
-            FatorConversao = 500, // 2 fardos de 500 = 1000 unidades
+            FatorConversao = 500,
             PrecoUnitarioFaturado = 65.00m,
             RateioDespesas = 5.00m
         });
@@ -266,7 +207,6 @@ public partial class EntradaNfeViewModel : ViewModelBase
         ItensNota.Add(novoItem);
         AtualizarTotais();
 
-        // Reseta form do item
         ItemDescricaoFornecedor = string.Empty;
         ItemPrecoFaturado = 0m;
         MensagemFeedback = "Item adicionado à grade da NF-e!";
@@ -282,7 +222,6 @@ public partial class EntradaNfeViewModel : ViewModelBase
     [RelayCommand]
     private void SimularImportacaoXml()
     {
-        // Simula a leitura de um XML oficial da SEFAZ
         NumeroNota = "000.582.114";
         SerieNota = "2";
         ChaveAcesso = "4126 0900 1122 3300 0144 5500 2000 5821 1419 8271 9283";
@@ -301,7 +240,7 @@ public partial class EntradaNfeViewModel : ViewModelBase
             Ncm = "2203.00.00",
             UnidadeFornecedor = "PK",
             QuantidadeFaturada = 10,
-            FatorConversao = 12, // 10 packs x 12 latas = 120 latas
+            FatorConversao = 12,
             PrecoUnitarioFaturado = 38.40m,
             RateioDespesas = 15.00m
         });
@@ -314,13 +253,13 @@ public partial class EntradaNfeViewModel : ViewModelBase
             Ncm = "2202.10.00",
             UnidadeFornecedor = "FD",
             QuantidadeFaturada = 8,
-            FatorConversao = 6, // 8 fardos x 6 pets = 48 unidades
+            FatorConversao = 6,
             PrecoUnitarioFaturado = 42.00m,
             RateioDespesas = 20.00m
         });
 
         StatusDocumento = "XML IMPORTADO (AGUARDANDO CONFERÊNCIA)";
-        StatusCor = "#2980B9"; // Azul
+        StatusCor = "#2980B9";
         AtualizarTotais();
         MensagemFeedback = "✅ Arquivo XML processado com sucesso! Grade preenchida.";
     }
@@ -334,7 +273,6 @@ public partial class EntradaNfeViewModel : ViewModelBase
             return;
         }
 
-        // Prepara lista para registrar a entrada de estoque
         var listaRegistro = ItensNota
             .Where(i => i.ProdutoVinculado != null)
             .Select(i => (i.ProdutoVinculado!.Id, i.QuantidadeEstoque, i.CustoUnitarioEstoque))
@@ -342,7 +280,6 @@ public partial class EntradaNfeViewModel : ViewModelBase
 
         if (listaRegistro.Count == 0 && ProdutosDisponiveis.Count > 0)
         {
-            // Se nenhum item foi vinculado manualmente, vincula com os produtos existentes por ordem
             for (int i = 0; i < ItensNota.Count; i++)
             {
                 var p = ProdutosDisponiveis[i % ProdutosDisponiveis.Count];
@@ -357,7 +294,7 @@ public partial class EntradaNfeViewModel : ViewModelBase
             listaRegistro);
 
         StatusDocumento = "LANÇADA NO ESTOQUE & INTEGRADA AO FINANCEIRO";
-        StatusCor = "#27AE60"; // Verde
+        StatusCor = "#27AE60";
         MensagemFeedback = "🚀 NOTA FISCAL PROCESSADA COM SUCESSO! Estoque alimentado e duplicatas geradas.";
         _logger.LogInformation("NF-e {Numero} do fornecedor {Fornecedor} processada.", NumeroNota, FornecedorRazao);
     }

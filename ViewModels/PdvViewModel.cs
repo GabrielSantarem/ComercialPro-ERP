@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -7,16 +8,8 @@ using System.Threading.Tasks;
 using GetStartedApp.Models;
 using GetStartedApp.Services;
 using Microsoft.Extensions.Logging;
-using System;
 
 namespace GetStartedApp.ViewModels;
-
-public class ProdutoItem
-{
-    public Produto Produto { get; set; } = null!;
-    public int Quantidade { get; set; }
-    public decimal Total => Quantidade * (Produto?.Preco ?? 0m);
-}
 
 public partial class PdvViewModel : ViewModelBase
 {
@@ -30,66 +23,6 @@ public partial class PdvViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _totalVenda;
 
-    private void AtualizarTotal()
-    {
-        TotalVenda = Carrinho.Sum(x => x.Produto.Preco * x.Quantidade);
-        OnPropertyChanged(nameof(Acrescimo));
-        OnPropertyChanged(nameof(TotalComTaxa));
-        OnPropertyChanged(nameof(Troco));
-        OnPropertyChanged(nameof(PodeConfirmarPagamento));
-        ValorRecebido = TotalComTaxa;
-    }
-
-    // === CONTROLE DE MODAL DE PAGAMENTO ===
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsBloqueadoPorModal))]
-    public partial bool IsModalAberto { get; set; }
-
-    [ObservableProperty]
-    public partial string ClienteIdentificacao { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Acrescimo))]
-    [NotifyPropertyChangedFor(nameof(TotalComTaxa))]
-    [NotifyPropertyChangedFor(nameof(Troco))]
-    [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
-    public partial string FormaPagamentoSelecionada { get; set; } = "Dinheiro";
-    public ObservableCollection<string> FormasPagamento { get; } = ["Dinheiro", "PIX", "Débito", "Crédito (+2%)"];
-
-    public decimal Acrescimo => FormaPagamentoSelecionada == "Crédito (+2%)" ? TotalVenda * 0.02m : 0m;
-    public decimal TotalComTaxa => TotalVenda + Acrescimo;
-
-    // === CONTROLE DE TURNOS DE CAIXA (ABERTURA, SANGRIA, FECHAMENTO) ===
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(StatusCaixaTexto))]
-    [NotifyPropertyChangedFor(nameof(StatusCaixaCor))]
-    [NotifyPropertyChangedFor(nameof(SaldoCaixaDinheiroTexto))]
-    public partial CaixaTurno? TurnoAtual { get; set; }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(StatusCaixaTexto))]
-    [NotifyPropertyChangedFor(nameof(StatusCaixaCor))]
-    [NotifyPropertyChangedFor(nameof(SaldoCaixaDinheiroTexto))]
-    public partial bool IsCaixaAberto { get; set; }
-
-    public string StatusCaixaTexto => IsCaixaAberto ? $"🟢 CAIXA ABERTO (TURNO #{TurnoAtual?.Id})" : "🔴 CAIXA FECHADO";
-    public string StatusCaixaCor => IsCaixaAberto ? "#27AE60" : "#C0392B";
-    public string SaldoCaixaDinheiroTexto => IsCaixaAberto ? $"Gaveta: R$ {TurnoAtual?.SaldoEsperadoEmDinheiro:N2}" : "Abra o Caixa";
-
-    // === MODAL DE OPERAÇÕES DE CAIXA ===
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsBloqueadoPorModal))]
-    public partial bool ModalCaixaAberto { get; set; }
-
-    [ObservableProperty] public partial string TipoModalCaixa { get; set; } = "ABERTURA";
-    [ObservableProperty] public partial string TituloModalCaixa { get; set; } = string.Empty;
-    [ObservableProperty] public partial string DescricaoModalCaixa { get; set; } = string.Empty;
-    [ObservableProperty] public partial decimal ValorModalCaixa { get; set; }
-    [ObservableProperty] public partial string MotivoModalCaixa { get; set; } = string.Empty;
-    [ObservableProperty] public partial string MensagemCaixaErro { get; set; } = string.Empty;
-
-    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto;
-
     [ObservableProperty]
     private ProdutoItem? _itemSelecionado;
 
@@ -102,13 +35,7 @@ public partial class PdvViewModel : ViewModelBase
     [ObservableProperty]
     private string _textoPesquisa = string.Empty;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Troco))]
-    [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
-    private decimal _valorRecebido;
-
-    public decimal Troco => ValorRecebido > TotalComTaxa ? ValorRecebido - TotalComTaxa : 0m;
-    public bool PodeConfirmarPagamento => ValorRecebido >= TotalComTaxa && TotalComTaxa > 0;
+    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto;
 
     public PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> logger)
     {
@@ -127,15 +54,14 @@ public partial class PdvViewModel : ViewModelBase
         await AtualizarEstadoTurnoAsync();
     }
 
-    public async Task AtualizarEstadoTurnoAsync()
+    private void AtualizarTotal()
     {
-        TurnoAtual = await _pdvService.ObterTurnoAtualAsync();
-        IsCaixaAberto = TurnoAtual != null;
-        OnPropertyChanged(nameof(TurnoAtual));
-        OnPropertyChanged(nameof(IsCaixaAberto));
-        OnPropertyChanged(nameof(StatusCaixaTexto));
-        OnPropertyChanged(nameof(StatusCaixaCor));
-        OnPropertyChanged(nameof(SaldoCaixaDinheiroTexto));
+        TotalVenda = Carrinho.Sum(x => x.Produto.Preco * x.Quantidade);
+        OnPropertyChanged(nameof(Acrescimo));
+        OnPropertyChanged(nameof(TotalComTaxa));
+        OnPropertyChanged(nameof(Troco));
+        OnPropertyChanged(nameof(PodeConfirmarPagamento));
+        ValorRecebido = TotalComTaxa;
     }
 
     async partial void OnTextoPesquisaChanged(string value)
@@ -249,156 +175,10 @@ public partial class PdvViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void AbrirModalPagamento()
-    {
-        if (Carrinho.Count == 0)
-        {
-            _logger.LogWarning("Tentativa de fechar nota com carrinho vazio.");
-            return;
-        }
-
-        if (!IsCaixaAberto)
-        {
-            AbrirModalAberturaCaixa();
-            MensagemCaixaErro = "⚠️ Abra o caixa antes de finalizar qualquer venda!";
-            return;
-        }
-
-        _logger.LogInformation("Abrindo modal de pagamento. Total: R$ {Total}", TotalVenda);
-        IsModalAberto = true;
-        ValorRecebido = TotalComTaxa;
-    }
-
-    [RelayCommand]
-    private void FecharModalPagamento()
-    {
-        _logger.LogInformation("Fechando modal de pagamento (cancelado pelo usuário via ESC/Botão).");
-        IsModalAberto = false;
-    }
-
-    [RelayCommand]
-    private async Task ConfirmarPagamentoAsync()
-    {
-        if (!PodeConfirmarPagamento) return;
-
-        _logger.LogInformation("Confirmando Checkout do Carrinho. Itens: {Qtd}, Cliente: {Cliente}", Carrinho.Count, ClienteIdentificacao);
-        var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
-
-        await _pdvService.SalvarPedidoAsync(VendedorSelecionado!.Id, itens, FormaPagamentoSelecionada);
-
-        Carrinho.Clear();
-        TextoPesquisa = string.Empty;
-        ClienteIdentificacao = string.Empty;
-        ResultadosPesquisa.Clear();
-        AtualizarTotal();
-        IsModalAberto = false;
-        await AtualizarEstadoTurnoAsync();
-        _logger.LogInformation("Venda processada com sucesso. Modal fechado.");
-    }
-
-    [RelayCommand]
     private void LimparCarrinho()
     {
         _logger.LogInformation("Limpando todo o cupom (carrinho limpo).");
         Carrinho.Clear();
         AtualizarTotal();
-    }
-
-    // === COMANDOS DE OPERAÇÃO DE CAIXA (MODAL) ===
-
-    [RelayCommand]
-    public void AbrirModalAberturaCaixa()
-    {
-        TipoModalCaixa = "ABERTURA";
-        TituloModalCaixa = "🟢 ABERTURA DE TURNO DE CAIXA";
-        DescricaoModalCaixa = "Informe o fundo de troco inicial em dinheiro colocado na gaveta:";
-        ValorModalCaixa = 100.00m;
-        MotivoModalCaixa = "Fundo de troco inicial";
-        MensagemCaixaErro = string.Empty;
-        ModalCaixaAberto = true;
-    }
-
-    [RelayCommand]
-    public void AbrirModalSuprimento()
-    {
-        TipoModalCaixa = "SUPRIMENTO";
-        TituloModalCaixa = "➕ SUPRIMENTO DE CAIXA (ENTRADA DE TROCO)";
-        DescricaoModalCaixa = "Informe o valor em dinheiro que está entrando na gaveta:";
-        ValorModalCaixa = 50.00m;
-        MotivoModalCaixa = "Troco extra em moedas/cédulas";
-        MensagemCaixaErro = string.Empty;
-        ModalCaixaAberto = true;
-    }
-
-    [RelayCommand]
-    public void AbrirModalSangria()
-    {
-        TipoModalCaixa = "SANGRIA";
-        TituloModalCaixa = "➖ SANGRIA DE CAIXA (RETIRADA PARA COFRE)";
-        DescricaoModalCaixa = $"Saldo disponível na gaveta: R$ {TurnoAtual?.SaldoEsperadoEmDinheiro:N2}. Digite o valor a retirar:";
-        ValorModalCaixa = Math.Min(100.00m, TurnoAtual?.SaldoEsperadoEmDinheiro ?? 0m);
-        MotivoModalCaixa = "Recolhimento para o cofre pelo gerente";
-        MensagemCaixaErro = string.Empty;
-        ModalCaixaAberto = true;
-    }
-
-    [RelayCommand]
-    public void AbrirModalFechamentoCaixa()
-    {
-        TipoModalCaixa = "FECHAMENTO";
-        TituloModalCaixa = "🔒 FECHAMENTO CEGO DE TURNO";
-        DescricaoModalCaixa = "Conte o dinheiro físico presente na gaveta e informe o valor total apurado:";
-        ValorModalCaixa = 0m;
-        MotivoModalCaixa = "Fechamento de expediente";
-        MensagemCaixaErro = string.Empty;
-        ModalCaixaAberto = true;
-    }
-
-    [RelayCommand]
-    public void FecharModalCaixa()
-    {
-        ModalCaixaAberto = false;
-        MensagemCaixaErro = string.Empty;
-    }
-
-    [RelayCommand]
-    public async Task ConfirmarAcaoCaixaAsync()
-    {
-        try
-        {
-            MensagemCaixaErro = string.Empty;
-            var vendedorId = VendedorSelecionado?.Id ?? 1;
-
-            switch (TipoModalCaixa)
-            {
-                case "ABERTURA":
-                    await _pdvService.AbrirCaixaAsync(vendedorId, ValorModalCaixa, MotivoModalCaixa);
-                    break;
-
-                case "SUPRIMENTO":
-                    if (TurnoAtual == null) throw new InvalidOperationException("Nenhum turno aberto.");
-                    await _pdvService.RegistrarSuprimentoAsync(TurnoAtual.Id, ValorModalCaixa, MotivoModalCaixa);
-                    break;
-
-                case "SANGRIA":
-                    if (TurnoAtual == null) throw new InvalidOperationException("Nenhum turno aberto.");
-                    await _pdvService.RegistrarSangriaAsync(TurnoAtual.Id, ValorModalCaixa, MotivoModalCaixa);
-                    break;
-
-                case "FECHAMENTO":
-                    if (TurnoAtual == null) throw new InvalidOperationException("Nenhum turno aberto.");
-                    var turnoFechado = await _pdvService.FecharCaixaAsync(TurnoAtual.Id, ValorModalCaixa, MotivoModalCaixa);
-                    _logger.LogInformation("Fechamento concluído. Quebra: R$ {Quebra}", turnoFechado.DiferencaQuebra);
-                    break;
-            }
-
-            await AtualizarEstadoTurnoAsync();
-            ModalCaixaAberto = false;
-        }
-        catch (Exception ex)
-        {
-            MensagemCaixaErro = $"❌ {ex.Message}";
-            _logger.LogWarning(ex, "Erro na ação de caixa ({Tipo})", TipoModalCaixa);
-        }
     }
 }
