@@ -377,17 +377,25 @@ public partial class EntradaNfeViewModel : ViewModelBase
             listaRegistro.Add((prod.Id, item.QuantidadeEstoque, item.CustoUnitarioEstoque));
         }
 
+        // Prepara lista de parcelas financeiras a pagar
+        var listaParcelas = Parcelas
+            .Select(p => ($"{p.Numero:D2}", p.Vencimento, p.Valor))
+            .ToList();
+
         await _service.RegistrarEntradaMercadoriaAsync(
             $"{NumeroNota} (Série {SerieNota})",
             FornecedorRazao,
             $"Chave: {ChaveAcesso} | Frete: R$ {ValorFrete:N2}",
-            listaRegistro);
+            listaRegistro,
+            listaParcelas,
+            FornecedorCnpj);
 
         await CarregarCatalogoAsync();
 
         StatusDocumento = "LANÇADA NO ESTOQUE & INTEGRADA AO FINANCEIRO";
         StatusCor = "#27AE60";
-        MensagemFeedback = "🚀 NOTA FISCAL PROCESSADA COM SUCESSO! Estoque alimentado e catálogo atualizado.";
-        _logger.LogInformation("NF-e {Numero} do fornecedor {Fornecedor} processada com sucesso.", NumeroNota, FornecedorRazao);
+        MensagemFeedback = $"🚀 NOTA FISCAL PROCESSADA COM SUCESSO! Estoque alimentado e {listaParcelas.Count} títulos gerados no Contas a Pagar.";
+        _logger.LogInformation("NF-e {Numero} do fornecedor {Fornecedor} processada com sucesso com {Titulos} títulos financeiros.",
+            NumeroNota, FornecedorRazao, listaParcelas.Count);
     }
 }

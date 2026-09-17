@@ -49,12 +49,25 @@
                             <StackPanel VerticalAlignment="Center" Spacing="10">
                                 <TextBlock Text="🏢" FontSize="46" HorizontalAlignment="Center"/>
                                 <TextBlock Text="Entrada de NF-e" FontSize="19" FontWeight="Black" Foreground="#16A085" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Suprimentos, Custos, Fator de Conversão e Rateio" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                                <TextBlock Text="Importação SEFAZ, Custos, Fator e Duplicatas" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Button>
                     </Border>
 
-                    <!-- Módulo 4: Estoque -->
+                    <!-- Módulo 4: Gestão Financeira / Contas a Pagar -->
+                    <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
+                            BorderBrush="#9B59B6" BorderThickness="2" BoxShadow="0 4 12 0 #20000000">
+                        <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToFinanceiroCommand}" 
+                                Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" Padding="15">
+                            <StackPanel VerticalAlignment="Center" Spacing="10">
+                                <TextBlock Text="💼" FontSize="46" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Contas a Pagar" FontSize="19" FontWeight="Black" Foreground="#8E44AD" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Controle de Boletos, Títulos Vencidos, Baixa Bancária e Fornecedores" FontSize="13" Foreground="#7F8C8D" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <!-- Módulo 5: Estoque -->
                     <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
                             BorderBrush="#F39C12" BorderThickness="1" BoxShadow="0 4 12 0 #15000000">
                         <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToEstoqueCommand}" 
@@ -67,7 +80,7 @@
                         </Button>
                     </Border>
 
-                    <!-- Módulo 5: Gerencial -->
+                    <!-- Módulo 6: Gerencial -->
                     <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
                             BorderBrush="#8E44AD" BorderThickness="1" BoxShadow="0 4 12 0 #15000000">
                         <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToDashboardCommand}" 
@@ -80,7 +93,7 @@
                         </Button>
                     </Border>
 
-                    <!-- Módulo 6: Configurações -->
+                    <!-- Módulo 7: Configurações -->
                     <Border Background="White" CornerRadius="12" Margin="12" Width="270" Height="230"
                             BorderBrush="#7F8C8D" BorderThickness="1" BoxShadow="0 4 12 0 #15000000">
                         <Button Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateToConfiguracoesCommand}" 

@@ -74,6 +74,15 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void NavigateToFinanceiro()
+    {
+        var vm = _services.GetRequiredService<FinanceiroViewModel>();
+        _ = vm.InicializarAsync();
+        CurrentPage = vm;
+        IsHome = false;
+    }
+
+    [RelayCommand]
     private void NavigateToConfiguracoes() 
     {
         var vm = _services.GetRequiredService<ConfiguracoesViewModel>();

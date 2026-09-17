@@ -13,6 +13,7 @@ public class EntradaMercadoria
     public decimal ValorTotal { get; set; }
 
     public List<ItemEntradaMercadoria> Itens { get; set; } = [];
+    public List<ContaPagar> Titulos { get; set; } = [];
 }
 
 public class ItemEntradaMercadoria

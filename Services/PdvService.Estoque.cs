@@ -43,17 +43,20 @@ public partial class PdvService
         return await _db.EntradasMercadoria
             .Include(e => e.Itens)
             .ThenInclude(i => i.Produto)
+            .Include(e => e.Titulos)
             .OrderByDescending(e => e.DataEntrada)
             .ToListAsync();
     }
 
-    public async Task RegistrarEntradaMercadoriaAsync(
+    public async Task<EntradaMercadoria> RegistrarEntradaMercadoriaAsync(
         string numeroNota, 
         string fornecedor, 
         string observacao, 
-        List<(int ProdutoId, int Quantidade, decimal CustoUnitario)> itens)
+        List<(int ProdutoId, int Quantidade, decimal CustoUnitario)> itens,
+        List<(string NumeroParcela, DateTime Vencimento, decimal Valor)>? parcelas = null,
+        string fornecedorCnpj = "")
     {
-        if (itens.Count == 0) return;
+        if (itens.Count == 0) return new EntradaMercadoria();
 
         foreach (var item in itens)
         {
@@ -99,9 +102,35 @@ public partial class PdvService
 
             _db.EntradasMercadoria.Add(entrada);
             await _db.SaveChangesAsync();
+
+            // Integração Financeira: Cria as duplicatas em Contas a Pagar
+            if (parcelas != null && parcelas.Count > 0)
+            {
+                foreach (var p in parcelas)
+                {
+                    var titulo = new ContaPagar
+                    {
+                        EntradaMercadoriaId = entrada.Id,
+                        FornecedorNome = fornecedor,
+                        FornecedorCnpj = fornecedorCnpj,
+                        NumeroDocumento = numeroNota,
+                        NumeroParcela = p.NumeroParcela,
+                        Valor = p.Valor,
+                        DataEmissao = DateTime.Today,
+                        DataVencimento = p.Vencimento,
+                        Status = "PENDENTE"
+                    };
+                    _db.ContasPagar.Add(titulo);
+                }
+                await _db.SaveChangesAsync();
+            }
+
             await transaction.CommitAsync();
 
-            _logger.LogInformation("Entrada de Mercadoria NF '{Nota}' registrada com sucesso. Total: R$ {Total}", numeroNota, entrada.ValorTotal);
+            _logger.LogInformation("Entrada de Mercadoria NF '{Nota}' registrada com sucesso. Total: R$ {Total}. Títulos Financeiros gerados: {QtdTitulos}",
+                numeroNota, entrada.ValorTotal, parcelas?.Count ?? 0);
+
+            return entrada;
         }
         catch (Exception ex)
         {

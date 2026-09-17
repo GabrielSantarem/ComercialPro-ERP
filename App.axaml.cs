@@ -60,6 +60,7 @@ public partial class App : Application
             collection.AddTransient<DashboardViewModel>();      // Dashboard
             collection.AddTransient<EstoqueViewModel>();        // Estoque
             collection.AddTransient<EntradaNfeViewModel>();      // Entrada de Notas (NF-e)
+            collection.AddTransient<FinanceiroViewModel>();      // Gestão Financeira / Contas a Pagar
             collection.AddTransient<ConfiguracoesViewModel>();  // Configuracoes
 
             Services = collection.BuildServiceProvider();
