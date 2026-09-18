@@ -308,7 +308,21 @@ public partial class PdvService
             throw new ArgumentException("O valor recebido deve ser maior que zero.", nameof(valorRecebido));
         }
 
+        if (juros < 0)
+        {
+            throw new ArgumentException("Juros e multas não podem ser negativos.", nameof(juros));
+        }
+
+        if (desconto < 0)
+        {
+            throw new ArgumentException("O desconto concedido não pode ser negativo.", nameof(desconto));
+        }
+
         var conta = await _db.ContasReceber.FindAsync(contaReceberId);
+        if (conta != null && desconto > (conta.ValorOriginal + juros))
+        {
+            throw new ArgumentException("O desconto concedido não pode exceder o valor total da dívida com juros.", nameof(desconto));
+        }
         if (conta == null)
         {
             throw new InvalidOperationException("Título a receber não encontrado.");

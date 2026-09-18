@@ -26,4 +26,5 @@ public class ContaPagar
     public string Observacao { get; set; } = string.Empty;
 
     public bool IsVencido => Status == "PENDENTE" && DataVencimento.Date < DateTime.Today;
+    public int DiasAtraso => IsVencido ? (int)(DateTime.Today - DataVencimento.Date).TotalDays : 0;
 }

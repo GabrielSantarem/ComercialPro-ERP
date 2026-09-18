@@ -60,6 +60,11 @@ public partial class PdvService
 {
     public async Task<ResumoIndicadoresVendasDto> ObterIndicadoresVendasAsync(DateTime? inicio = null, DateTime? fim = null)
     {
+        if (inicio.HasValue && fim.HasValue && inicio.Value.Date > fim.Value.Date)
+        {
+            throw new ArgumentException("A data inicial não pode ser superior à data final.", nameof(inicio));
+        }
+
         var dataIni = inicio?.Date ?? DateTime.Today.AddDays(-30);
         var dataFim = fim?.Date.AddDays(1).AddTicks(-1) ?? DateTime.Today.AddDays(1).AddTicks(-1);
 
