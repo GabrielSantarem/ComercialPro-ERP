@@ -1,56 +1,266 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GetStartedApp.ViewModels"
+             xmlns:services="using:GetStartedApp.Services"
              x:Class="GetStartedApp.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
              
-    <!-- Tela de Dashboard -->
-    <Border Background="#F4F6F7" Padding="30">
-        <Grid RowDefinitions="Auto, *, Auto">
-            
-            <!-- Cabecalho -->
-            <StackPanel Grid.Row="0" Margin="0,0,0,30">
-                <TextBlock Text="📈 Painel Gerencial" FontSize="36" FontWeight="Bold" Foreground="#2C3E50"/>
-                <TextBlock Text="Visão geral do seu negócio em tempo real." FontSize="18" Foreground="#7F8C8D" Margin="0,5,0,0"/>
-            </StackPanel>
-            
-            <!-- Cards de Métricas -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    
-                    <!-- Card 1: Faturamento do Dia -->
-                    <Border Background="White" CornerRadius="12" Padding="25" Margin="15" Width="300" BoxShadow="0 4 15 0 #1A000000">
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="Faturamento Hoje" FontSize="18" Foreground="#95A5A6" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding FaturamentoHoje, StringFormat='{}R$ {0:N2}'}" FontSize="36" FontWeight="Black" Foreground="#2ECC71"/>
-                            <StackPanel Orientation="Horizontal" Spacing="5">
-                                <TextBlock Text="🛒" FontSize="16"/>
-                                <TextBlock Text="{Binding TotalVendasHoje, StringFormat='{}{0} Pedidos Fechados'}" FontSize="14" Foreground="#7F8C8D"/>
+    <Border Background="#F4F6F7" Padding="25">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="20">
+                
+                <!-- CABEÇALHO & FILTRO DE PERÍODO -->
+                <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="📊 INTELIGÊNCIA DE VENDAS &amp; DRE GERENCIAL" FontSize="24" FontWeight="Black" Foreground="#2C3E50"/>
+                                <Border Background="#2980B9" CornerRadius="4" Padding="8,2" VerticalAlignment="Center">
+                                    <TextBlock Text="INDICADORES EXECUTIVOS" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                                </Border>
                             </StackPanel>
+                            <TextBlock Text="Curva ABC de Produtos, Demonstrativo de Resultado (DRE), CMV Real e Desempenho Operacional" 
+                                       FontSize="14" Foreground="#7F8C8D" Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <TextBlock Text="Período:" FontWeight="Bold" VerticalAlignment="Center" Foreground="#34495E"/>
+                                <ComboBox ItemsSource="{Binding FiltrosPeriodo}" 
+                                          SelectedItem="{Binding FiltroPeriodoSelecionado}" 
+                                          Width="160" Height="36"/>
+                            </StackPanel>
+
+                            <Button Command="{Binding CarregarMetricasCommand}" Background="#34495E" Foreground="White" FontWeight="Bold" FontSize="13" Padding="14,10" CornerRadius="6" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="🔄"/>
+                                    <TextBlock Text="Atualizar"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- LOADER -->
+                <ProgressBar IsIndeterminate="True" Height="4" Foreground="#F39C12" IsVisible="{Binding Carregando}"/>
+
+                <!-- 1. CARDS DE INDICADORES PRINCIPAIS (KPIs) -->
+                <Grid ColumnDefinitions="*, *, *, *, *">
+                    <!-- Faturamento -->
+                    <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="16" Margin="0,0,8,0" BorderBrush="#27AE60" BorderThickness="2">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="💵 FATURAMENTO TOTAL" FontSize="11" FontWeight="Black" Foreground="#27AE60"/>
+                            <TextBlock Text="{Binding Resumo.TotalFaturado, StringFormat='R$ {0:N2}'}" FontSize="22" FontWeight="Black" Foreground="#2C3E50"/>
+                            <TextBlock Text="{Binding Resumo.QuantidadeVendas, StringFormat='{}{0} pedido(s) fechado(s)'}" FontSize="12" Foreground="#7F8C8D"/>
                         </StackPanel>
                     </Border>
 
-                    <!-- Card 2: Valor Alocado Estoque -->
-                    <Border Background="White" CornerRadius="12" Padding="25" Margin="15" Width="300" BoxShadow="0 4 15 0 #1A000000">
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="Patrimônio em Estoque" FontSize="18" Foreground="#95A5A6" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding ValorEstoque, StringFormat='{}R$ {0:N2}'}" FontSize="36" FontWeight="Black" Foreground="#2980B9"/>
-                            <StackPanel Orientation="Horizontal" Spacing="5">
-                                <TextBlock Text="📦" FontSize="16"/>
-                                <TextBlock Text="{Binding TotalProdutosEstoque, StringFormat='{}{0} Unidades Físicas'}" FontSize="14" Foreground="#7F8C8D"/>
-                            </StackPanel>
+                    <!-- Ticket Médio -->
+                    <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="16" Margin="4,0,4,0" BorderBrush="#3498DB" BorderThickness="2">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="🎯 TICKET MÉDIO" FontSize="11" FontWeight="Black" Foreground="#2980B9"/>
+                            <TextBlock Text="{Binding Resumo.TicketMedio, StringFormat='R$ {0:N2}'}" FontSize="22" FontWeight="Black" Foreground="#2C3E50"/>
+                            <TextBlock Text="{Binding Resumo.QuantidadeItensVendidos, StringFormat='{}{0} itens vendidos'}" FontSize="12" Foreground="#7F8C8D"/>
                         </StackPanel>
                     </Border>
-                    
-                </WrapPanel>
-            </ScrollViewer>
-            
-            <!-- Footer Loader -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" IsVisible="{Binding Carregando}">
-                <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="#F39C12"/>
-                <TextBlock Text=" Calculando Metricas..." Foreground="#F39C12" Margin="10,0,0,0"/>
+
+                    <!-- Lucro Bruto & Margem -->
+                    <Border Grid.Column="2" Background="White" CornerRadius="8" Padding="16" Margin="4,0,4,0" BorderBrush="#16A085" BorderThickness="2">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="📈 LUCRO BRUTO (MARGEM)" FontSize="11" FontWeight="Black" Foreground="#16A085"/>
+                            <TextBlock Text="{Binding Dre.LucroBruto, StringFormat='R$ {0:N2}'}" FontSize="22" FontWeight="Black" Foreground="#16A085"/>
+                            <TextBlock Text="{Binding Dre.MargemBrutaPercentual, StringFormat='Margem: {0:N1}%'}" FontSize="12" FontWeight="Bold" Foreground="#2C3E50"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Lucro Líquido Real -->
+                    <Border Grid.Column="3" Background="White" CornerRadius="8" Padding="16" Margin="4,0,4,0" BorderBrush="#8E44AD" BorderThickness="2">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="💼 LUCRO LÍQUIDO REAL" FontSize="11" FontWeight="Black" Foreground="#8E44AD"/>
+                            <TextBlock Text="{Binding Dre.LucroLiquido, StringFormat='R$ {0:N2}'}" FontSize="22" FontWeight="Black" Foreground="#8E44AD"/>
+                            <TextBlock Text="{Binding Dre.MargemLiquidaPercentual, StringFormat='Margem Líq: {0:N1}%'}" FontSize="12" FontWeight="Bold" Foreground="#2C3E50"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Estoque Físico -->
+                    <Border Grid.Column="4" Background="White" CornerRadius="8" Padding="16" Margin="8,0,0,0" BorderBrush="#E67E22" BorderThickness="2">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="📦 PATRIMÔNIO EM ESTOQUE" FontSize="11" FontWeight="Black" Foreground="#D35400"/>
+                            <TextBlock Text="{Binding ValorEstoque, StringFormat='R$ {0:N2}'}" FontSize="22" FontWeight="Black" Foreground="#2C3E50"/>
+                            <TextBlock Text="{Binding TotalProdutosEstoque, StringFormat='{}{0} un. cadastradas'}" FontSize="12" Foreground="#7F8C8D"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 2. DRE GERENCIAL (DEMONSTRATIVO DE RESULTADO) -->
+                <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <TextBlock Text="📋 Demonstrativo de Resultado do Exercício (DRE Gerencial)" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
+
+                        <Border Background="#F8F9F9" CornerRadius="6" Padding="15">
+                            <StackPanel Spacing="10">
+                                <!-- Linha 1: Receita Bruta -->
+                                <Grid ColumnDefinitions="*, 140, 100">
+                                    <TextBlock Grid.Column="0" Text="(+) RECEITA BRUTA DE VENDAS" FontWeight="Bold" Foreground="#27AE60" FontSize="14"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Dre.ReceitaBruta, StringFormat='R$ {0:N2}'}" FontWeight="Black" FontSize="14" Foreground="#27AE60" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="2" Text="100.0%" FontWeight="Bold" Foreground="#7F8C8D" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Separator Background="#BDC3C7" Height="1"/>
+
+                                <!-- Linha 2: CMV -->
+                                <Grid ColumnDefinitions="*, 140, 100">
+                                    <TextBlock Grid.Column="0" Text="(-) CMV - Custo das Mercadorias Vendidas (Custo Real de Aquisição)" FontWeight="SemiBold" Foreground="#C0392B" FontSize="13"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Dre.CustoMercadoriasVendidas, StringFormat='R$ {0:N2}'}" FontWeight="Bold" FontSize="13" Foreground="#C0392B" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="2" Text="" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Separator Background="#BDC3C7" Height="1"/>
+
+                                <!-- Linha 3: Lucro Bruto -->
+                                <Grid ColumnDefinitions="*, 140, 100">
+                                    <TextBlock Grid.Column="0" Text="(=) LUCRO BRUTO OPERACIONAL (MARGEM DE CONTRIBUIÇÃO)" FontWeight="Black" Foreground="#2C3E50" FontSize="14"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Dre.LucroBruto, StringFormat='R$ {0:N2}'}" FontWeight="Black" FontSize="14" Foreground="#2C3E50" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Dre.MargemBrutaPercentual, StringFormat='{}{0:N1}%'}" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Separator Background="#BDC3C7" Height="1"/>
+
+                                <!-- Linha 4: Despesas Pagas -->
+                                <Grid ColumnDefinitions="*, 140, 100">
+                                    <TextBlock Grid.Column="0" Text="(-) DESPESAS OPERACIONAIS PAGAS (Contas a Pagar Liquidadas no Período)" FontWeight="SemiBold" Foreground="#D35400" FontSize="13"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Dre.DespesasOperacionaisPagas, StringFormat='R$ {0:N2}'}" FontWeight="Bold" FontSize="13" Foreground="#D35400" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="2" Text="" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Separator Background="#2C3E50" Height="2"/>
+
+                                <!-- Linha 5: Lucro Líquido -->
+                                <Grid ColumnDefinitions="*, 140, 100">
+                                    <TextBlock Grid.Column="0" Text="(=) LUCRO LÍQUIDO DO PERÍODO" FontWeight="Black" Foreground="#8E44AD" FontSize="16"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Dre.LucroLiquido, StringFormat='R$ {0:N2}'}" FontWeight="Black" FontSize="16" Foreground="#8E44AD" HorizontalAlignment="Right"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Dre.MargemLiquidaPercentual, StringFormat='{}{0:N1}%'}" FontWeight="Black" FontSize="15" Foreground="#8E44AD" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- 3. CURVA ABC DE PRODUTOS -->
+                <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="🏆 Curva ABC de Produtos (Classificação de Faturamento)" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
+                                <TextBlock Text="Classe A (Até 80% do faturamento) | Classe B (Próximos 15%) | Classe C (Últimos 5%)" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Separator Background="#ECF0F1" Height="1"/>
+
+                        <!-- CABEÇALHO TABELA ABC -->
+                        <Border Background="#F8F9F9" Padding="12,8" CornerRadius="4">
+                            <Grid ColumnDefinitions="80, 2*, 70, 110, 110, 110, 80, 80, 80">
+                                <TextBlock Grid.Column="0" Text="CLASSE" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="PRODUTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="QTD." FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="FATURAMENTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="4" Text="CUSTO (CMV)" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="5" Text="LUCRO BRUTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="6" Text="MARGEM" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="7" Text="% TOTAL" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="8" Text="% ACUM." FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- LISTA DE ITENS ABC -->
+                        <ItemsControl ItemsSource="{Binding ItensCurvaAbc}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="services:ItemCurvaAbcDto">
+                                    <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="12,10">
+                                        <Grid ColumnDefinitions="80, 2*, 70, 110, 110, 110, 80, 80, 80" VerticalAlignment="Center">
+                                            
+                                            <!-- Badge Classe ABC -->
+                                            <Border Grid.Column="0" CornerRadius="4" Padding="8,3" HorizontalAlignment="Left" Background="#E8F8F5">
+                                                <TextBlock Text="{Binding ClasseAbc, StringFormat='Classe {0}'}" FontWeight="Black" FontSize="11" Foreground="#27AE60"/>
+                                            </Border>
+
+                                            <!-- Nome e Código -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ProdutoNome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding CodigoBarras}" Foreground="#95A5A6" FontSize="11"/>
+                                            </StackPanel>
+
+                                            <!-- Quantidade -->
+                                            <TextBlock Grid.Column="2" Text="{Binding QuantidadeVendida}" FontWeight="Bold" Foreground="#34495E" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                                            <!-- Faturamento -->
+                                            <TextBlock Grid.Column="3" Text="{Binding FaturamentoTotal, StringFormat='R$ {0:N2}'}" FontWeight="Black" Foreground="#27AE60" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                                            <!-- Custo -->
+                                            <TextBlock Grid.Column="4" Text="{Binding CustoTotal, StringFormat='R$ {0:N2}'}" Foreground="#C0392B" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                                            <!-- Lucro -->
+                                            <TextBlock Grid.Column="5" Text="{Binding LucroBrutoTotal, StringFormat='R$ {0:N2}'}" FontWeight="Bold" Foreground="#2C3E50" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                                            <!-- Margem -->
+                                            <TextBlock Grid.Column="6" Text="{Binding MargemPercentual, StringFormat='{}{0:N1}%'}" FontWeight="Bold" Foreground="#16A085" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                                            <!-- % Total -->
+                                            <TextBlock Grid.Column="7" Text="{Binding PercentualDoTotal, StringFormat='{}{0:N1}%'}" Foreground="#7F8C8D" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                                            <!-- % Acumulado -->
+                                            <TextBlock Grid.Column="8" Text="{Binding PercentualAcumulado, StringFormat='{}{0:N1}%'}" FontWeight="Bold" Foreground="#2C3E50" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Nenhuma venda registrada no período selecionado para análise de Curva ABC." 
+                                   Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="15"
+                                   IsVisible="{Binding !ItensCurvaAbc.Count}"/>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- 4. RANKING DE VENDEDORES -->
+                <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <TextBlock Text="👨‍💼 Desempenho e Ranking de Vendedores / Atendentes" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
+
+                        <Border Background="#F8F9F9" Padding="12,8" CornerRadius="4">
+                            <Grid ColumnDefinitions="2*, 120, 140, 140">
+                                <TextBlock Grid.Column="0" Text="VENDEDOR" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="QTD. VENDAS" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Text="TOTAL FATURADO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="TICKET MÉDIO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
+
+                        <ItemsControl ItemsSource="{Binding RankingVendedores}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="services:VendedorDesempenhoDto">
+                                    <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="12,10">
+                                        <Grid ColumnDefinitions="2*, 120, 140, 140" VerticalAlignment="Center">
+                                            <TextBlock Grid.Column="0" Text="{Binding VendedorNome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="13"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding QuantidadeVendas}" FontWeight="SemiBold" Foreground="#34495E" FontSize="13" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding TotalFaturado, StringFormat='R$ {0:N2}'}" FontWeight="Black" Foreground="#27AE60" FontSize="13" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding TicketMedio, StringFormat='R$ {0:N2}'}" FontWeight="Bold" Foreground="#2980B9" FontSize="13" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Nenhum atendimento de vendedor registrado no período selecionado." 
+                                   Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="15"
+                                   IsVisible="{Binding !RankingVendedores.Count}"/>
+
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
-            
-        </Grid>
+        </ScrollViewer>
     </Border>
 </UserControl>
