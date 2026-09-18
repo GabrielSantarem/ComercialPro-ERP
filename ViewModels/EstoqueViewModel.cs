@@ -68,6 +68,7 @@ public partial class EstoqueViewModel : ViewModelBase
         _ = CarregarHistoricoEntradasAsync();
         _ = CarregarHistoricoAjustesAsync();
         _ = CarregarAuditoriaAsync();
+        _ = CalcularSugestaoComprasAsync();
     }
 
     partial void OnSomenteEstoqueCriticoChanged(bool value)
@@ -384,6 +385,48 @@ public partial class EstoqueViewModel : ViewModelBase
         }
 
         _ = LimparAvisoDepoisAsync();
+    }
+
+
+    // === ABA: PONTO DE PEDIDO & SUGESTÃO DE COMPRAS ===
+    public ObservableCollection<ItemSugestaoCompraDto> ItensSugestaoCompra { get; } = [];
+    [ObservableProperty] public partial ResumoSugestaoComprasDto ResumoCompras { get; set; } = new();
+
+    [ObservableProperty] public partial int ComprasDiasHistorico { get; set; } = 30;
+    [ObservableProperty] public partial int ComprasLeadTime { get; set; } = 7;
+    [ObservableProperty] public partial int ComprasCobertura { get; set; } = 15;
+    [ObservableProperty] public partial string ComprasFornecedorCotacao { get; set; } = string.Empty;
+
+    [ObservableProperty] public partial bool ExibirModalCotacao { get; set; } = false;
+    [ObservableProperty] public partial string FolhaCotacaoTexto { get; set; } = string.Empty;
+
+    [RelayCommand]
+    public async Task CalcularSugestaoComprasAsync()
+    {
+        ItensSugestaoCompra.Clear();
+        var resumo = await _service.CalcularSugestaoComprasAsync(ComprasDiasHistorico, ComprasLeadTime, ComprasCobertura);
+        ResumoCompras = resumo;
+
+        foreach (var item in resumo.Itens)
+        {
+            ItensSugestaoCompra.Add(item);
+        }
+
+        MensagemAviso = $"Sugestão de compras recalculada: {resumo.TotalItensParaComprar} produtos com necessidade de reposição.";
+        _ = LimparAvisoDepoisAsync();
+    }
+
+    [RelayCommand]
+    public void GerarFolhaCotacao()
+    {
+        FolhaCotacaoTexto = _service.GerarTextoCotacaoFornecedor(ItensSugestaoCompra, ComprasFornecedorCotacao);
+        ExibirModalCotacao = true;
+    }
+
+    [RelayCommand]
+    public void FecharModalCotacao()
+    {
+        ExibirModalCotacao = false;
     }
 
 }

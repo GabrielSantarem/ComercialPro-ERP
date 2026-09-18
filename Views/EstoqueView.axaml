@@ -536,6 +536,160 @@
                         </Grid>
                     </Grid>
                 </TabItem>
+
+                <!-- ABA 6: PONTO DE PEDIDO & SUGESTÃO DE COMPRAS -->
+                <TabItem Header="🛒 Ponto de Pedido &amp; Compras" FontSize="16" FontWeight="SemiBold">
+                    <Grid RowDefinitions="Auto, *">
+                        <!-- BANNER KPIS DE COMPRAS -->
+                        <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#E9ECEF" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                            <Grid ColumnDefinitions="*, *, *, *, Auto">
+                                <!-- Card 1: Itens para Comprar -->
+                                <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,10,0">
+                                    <StackPanel>
+                                        <TextBlock Text="ITENS PARA COMPRA" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                        <TextBlock Text="{Binding ResumoCompras.TotalItensParaComprar, StringFormat='{}{0} produtos'}" FontSize="18" FontWeight="Black" Foreground="#2980B9" Margin="0,4,0,0"/>
+                                        <TextBlock Text="{Binding ResumoCompras.TotalProdutosAnalisados, StringFormat='{}de {0} no catálogo'}" FontSize="11" Foreground="#7F8C8D" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Card 2: Ruptura Crítica (Estoque Zerado) -->
+                                <Border Grid.Column="1" Background="#FDEDEC" BorderBrush="#F5B7B1" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,10,0">
+                                    <StackPanel>
+                                        <TextBlock Text="RUPTURA CRÍTICA (FALTA)" FontSize="11" FontWeight="Bold" Foreground="#C0392B"/>
+                                        <TextBlock Text="{Binding ResumoCompras.TotalItensEmRuptura, StringFormat='{}{0} itens zerados'}" FontSize="18" FontWeight="Black" Foreground="#C0392B" Margin="0,4,0,0"/>
+                                        <TextBlock Text="Prateleira vazia imediata" FontSize="11" Foreground="#C0392B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Card 3: Orçamento Total Estimado -->
+                                <Border Grid.Column="2" Background="#E8F8F5" BorderBrush="#A3E4D7" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,10,0">
+                                    <StackPanel>
+                                        <TextBlock Text="ORÇAMENTO ESTIMADO" FontSize="11" FontWeight="Bold" Foreground="#16A085"/>
+                                        <TextBlock Text="{Binding ResumoCompras.OrcamentoTotalEstimado, StringFormat='{}R$ {0:N2}'}" FontSize="18" FontWeight="Black" Foreground="#16A085" Margin="0,4,0,0"/>
+                                        <TextBlock Text="Custo de reposição total" FontSize="11" Foreground="#16A085" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Card 4: Cobertura / Lead Time -->
+                                <Border Grid.Column="3" Background="White" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,15,0">
+                                    <StackPanel>
+                                        <TextBlock Text="PARÂMETROS DO PEDIDO" FontSize="11" FontWeight="Bold" Foreground="#2C3E50"/>
+                                        <TextBlock Text="{Binding ComprasCobertura, StringFormat='{}Cobertura: {0} dias'}" FontSize="14" FontWeight="Bold" Foreground="#2C3E50" Margin="0,4,0,0"/>
+                                        <TextBlock Text="{Binding ComprasLeadTime, StringFormat='{}Prazo Fornecedor: {0} dias'}" FontSize="11" Foreground="#7F8C8D" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Botões de Ação Rápida -->
+                                <StackPanel Grid.Column="4" VerticalAlignment="Center" Spacing="8">
+                                    <Button Content="📄 Gerar Cotação para Fornecedor" Command="{Binding GerarFolhaCotacaoCommand}" Background="#8E44AD" Foreground="White" FontWeight="Bold" Padding="14,8" CornerRadius="6" Cursor="Hand"/>
+                                    <Button Content="🔄 Recalcular Necessidade" Command="{Binding CalcularSugestaoComprasCommand}" Background="#34495E" Foreground="White" FontWeight="SemiBold" Padding="14,6" CornerRadius="6" Cursor="Hand"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- ÁREA DA TABELA & PARÂMETROS -->
+                        <Grid Grid.Row="1" RowDefinitions="Auto, *">
+                            <!-- BARRA DE PARÂMETROS -->
+                            <Border Grid.Row="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,0,10">
+                                <Grid ColumnDefinitions="*, *, *, 2*, Auto" VerticalAlignment="Center">
+                                    <!-- Histórico -->
+                                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                        <TextBlock Text="Histórico Vendas (Dias):" FontSize="11" FontWeight="Bold" Foreground="#555"/>
+                                        <NumericUpDown Value="{Binding ComprasDiasHistorico, Mode=TwoWay}" Minimum="1" Maximum="365" Height="36" FormatString="0"/>
+                                    </StackPanel>
+
+                                    <!-- Lead Time -->
+                                    <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                        <TextBlock Text="Prazo Entrega Fornec. (Dias):" FontSize="11" FontWeight="Bold" Foreground="#555"/>
+                                        <NumericUpDown Value="{Binding ComprasLeadTime, Mode=TwoWay}" Minimum="0" Maximum="120" Height="36" FormatString="0"/>
+                                    </StackPanel>
+
+                                    <!-- Cobertura -->
+                                    <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                                        <TextBlock Text="Cobertura Alvo (Dias):" FontSize="11" FontWeight="Bold" Foreground="#555"/>
+                                        <NumericUpDown Value="{Binding ComprasCobertura, Mode=TwoWay}" Minimum="1" Maximum="180" Height="36" FormatString="0"/>
+                                    </StackPanel>
+
+                                    <!-- Fornecedor Alvo -->
+                                    <StackPanel Grid.Column="3" Margin="0,0,10,0">
+                                        <TextBlock Text="Nome do Fornecedor / Distribuidor (p/ Cotação):" FontSize="11" FontWeight="Bold" Foreground="#555"/>
+                                        <TextBox Text="{Binding ComprasFornecedorCotacao, Mode=TwoWay}" Height="36" VerticalContentAlignment="Center" PlaceholderText="Ex: Distribuidora Brasil Atacadista"/>
+                                    </StackPanel>
+
+                                    <!-- Botão Recalcular -->
+                                    <Button Grid.Column="4" Content="⚡ Aplicar Filtros" Command="{Binding CalcularSugestaoComprasCommand}" Background="#27AE60" Foreground="White" FontWeight="Bold" Height="36" Padding="15,0" VerticalAlignment="Bottom" CornerRadius="6" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- TABELA DE SUGESTÃO DE COMPRAS -->
+                            <Border Grid.Row="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+                                <Grid RowDefinitions="Auto, *">
+                                    <!-- Cabeçalho -->
+                                    <Border Grid.Row="0" Background="#2C3E50" Padding="12,10">
+                                        <Grid ColumnDefinitions="1.5*, 3*, 1.2*, 1.2*, 1.2*, 1.5*, 1.5*, 1.5*">
+                                            <TextBlock Grid.Column="0" Text="Código / EAN" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                            <TextBlock Grid.Column="1" Text="Produto" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                                            <TextBlock Grid.Column="2" Text="Estoque Atual" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="3" Text="Giro / Dia" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="4" Text="Pto. Pedido" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="5" Text="Qtd Sugerida" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                                            <TextBlock Grid.Column="6" Text="Custo Previsto" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="7" Text="Status Reposição" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Lista de Sugestão -->
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding ItensSugestaoCompra}" Background="Transparent" BorderThickness="0">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="12,8" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1">
+                                                    <Grid ColumnDefinitions="1.5*, 3*, 1.2*, 1.2*, 1.2*, 1.5*, 1.5*, 1.5*" VerticalAlignment="Center">
+                                                        <TextBlock Grid.Column="0" Text="{Binding CodigoBarras}" FontSize="12" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding ProdutoNome}" FontWeight="SemiBold" FontSize="13" Foreground="#2C3E50" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="2" Text="{Binding EstoqueAtual, StringFormat='{}{0} un'}" FontSize="13" FontWeight="Bold" Foreground="#34495E" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="3" Text="{Binding ConsumoMedioDiario, StringFormat='{}{0:N2}/dia'}" FontSize="12" Foreground="#7F8C8D" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="4" Text="{Binding PontoDePedido, StringFormat='{}{0} un'}" FontSize="13" FontWeight="Bold" Foreground="#D35400" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                        
+                                                        <!-- Quantidade Sugerida com Destaque -->
+                                                        <Border Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center" Background="#EBF5FB" CornerRadius="6" Padding="10,4">
+                                                            <TextBlock Text="{Binding QuantidadeSugerida, StringFormat='{}{0} un'}" FontWeight="Black" FontSize="14" Foreground="#2980B9"/>
+                                                        </Border>
+
+                                                        <TextBlock Grid.Column="6" Text="{Binding CustoTotalEstimado, StringFormat='{}R$ {0:N2}'}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#27AE60"/>
+                                                        
+                                                        <!-- Badge de Status -->
+                                                        <Border Grid.Column="7" HorizontalAlignment="Center" VerticalAlignment="Center" CornerRadius="12" Padding="10,3" Background="#EAECEE">
+                                                            <TextBlock Text="{Binding StatusReposicao}" FontSize="11" FontWeight="Bold" Foreground="#2C3E50"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- MODAL DE VISUALIZAÇÃO DA COTAÇÃO DE COMPRAS -->
+                            <Border Grid.Row="0" Grid.RowSpan="2" Background="#AA000000" IsVisible="{Binding ExibirModalCotacao}" Padding="50">
+                                <Border Background="White" CornerRadius="10" Padding="25" MaxWidth="900" MaxHeight="650">
+                                    <Grid RowDefinitions="Auto, *, Auto">
+                                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,15">
+                                            <TextBlock Grid.Column="0" Text="📄 Solicitação de Cotação para Fornecedor" FontSize="18" FontWeight="Black" Foreground="#2C3E50"/>
+                                            <Button Grid.Column="1" Content="✕ Fechar" Command="{Binding FecharModalCotacaoCommand}" Background="#E74C3C" Foreground="White" FontWeight="Bold" Padding="10,5" CornerRadius="6" Cursor="Hand"/>
+                                        </Grid>
+
+                                        <TextBox Grid.Row="1" Text="{Binding FolhaCotacaoTexto}" FontFamily="Monospace" FontSize="12" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"/>
+
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,15,0,0">
+                                            <TextBlock Text="💡 Copie ou envie este texto pronto diretamente por WhatsApp ou E-mail para o representante." FontSize="12" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                            <Button Content="Concluir Visualização" Command="{Binding FecharModalCotacaoCommand}" Background="#2980B9" Foreground="White" FontWeight="Bold" Padding="15,8" CornerRadius="6" Cursor="Hand"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </TabItem>
             </TabControl>
         </Grid>
     </Border>
