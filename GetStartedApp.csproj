@@ -38,6 +38,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.12" />
+    <PackageReference Include="Zeus.Net.NFe.Danfe.QuestPdf" Version="2026.8.18.2047" />
     <PackageReference Include="Zeus.Net.NFe.NFCe" Version="2026.8.18.2047" />
   </ItemGroup>
 </Project>

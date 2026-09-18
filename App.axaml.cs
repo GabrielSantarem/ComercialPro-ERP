@@ -56,9 +56,10 @@ public partial class App : Application
             collection.AddSingleton<CupomTermicoService>();
             collection.AddSingleton<EstacaoKioskService>();
 
-            // Módulo Fiscal NFC-e (Zeus Automação)
+            // Módulo Fiscal NFC-e (Zeus Automação & DANFE A4 QuestPDF)
             collection.AddSingleton<ConfiguracaoFiscalEmpresa>();
             collection.AddSingleton<DanfeNfceTermicaService>();
+            collection.AddSingleton<DanfeA4PdfService>();
             collection.AddSingleton<NfceEmissaoService>();
             
             // Nossas ViewModels

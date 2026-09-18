@@ -19,6 +19,7 @@ public partial class PdvViewModel : ViewModelBase
     private readonly ILogger<PdvViewModel> _logger;
     private readonly NfceEmissaoService? _nfceService;
     private readonly ConfiguracaoFiscalEmpresa? _fiscalConfig;
+    private readonly DanfeA4PdfService? _danfePdfService;
 
     public ObservableCollection<ProdutoItem> Carrinho { get; } = [];
     public ObservableCollection<Produto> ResultadosPesquisa { get; } = [];
@@ -45,12 +46,14 @@ public partial class PdvViewModel : ViewModelBase
         PdvService pdvService, 
         ILogger<PdvViewModel> logger,
         NfceEmissaoService? nfceService = null,
-        ConfiguracaoFiscalEmpresa? fiscalConfig = null)
+        ConfiguracaoFiscalEmpresa? fiscalConfig = null,
+        DanfeA4PdfService? danfePdfService = null)
     {
         _pdvService = pdvService;
         _logger = logger;
         _nfceService = nfceService;
         _fiscalConfig = fiscalConfig;
+        _danfePdfService = danfePdfService;
     }
 
     public async Task InicializarAsync()

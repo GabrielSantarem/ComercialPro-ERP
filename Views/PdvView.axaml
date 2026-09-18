@@ -358,12 +358,12 @@
             </Border>
         </Border>
 
-        <!-- CAMADA 5: MODAL DE VISUALIZAÇÃO DA NFC-e EMITIDA -->
+        <!-- CAMADA 5: MODAL DE VISUALIZAÇÃO DA NFC-e EMITIDA (TÉRMICA E DANFE A4) -->
         <Border Background="#F2000000" 
                 IsVisible="{Binding ModalNfceEmitidaAberto}" 
                 IsHitTestVisible="{Binding ModalNfceEmitidaAberto}"
                 ZIndex="120">
-            <Border Background="White" Width="680" CornerRadius="12" Padding="25" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #44000000">
+            <Border Background="White" Width="720" CornerRadius="12" Padding="25" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #44000000">
                 <Grid RowDefinitions="Auto, *, Auto">
                     <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,10">
                         <TextBlock Text="{Binding UltimaNfceMensagemStatus}" FontSize="18" FontWeight="Black" Foreground="#27AE60"/>
@@ -376,9 +376,11 @@
                         </ScrollViewer>
                     </Border>
 
-                    <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0,15,0,0">
-                        <Button Grid.Column="0" Command="{Binding FecharModalNfceEmitidaCommand}" Content="[ESC] Fechar Visualização" Background="#7F8C8D" Foreground="White" FontWeight="Bold" FontSize="14" Padding="10" Margin="0,0,5,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
-                        <Button Grid.Column="1" Command="{Binding FecharModalNfceEmitidaCommand}" Content="🖨️ [ENTER] Imprimir Cupom Térmico" Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="14" Padding="10" Margin="5,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                    <!-- Ações de Impressão (Cupom Térmico 80mm & Folha A4 em PDF) -->
+                    <Grid Grid.Row="2" ColumnDefinitions="*, 1.4*, 1.4*" Margin="0,15,0,0">
+                        <Button Grid.Column="0" Command="{Binding FecharModalNfceEmitidaCommand}" Content="[ESC] Fechar" Background="#7F8C8D" Foreground="White" FontWeight="Bold" FontSize="13" Padding="10" Margin="0,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="1" Command="{Binding VisualizarDanfeA4PdfCommand}" Content="📄 [F5] Imprimir DANFE A4 (PDF)" Background="#8E44AD" Foreground="White" FontWeight="Bold" FontSize="13" Padding="10" Margin="4,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="2" Command="{Binding FecharModalNfceEmitidaCommand}" Content="🖨️ [ENTER] Imprimir Térmico" Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="13" Padding="10" Margin="4,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
                     </Grid>
                 </Grid>
             </Border>

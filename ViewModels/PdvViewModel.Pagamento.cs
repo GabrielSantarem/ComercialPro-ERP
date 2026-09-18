@@ -42,7 +42,7 @@ public partial class PdvViewModel
     public decimal Troco => ValorRecebido > TotalComTaxa ? ValorRecebido - TotalComTaxa : 0m;
     public bool PodeConfirmarPagamento => ValorRecebido >= TotalComTaxa && TotalComTaxa > 0;
 
-    // === CONTROLE FISCAL NFC-e (ZEUS) ===
+    // === CONTROLE FISCAL NFC-e (ZEUS) & DANFE A4 ===
     [ObservableProperty]
     public partial bool EmitirNfceAoFinalizar { get; set; } = true;
 
@@ -58,6 +58,12 @@ public partial class PdvViewModel
 
     [ObservableProperty]
     public partial string? UltimaNfceMensagemStatus { get; set; }
+
+    [ObservableProperty]
+    public partial string? UltimoCaminhoPdfA4 { get; set; }
+
+    private DadosEmissaoNfce? _ultimosDadosNfce;
+    private RetornoEmissaoNfce? _ultimoRetornoNfce;
 
     [RelayCommand]
     public void AbrirModalPagamento()
@@ -92,6 +98,31 @@ public partial class PdvViewModel
     public void FecharModalNfceEmitida()
     {
         ModalNfceEmitidaAberto = false;
+    }
+
+    [RelayCommand]
+    public void VisualizarDanfeA4Pdf()
+    {
+        if (_danfePdfService == null || _fiscalConfig == null || _ultimosDadosNfce == null || _ultimoRetornoNfce == null)
+        {
+            _logger.LogWarning("Não há dados fiscais para gerar o DANFE A4 PDF.");
+            return;
+        }
+
+        try
+        {
+            _logger.LogInformation("Gerando DANFE A4 em PDF para a chave {Chave}...", _ultimoRetornoNfce.ChaveAcesso);
+            var pdfBytes = _danfePdfService.GerarDanfeA4Pdf(_ultimosDadosNfce, _ultimoRetornoNfce, _fiscalConfig);
+            var caminho = _danfePdfService.SalvarPdf(pdfBytes, _ultimoRetornoNfce.ChaveAcesso);
+            UltimoCaminhoPdfA4 = caminho;
+
+            _logger.LogInformation("Abrindo visualizador nativo e tela de impressão para: {Caminho}", caminho);
+            _danfePdfService.AbrirVisualizacaoEImpressao(caminho);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao gerar ou abrir DANFE A4 em PDF.");
+        }
     }
 
     [RelayCommand]
@@ -161,6 +192,9 @@ public partial class PdvViewModel
             var retornoNfce = _nfceService.EmitirNfce(dadosNfce, _fiscalConfig);
             if (retornoNfce.Sucesso)
             {
+                _ultimosDadosNfce = dadosNfce;
+                _ultimoRetornoNfce = retornoNfce;
+
                 UltimaNfceDanfeTexto = retornoNfce.DanfeTextoTermica;
                 UltimaNfceChaveAcesso = retornoNfce.ChaveAcesso;
                 UltimaNfceMensagemStatus = $"✅ NFC-e Nº {retornoNfce.NumeroNota:D6} emitida e assinada com sucesso!";
