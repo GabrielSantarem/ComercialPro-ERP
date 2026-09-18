@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace GetStartedApp.ViewModels;
 
 public partial class PdvViewModel
 {
-    // === CONTROLE DE MODAL DE PAGAMENTO ===
+    // === CONTROLE DE MODAL DE PAGAMENTO & SPLIT PAYMENT ===
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsBloqueadoPorModal))]
     public partial bool IsModalAberto { get; set; }
@@ -26,6 +27,7 @@ public partial class PdvViewModel
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Acrescimo))]
     [NotifyPropertyChangedFor(nameof(TotalComTaxa))]
+    [NotifyPropertyChangedFor(nameof(SaldoRestante))]
     [NotifyPropertyChangedFor(nameof(Troco))]
     [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
     public partial string FormaPagamentoSelecionada { get; set; } = "Dinheiro";
@@ -34,13 +36,25 @@ public partial class PdvViewModel
     public decimal Acrescimo => FormaPagamentoSelecionada == "Crédito (+2%)" ? TotalVenda * 0.02m : 0m;
     public decimal TotalComTaxa => TotalVenda + Acrescimo;
 
+    // Lista de múltiplas parcelas / formas de pagamento (Split Payment)
+    public ObservableCollection<ItemPagamentoCheckout> PagamentosAdicionados { get; } = [];
+
+    public decimal TotalPago => PagamentosAdicionados.Sum(p => p.Valor);
+    
+    public decimal SaldoRestante => Math.Max(0, TotalComTaxa - TotalPago);
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Troco))]
     [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
     private decimal _valorRecebido;
 
-    public decimal Troco => ValorRecebido > TotalComTaxa ? ValorRecebido - TotalComTaxa : 0m;
-    public bool PodeConfirmarPagamento => ValorRecebido >= TotalComTaxa && TotalComTaxa > 0;
+    public decimal Troco => PagamentosAdicionados.Count > 0
+        ? (TotalPago > TotalComTaxa ? TotalPago - TotalComTaxa : 0m)
+        : (ValorRecebido > TotalComTaxa ? ValorRecebido - TotalComTaxa : 0m);
+
+    public bool PodeConfirmarPagamento => PagamentosAdicionados.Count > 0
+        ? TotalPago >= TotalComTaxa && TotalComTaxa > 0
+        : ValorRecebido >= TotalComTaxa && TotalComTaxa > 0;
 
     // === CONTROLE FISCAL NFC-e (ZEUS) & DANFE A4 ===
     [ObservableProperty]
@@ -81,9 +95,44 @@ public partial class PdvViewModel
             return;
         }
 
-        _logger.LogInformation("Abrindo modal de pagamento. Total: R$ {Total}", TotalVenda);
+        _logger.LogInformation("Abrindo modal de pagamento. Total Venda: {Total}", TotalVenda);
+        ClienteIdentificacao = string.Empty;
+        FormaPagamentoSelecionada = "Dinheiro";
+        PagamentosAdicionados.Clear();
         IsModalAberto = true;
         ValorRecebido = TotalComTaxa;
+        NotificarValoresPagamento();
+    }
+
+    public void AbrirModalPagamentoParaPedidoBalcao(PedidoBalcao pedido)
+    {
+        if (!IsCaixaAberto)
+        {
+            AbrirModalAberturaCaixa();
+            MensagemCaixaErro = "⚠️ Abra o caixa antes de receber pedidos do balcão!";
+            return;
+        }
+
+        _logger.LogInformation("Recebendo Pedido Balcão #{Comanda} ({Cliente}) para faturamento.", 
+            pedido.NumeroComanda, pedido.ClienteNome);
+
+        PedidoBalcaoEmAtendimento = pedido;
+        ClienteIdentificacao = string.IsNullOrWhiteSpace(pedido.ClienteCpf) 
+            ? pedido.ClienteNome 
+            : $"{pedido.ClienteNome} (CPF: {pedido.ClienteCpf})";
+
+        Carrinho.Clear();
+        foreach (var item in pedido.Itens)
+        {
+            Carrinho.Add(new ProdutoItem { Produto = item.Produto, Quantidade = item.Quantidade });
+        }
+        AtualizarTotal();
+
+        FormaPagamentoSelecionada = "Dinheiro";
+        PagamentosAdicionados.Clear();
+        IsModalAberto = true;
+        ValorRecebido = TotalComTaxa;
+        NotificarValoresPagamento();
     }
 
     [RelayCommand]
@@ -92,6 +141,56 @@ public partial class PdvViewModel
         _logger.LogInformation("Fechando modal de pagamento (cancelado pelo usuário via ESC/Botão).");
         IsModalAberto = false;
         PedidoBalcaoEmAtendimento = null;
+        PagamentosAdicionados.Clear();
+    }
+
+    [RelayCommand]
+    public void AdicionarParcelaPagamento()
+    {
+        var valorParaAdicionar = ValorRecebido > 0 ? ValorRecebido : SaldoRestante;
+        if (valorParaAdicionar <= 0) return;
+
+        var codigoSefaz = FormaPagamentoSelecionada switch
+        {
+            "Dinheiro" => "01",
+            "PIX" => "17",
+            "Débito" => "04",
+            "Crédito (+2%)" => "03",
+            _ => "99"
+        };
+
+        PagamentosAdicionados.Add(new ItemPagamentoCheckout
+        {
+            Forma = FormaPagamentoSelecionada,
+            Valor = valorParaAdicionar,
+            MeioPagamentoCodigo = codigoSefaz
+        });
+
+        NotificarValoresPagamento();
+        ValorRecebido = SaldoRestante;
+
+        _logger.LogInformation("Parcela adicionada: {Forma} R$ {Valor:N2}. Saldo restante: R$ {Saldo:N2}",
+            FormaPagamentoSelecionada, valorParaAdicionar, SaldoRestante);
+    }
+
+    [RelayCommand]
+    public void RemoverParcelaPagamento(ItemPagamentoCheckout? parcela)
+    {
+        if (parcela == null) return;
+        PagamentosAdicionados.Remove(parcela);
+
+        NotificarValoresPagamento();
+        ValorRecebido = SaldoRestante > 0 ? SaldoRestante : TotalComTaxa;
+
+        _logger.LogInformation("Parcela removida. Novo saldo restante: R$ {Saldo:N2}", SaldoRestante);
+    }
+
+    private void NotificarValoresPagamento()
+    {
+        OnPropertyChanged(nameof(TotalPago));
+        OnPropertyChanged(nameof(SaldoRestante));
+        OnPropertyChanged(nameof(Troco));
+        OnPropertyChanged(nameof(PodeConfirmarPagamento));
     }
 
     [RelayCommand]
@@ -132,40 +231,56 @@ public partial class PdvViewModel
 
         _logger.LogInformation("Confirmando Checkout do Carrinho. Itens: {Qtd}, Cliente: {Cliente}", Carrinho.Count, ClienteIdentificacao);
 
-        // Copiar itens para emissão fiscal
+        // Copiar itens para emissão fiscal utilizando dados cadastrais reais do produto
         var itensParaNfce = Carrinho.Select((i, idx) => new ItemEmissaoNfceDto
         {
             ItemNumero = idx + 1,
             CodigoProduto = i.Produto.Id.ToString(),
             CodigoBarrasEan = string.IsNullOrWhiteSpace(i.Produto.CodigoBarras) ? "SEM GTIN" : i.Produto.CodigoBarras,
             DescricaoProduto = i.Produto.Nome,
-            Ncm = "22021000",
+            Ncm = !string.IsNullOrWhiteSpace(i.Produto.Ncm) ? i.Produto.Ncm.Trim() : "22021000",
             Cfop = 5102,
-            UnidadeComercial = "UN",
+            UnidadeComercial = !string.IsNullOrWhiteSpace(i.Produto.UnidadeMedida) ? i.Produto.UnidadeMedida.Trim().ToUpper() : "UN",
             Quantidade = i.Quantidade,
             ValorUnitario = i.Produto.Preco,
             Csosn = "102",
             AliquotaTributosAproximadosPercentual = 15.00m
         }).ToList();
 
-        var formaCod = FormaPagamentoSelecionada switch
-        {
-            "Dinheiro" => "01",
-            "PIX" => "17",
-            "Débito" => "04",
-            "Crédito (+2%)" => "03",
-            _ => "99"
-        };
+        List<PagamentoEmissaoNfceDto> pagamentosNfce;
+        List<(string Forma, decimal Valor)> parcelasDetalhadas;
+        string formaDescricao;
 
-        var pagamentosNfce = new System.Collections.Generic.List<PagamentoEmissaoNfceDto>
+        if (PagamentosAdicionados.Count > 0)
         {
-            new PagamentoEmissaoNfceDto { MeioPagamento = formaCod, Valor = ValorRecebido }
-        };
+            pagamentosNfce = PagamentosAdicionados.Select(p => new PagamentoEmissaoNfceDto
+            {
+                MeioPagamento = p.MeioPagamentoCodigo,
+                Valor = p.Valor
+            }).ToList();
+            parcelasDetalhadas = PagamentosAdicionados.Select(p => (p.Forma, p.Valor)).ToList();
+            formaDescricao = string.Join(" + ", PagamentosAdicionados.Select(p => p.Forma).Distinct());
+        }
+        else
+        {
+            var formaCod = FormaPagamentoSelecionada switch
+            {
+                "Dinheiro" => "01",
+                "PIX" => "17",
+                "Débito" => "04",
+                "Crédito (+2%)" => "03",
+                _ => "99"
+            };
+
+            pagamentosNfce = [new PagamentoEmissaoNfceDto { MeioPagamento = formaCod, Valor = ValorRecebido }];
+            parcelasDetalhadas = [(FormaPagamentoSelecionada, TotalComTaxa)];
+            formaDescricao = FormaPagamentoSelecionada;
+        }
 
         if (PedidoBalcaoEmAtendimento != null)
         {
             // Fatura o pedido que veio da fila do balcão
-            await _pdvService.FaturarPedidoBalcaoNoCaixaAsync(PedidoBalcaoEmAtendimento.Id, FormaPagamentoSelecionada);
+            await _pdvService.FaturarPedidoBalcaoNoCaixaAsync(PedidoBalcaoEmAtendimento.Id, formaDescricao, parcelasDetalhadas);
             PedidoBalcaoEmAtendimento = null;
         }
         else
@@ -173,7 +288,7 @@ public partial class PdvViewModel
             // Venda direta lançada pelo caixa
             var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
             var vendedorId = VendedorSelecionado?.Id ?? 1;
-            await _pdvService.SalvarPedidoAsync(vendedorId, itens, FormaPagamentoSelecionada);
+            await _pdvService.SalvarPedidoAsync(vendedorId, itens, formaDescricao, parcelasDetalhadas);
         }
 
         // Emissão Fiscal Automática NFC-e se estiver ativo
@@ -212,6 +327,7 @@ public partial class PdvViewModel
         TextoPesquisa = string.Empty;
         ClienteIdentificacao = string.Empty;
         ResultadosPesquisa.Clear();
+        PagamentosAdicionados.Clear();
         AtualizarTotal();
         IsModalAberto = false;
         await AtualizarEstadoTurnoAsync();

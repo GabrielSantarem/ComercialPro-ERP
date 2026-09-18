@@ -16,6 +16,8 @@ public partial class PdvView : UserControl
     {
         AvaloniaXamlLoader.Load(this);
 
+        this.Focusable = true;
+
         // Intercepta teclas no nível mais alto do UserControl via Tunnel
         this.AddHandler(InputElement.KeyDownEvent, PdvView_KeyDownTunnel, RoutingStrategies.Tunnel);
 
@@ -30,7 +32,14 @@ public partial class PdvView : UserControl
         Dispatcher.UIThread.Post(() =>
         {
             var txt = this.FindControl<TextBox>("TxtPesquisa");
-            txt?.Focus();
+            if (txt != null && txt.IsEnabled)
+            {
+                txt.Focus();
+            }
+            else
+            {
+                this.Focus();
+            }
         });
     }
 
@@ -55,6 +64,31 @@ public partial class PdvView : UserControl
     private async void PdvView_KeyDownTunnel(object? sender, KeyEventArgs e)
     {
         if (this.DataContext is not PdvViewModel vm) return;
+
+        // ==========================================
+        // 0. SE O MODAL DE NFC-E EMITIDA ESTIVER ABERTO:
+        // ==========================================
+        if (vm.ModalNfceEmitidaAberto)
+        {
+            if (e.Key == Key.Escape || e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                Log.Information("[PDV MODAL NFCE] ENTER/ESC -> Fechando modal de comprovante NFC-e");
+                vm.FecharModalNfceEmitidaCommand.Execute(null);
+                FocarBusca();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.F5)
+            {
+                Log.Information("[PDV MODAL NFCE] F5 -> Visualizar DANFE A4 em PDF");
+                vm.VisualizarDanfeA4PdfCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+
+            return;
+        }
 
         // ==========================================
         // 1. SE O MODAL DE OPERAÇÕES DE CAIXA ESTIVER ABERTO:
@@ -141,6 +175,15 @@ public partial class PdvView : UserControl
                 return;
             }
 
+            // F3: Adicionar Parcela no Split Payment
+            if (e.Key == Key.F3)
+            {
+                Log.Information("[PDV MODAL] F3 -> Adicionando parcela no split payment");
+                vm.AdicionarParcelaPagamentoCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+
             // ENTER: Confirma pagamento se valor foi atingido
             if (e.Key == Key.Enter || e.Key == Key.Return)
             {
@@ -213,7 +256,7 @@ public partial class PdvView : UserControl
             return;
         }
 
-        // F2: Força o foco no campo de busca de venda direta
+        // F2 ou Tab: Foco na barra de busca de produtos
         if (e.Key == Key.F2)
         {
             FocarBusca();
@@ -221,72 +264,16 @@ public partial class PdvView : UserControl
             return;
         }
 
-        // F8 ou Delete: Cancela/Remove o item selecionado do cupom
-        if (e.Key == Key.F8 || e.Key == Key.Delete)
+        // DELETE: Exclui o item atualmente selecionado no carrinho
+        if (e.Key == Key.Delete)
         {
-            Log.Information("[PDV ATALHO] F8/DEL -> Remover Item");
-            vm.CancelarItemSelecionadoCommand.Execute(null);
-            e.Handled = true;
-            return;
-        }
-
-        // ESC: Limpa a busca ou o cupom
-        if (e.Key == Key.Escape)
-        {
-            var txt = this.FindControl<TextBox>("TxtPesquisa");
-            if (txt != null && !string.IsNullOrEmpty(txt.Text))
+            if (vm.ItemSelecionado != null)
             {
-                txt.Text = string.Empty;
-                vm.TextoPesquisa = string.Empty;
+                Log.Information("[PDV ATALHO] DELETE -> Removendo item {Item}", vm.ItemSelecionado.Produto.Nome);
+                vm.RemoverItemCommand.Execute(vm.ItemSelecionado);
+                e.Handled = true;
+                return;
             }
-            else
-            {
-                vm.LimparCarrinhoCommand.Execute(null);
-            }
-            e.Handled = true;
-            return;
-        }
-
-        // SETA PARA BAIXO / CIMA: Navega na lista de sugestões de busca
-        if (e.Key == Key.Down && vm.ResultadosPesquisa.Count > 0)
-        {
-            var lista = vm.ResultadosPesquisa.ToList();
-            var atualIdx = vm.ProdutoPesquisaSelecionado != null ? lista.IndexOf(vm.ProdutoPesquisaSelecionado) : -1;
-            var proximoIdx = Math.Min(atualIdx + 1, lista.Count - 1);
-            vm.ProdutoPesquisaSelecionado = lista[proximoIdx];
-            e.Handled = true;
-            return;
-        }
-
-        if (e.Key == Key.Up && vm.ResultadosPesquisa.Count > 0)
-        {
-            var lista = vm.ResultadosPesquisa.ToList();
-            var atualIdx = vm.ProdutoPesquisaSelecionado != null ? lista.IndexOf(vm.ProdutoPesquisaSelecionado) : 0;
-            var anteriorIdx = Math.Max(atualIdx - 1, 0);
-            vm.ProdutoPesquisaSelecionado = lista[anteriorIdx];
-            e.Handled = true;
-            return;
-        }
-
-        // ENTER: Lança o produto no cupom
-        if (e.Key == Key.Enter || e.Key == Key.Return)
-        {
-            var txt = this.FindControl<TextBox>("TxtPesquisa");
-            if (txt != null && !string.IsNullOrWhiteSpace(txt.Text))
-            {
-                vm.TextoPesquisa = txt.Text;
-            }
-
-            Log.Information("[PDV ATALHO] ENTER -> Lançando produto com texto '{Texto}'", vm.TextoPesquisa);
-            vm.LancarProdutoCommand.Execute(null);
-
-            if (txt != null && vm.IsCaixaAberto)
-            {
-                txt.Text = string.Empty;
-                txt.Focus();
-            }
-
-            e.Handled = true;
         }
     }
 }

@@ -80,6 +80,40 @@ public partial class PdvService
         await _db.SaveChangesAsync();
     }
 
+    public async Task<ConfiguracaoTerminal> ObterConfiguracaoTerminalAsync()
+    {
+        var config = await _db.ConfiguracoesTerminal.FirstOrDefaultAsync();
+        if (config == null)
+        {
+            config = new ConfiguracaoTerminal();
+            _db.ConfiguracoesTerminal.Add(config);
+            await _db.SaveChangesAsync();
+        }
+        return config;
+    }
+
+    public async Task SalvarConfiguracaoTerminalAsync(ConfiguracaoTerminal config)
+    {
+        var existente = await _db.ConfiguracoesTerminal.FirstOrDefaultAsync();
+        if (existente == null)
+        {
+            _db.ConfiguracoesTerminal.Add(config);
+        }
+        else
+        {
+            existente.NomeEstacao = config.NomeEstacao;
+            existente.ModeloImpressora = config.ModeloImpressora;
+            existente.LarguraBobina = config.LarguraBobina;
+            existente.PortaComunicacao = config.PortaComunicacao;
+            existente.CortarPapelAutomatico = config.CortarPapelAutomatico;
+            existente.ModoImpressaoPadrao = config.ModoImpressaoPadrao;
+            existente.ImprimirComandaBalcaoAutomatico = config.ImprimirComandaBalcaoAutomatico;
+            existente.IntegracaoBalancaHabilitada = config.IntegracaoBalancaHabilitada;
+            existente.ModeloBalanca = config.ModeloBalanca;
+        }
+        await _db.SaveChangesAsync();
+    }
+
     public async Task<List<Produto>> PesquisarProdutosAsync(string texto)
     {
         if (string.IsNullOrWhiteSpace(texto)) return new List<Produto>();
@@ -88,7 +122,11 @@ public partial class PdvService
         return produtos.Where(p => terms.All(t => p.Nome.ToLowerInvariant().Contains(t))).ToList();
     }
 
-    public async Task SalvarPedidoAsync(int vendedorId, IEnumerable<(Produto Produto, int Quantidade)> carrinho, string formaPagamento = "Dinheiro")
+    public async Task SalvarPedidoAsync(
+        int vendedorId, 
+        IEnumerable<(Produto Produto, int Quantidade)> carrinho, 
+        string formaPagamento = "Dinheiro",
+        IEnumerable<(string Forma, decimal Valor)>? pagamentosDetalhados = null)
     {
         var itensList = carrinho.ToList();
         if (itensList.Count == 0)
@@ -136,13 +174,29 @@ public partial class PdvService
             var turnoAtivo = await _db.CaixasTurno.FirstOrDefaultAsync(c => c.Status == "ABERTO");
             if (turnoAtivo != null)
             {
-                if (formaPagamento.Equals("Dinheiro", StringComparison.OrdinalIgnoreCase))
+                var parcelas = pagamentosDetalhados?.ToList();
+                if (parcelas != null && parcelas.Count > 0)
                 {
-                    turnoAtivo.TotalVendasDinheiro += valorTotal;
+                    var valorDinheiro = parcelas
+                        .Where(p => p.Forma.Contains("Dinheiro", StringComparison.OrdinalIgnoreCase))
+                        .Sum(p => p.Valor);
+                    var valorOutros = parcelas
+                        .Where(p => !p.Forma.Contains("Dinheiro", StringComparison.OrdinalIgnoreCase))
+                        .Sum(p => p.Valor);
+
+                    turnoAtivo.TotalVendasDinheiro += valorDinheiro;
+                    turnoAtivo.TotalVendasOutros += valorOutros;
                 }
                 else
                 {
-                    turnoAtivo.TotalVendasOutros += valorTotal;
+                    if (formaPagamento.Equals("Dinheiro", StringComparison.OrdinalIgnoreCase))
+                    {
+                        turnoAtivo.TotalVendasDinheiro += valorTotal;
+                    }
+                    else
+                    {
+                        turnoAtivo.TotalVendasOutros += valorTotal;
+                    }
                 }
             }
 

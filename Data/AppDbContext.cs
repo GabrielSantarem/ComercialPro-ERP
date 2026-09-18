@@ -1,12 +1,7 @@
-using System;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Linq;
+using System.IO;
+using GetStartedApp.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using GetStartedApp.Models;
 
 namespace GetStartedApp.Data;
 
@@ -25,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<ContaPagar> ContasPagar { get; set; }
     public DbSet<ContaReceber> ContasReceber { get; set; }
     public DbSet<AjusteEstoque> AjustesEstoque { get; set; }
+    public DbSet<ConfiguracaoTerminal> ConfiguracoesTerminal { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -39,30 +35,8 @@ public class AppDbContext : DbContext
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    // === INTERCEPTADOR ANTIFRAUDE (BLOCKCHAIN FISCAL) ===
-    public override async Task<int> SaveChangesAsync(CancellationToken cancel = default)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var vendasNovas = ChangeTracker.Entries<Venda>()
-            .Where(e => e.State == EntityState.Added)
-            .ToList();
-
-        if (vendasNovas.Count != 0)
-        {
-            var ultimaVenda = await Vendas.OrderByDescending(v => v.Id).FirstOrDefaultAsync(cancel);
-            string ultimoHash = ultimaVenda?.HashSeguranca ?? "BLOCO_GENESIS_00000000";
-
-            foreach (var entry in vendasNovas)
-            {
-                var v = entry.Entity;
-                string textoCru = $"{ultimoHash}|{v.DataHora:O}|{v.ValorTotal}|{v.VendedorId}";
-
-                byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(textoCru));
-                v.HashSeguranca = Convert.ToHexStringLower(hashBytes);
-
-                ultimoHash = v.HashSeguranca;
-            }
-        }
-
-        return await base.SaveChangesAsync(cancel);
+        base.OnModelCreating(modelBuilder);
     }
 }

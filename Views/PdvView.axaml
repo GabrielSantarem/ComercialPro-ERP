@@ -201,61 +201,119 @@
             </Border>
         </Grid>
 
-        <!-- CAMADA 2: MODAL DE RECEBIMENTO DE PAGAMENTO [F12] -->
+        <!-- CAMADA 2: MODAL DE RECEBIMENTO DE PAGAMENTO & SPLIT PAYMENT [F12] -->
         <Border Background="#F2000000" 
                 IsVisible="{Binding IsModalAberto}" 
                 IsHitTestVisible="{Binding IsModalAberto}"
                 ZIndex="100"
                 KeyboardNavigation.TabNavigation="Cycle">
-            <Border Background="White" Width="620" CornerRadius="12" Padding="35" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AAF1C40F">
-                <StackPanel Spacing="15">
-                    <TextBlock Text="💰 RECEBIMENTO DE NOTA / COBRANÇA" FontSize="22" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,5"/>
-                    
-                    <Border Background="#F4F6F7" CornerRadius="8" Padding="15">
-                        <StackPanel Spacing="5">
-                            <TextBlock Text="👤 Cliente / Comanda Balcão:" FontSize="14" FontWeight="Bold" Foreground="#34495E"/>
-                            <TextBox x:Name="TxtCliente" Text="{Binding ClienteIdentificacao}" FontSize="16" Padding="10" Background="White" BorderThickness="1" BorderBrush="#BDC3C7" CornerRadius="4" PlaceholderText="Ex: Seu Pedro (PED-0001)"/>
-                        </StackPanel>
-                    </Border>
+            <Border Background="White" Width="680" MaxHeight="720" CornerRadius="12" Padding="30" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AAF1C40F">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="💰 RECEBIMENTO DE NOTA / CHECKOUT" FontSize="22" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                        
+                        <!-- Identificação do Cliente / Comanda -->
+                        <Border Background="#F4F6F7" CornerRadius="8" Padding="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="👤 Cliente / Comanda Balcão:" FontSize="13" FontWeight="Bold" Foreground="#34495E"/>
+                                <TextBox x:Name="TxtCliente" Text="{Binding ClienteIdentificacao}" FontSize="15" Padding="8" Background="White" BorderThickness="1" BorderBrush="#BDC3C7" CornerRadius="4" PlaceholderText="Ex: Seu Pedro (PED-0001)"/>
+                            </StackPanel>
+                        </Border>
 
-                    <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto">
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Forma de Pagamento:" FontSize="16" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding FormasPagamento}" SelectedItem="{Binding FormaPagamentoSelecionada}" HorizontalAlignment="Stretch" Margin="0,0,0,10" FontSize="16"/>
+                        <!-- Painel de Totais da Venda -->
+                        <Border Background="#F8F9F9" BorderBrush="#E5E8E8" BorderThickness="1" CornerRadius="8" Padding="15">
+                            <Grid ColumnDefinitions="*, *, *">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="SUBTOTAL" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                    <TextBlock Text="{Binding TotalVenda, StringFormat='{}R$ {0:N2}'}" FontSize="16" FontWeight="SemiBold" Foreground="#34495E"/>
+                                </StackPanel>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Subtotal:" FontSize="16" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalVenda, StringFormat='{}R$ {0:N2}'}" FontSize="16" FontWeight="SemiBold" Foreground="#333" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="TAXA / ACRÉSCIMO" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                    <TextBlock Text="{Binding Acrescimo, StringFormat='{}+ R$ {0:N2}'}" FontSize="16" FontWeight="SemiBold" Foreground="#E67E22"/>
+                                </StackPanel>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Acréscimo/Taxa:" FontSize="16" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Acrescimo, StringFormat='{}+ R$ {0:N2}'}" FontSize="16" FontWeight="SemiBold" Foreground="#E67E22" HorizontalAlignment="Right" Margin="0,0,0,10"/>
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                    <TextBlock Text="TOTAL A PAGAR" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="{Binding TotalComTaxa, StringFormat='{}R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#E74C3C" HorizontalAlignment="Right"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Total a Pagar:" FontSize="22" FontWeight="Black" Foreground="#2C3E50" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding TotalComTaxa, StringFormat='{}R$ {0:N2}'}" FontSize="28" FontWeight="Black" Foreground="#E74C3C" HorizontalAlignment="Right"/>
-                    </Grid>
+                        <!-- Seletor de Forma de Pagamento e Valor da Parcela -->
+                        <Border Background="#EBF5FB" BorderBrush="#AED6F1" BorderThickness="1" CornerRadius="8" Padding="12">
+                            <Grid ColumnDefinitions="2*, 2*, Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Forma de Pagamento:" FontSize="12" FontWeight="Bold" Foreground="#2980B9"/>
+                                    <ComboBox ItemsSource="{Binding FormasPagamento}" SelectedItem="{Binding FormaPagamentoSelecionada}" HorizontalAlignment="Stretch" Height="36" FontSize="14"/>
+                                </StackPanel>
 
-                    <Border Height="1" Background="#ECF0F1" Margin="0,5"/>
+                                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                    <TextBlock Text="Valor a Lançar / Recebido:" FontSize="12" FontWeight="Bold" Foreground="#2980B9"/>
+                                    <NumericUpDown x:Name="NumValorRecebido" Value="{Binding ValorRecebido}" FontSize="18" FontWeight="Black" Foreground="#2C3E50" Increment="5" Minimum="0" Height="36" FormatString="N2"/>
+                                </StackPanel>
 
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="Valor Recebido em Dinheiro (R$):" FontSize="16" FontWeight="Bold" Foreground="#34495E"/>
-                        <NumericUpDown x:Name="NumValorRecebido" Value="{Binding ValorRecebido}" FontSize="28" FontWeight="Black" Foreground="#2C3E50" Increment="5" Minimum="0" FormatString="N2" />
-                    </StackPanel>
+                                <Button Grid.Column="2" Command="{Binding AdicionarParcelaPagamentoCommand}" Content="➕ Dividir [F3]" Background="#2980B9" Foreground="White" FontWeight="Bold" Height="36" Padding="12,0" VerticalAlignment="Bottom" CornerRadius="6" Cursor="Hand" ToolTip.Tip="Adiciona como parcela de pagamento mista (Split Payment)"/>
+                            </Grid>
+                        </Border>
 
-                    <Border Background="#F9FBFB" BorderBrush="#ECF0F1" BorderThickness="2" CornerRadius="8" Padding="15">
-                        <Grid ColumnDefinitions="*, *">
-                            <TextBlock Grid.Column="0" Text="TROCO:" FontSize="20" FontWeight="Black" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Troco, StringFormat='{}R$ {0:N2}'}" FontSize="32" FontWeight="Black" Foreground="#2ECC71" HorizontalAlignment="Right"/>
+                        <!-- LISTA DE PARCELAS ADICIONADAS (SPLIT PAYMENT) -->
+                        <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="10" IsVisible="{Binding PagamentosAdicionados.Count}">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Grid.Column="0" Text="💳 Pagamentos Parciais Registrados:" FontWeight="Bold" FontSize="13" Foreground="#2C3E50"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding PagamentosAdicionados.Count, StringFormat='{}{0} parcela(s)'}" FontSize="11" Foreground="#7F8C8D" FontWeight="Bold"/>
+                                </Grid>
+
+                                <ListBox ItemsSource="{Binding PagamentosAdicionados}" Background="Transparent" BorderThickness="0" MaxHeight="130">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:ItemPagamentoCheckout">
+                                            <Border BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="8,4">
+                                                <Grid ColumnDefinitions="Auto, *, Auto, Auto" VerticalAlignment="Center">
+                                                    <Border Grid.Column="0" Background="#EAECEE" CornerRadius="4" Padding="6,2" Margin="0,0,10,0">
+                                                        <TextBlock Text="{Binding Forma}" FontWeight="Bold" FontSize="12" Foreground="#34495E"/>
+                                                    </Border>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Valor, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" FontSize="14" Foreground="#27AE60" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                                                    <Button Grid.Column="3" Command="{Binding #RootWindow.((vm:PdvViewModel)DataContext).RemoverParcelaPagamentoCommand}" CommandParameter="{Binding}" Content="✕" Background="#FDEDEC" Foreground="#E74C3C" FontWeight="Bold" FontSize="11" Padding="6,2" CornerRadius="4" Cursor="Hand"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- BARRA DE STATUS DO PAGAMENTO (PAGO / RESTANTE / TROCO) -->
+                        <Border Background="#F9FBFB" BorderBrush="#ECF0F1" BorderThickness="2" CornerRadius="8" Padding="12">
+                            <Grid ColumnDefinitions="*, *, *">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="TOTAL PAGO" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                    <TextBlock Text="{Binding TotalPago, StringFormat='{}R$ {0:N2}'}" FontSize="18" FontWeight="Black" Foreground="#2980B9"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="PENDENTE" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D"/>
+                                    <TextBlock Text="{Binding SaldoRestante, StringFormat='{}R$ {0:N2}'}" FontSize="18" FontWeight="Black" Foreground="#E74C3C"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                    <TextBlock Text="TROCO" FontSize="11" FontWeight="Bold" Foreground="#7F8C8D" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="{Binding Troco, StringFormat='{}R$ {0:N2}'}" FontSize="22" FontWeight="Black" Foreground="#2ECC71" HorizontalAlignment="Right"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Opção de Emissão Fiscal NFC-e -->
+                        <CheckBox IsChecked="{Binding EmitirNfceAoFinalizar}" Margin="0,2,0,0">
+                            <TextBlock Text="🏛️ Emitir Cupom Fiscal NFC-e (Zeus Automação)" FontWeight="Bold" Foreground="#2980B9" FontSize="13"/>
+                        </CheckBox>
+
+                        <Grid ColumnDefinitions="*, *" Margin="0,10,0,0">
+                            <Button Grid.Column="0" Command="{Binding FecharModalPagamentoCommand}" Content="[ESC] Cancelar" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="15" Padding="12" Margin="0,0,10,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                            <Button Grid.Column="1" Command="{Binding ConfirmarPagamentoCommand}" Content="✅ [ENTER] Confirmar Venda" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="16" Padding="12" Margin="10,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="{Binding PodeConfirmarPagamento}" Cursor="Hand"/>
                         </Grid>
-                    </Border>
-
-                    <!-- Opção de Emissão Fiscal NFC-e -->
-                    <CheckBox IsChecked="{Binding EmitirNfceAoFinalizar}" Margin="0,5,0,0">
-                        <TextBlock Text="🏛️ Emitir Cupom Fiscal NFC-e (Zeus Automação)" FontWeight="Bold" Foreground="#2980B9" FontSize="14"/>
-                    </CheckBox>
-
-                    <Grid ColumnDefinitions="*, *" Margin="0,15,0,0">
-                        <Button Grid.Column="0" Command="{Binding FecharModalPagamentoCommand}" Content="[ESC] Cancelar" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="16" Padding="12" Margin="0,0,10,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
-                        <Button Grid.Column="1" Command="{Binding ConfirmarPagamentoCommand}" Content="✅ [ENTER] Confirmar Recebimento" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="17" Padding="12" Margin="10,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="{Binding PodeConfirmarPagamento}" Cursor="Hand"/>
-                    </Grid>
-                </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Border>
 
