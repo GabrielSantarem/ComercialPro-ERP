@@ -277,6 +277,7 @@ public partial class PdvViewModel
             formaDescricao = FormaPagamentoSelecionada;
         }
 
+        Venda? vendaCriada = null;
         if (PedidoBalcaoEmAtendimento != null)
         {
             // Fatura o pedido que veio da fila do balcão
@@ -288,7 +289,7 @@ public partial class PdvViewModel
             // Venda direta lançada pelo caixa
             var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
             var vendedorId = VendedorSelecionado?.Id ?? 1;
-            await _pdvService.SalvarPedidoAsync(vendedorId, itens, formaDescricao, parcelasDetalhadas);
+            vendaCriada = await _pdvService.SalvarPedidoAsync(vendedorId, itens, formaDescricao, parcelasDetalhadas);
         }
 
         // Emissão Fiscal Automática NFC-e se estiver ativo
@@ -309,6 +310,16 @@ public partial class PdvViewModel
             {
                 _ultimosDadosNfce = dadosNfce;
                 _ultimoRetornoNfce = retornoNfce;
+
+                if (vendaCriada != null)
+                {
+                    await _pdvService.VincularDadosFiscaisVendaAsync(
+                        vendaCriada.Id,
+                        retornoNfce.ChaveAcesso,
+                        retornoNfce.NumeroNota,
+                        retornoNfce.Serie,
+                        retornoNfce.XmlAssinado);
+                }
 
                 UltimaNfceDanfeTexto = retornoNfce.DanfeTextoTermica;
                 UltimaNfceChaveAcesso = retornoNfce.ChaveAcesso;

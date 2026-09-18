@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GetStartedApp.ViewModels"
+             xmlns:services="using:GetStartedApp.Services"
              x:Class="GetStartedApp.Views.ConfiguracoesView"
              x:DataType="vm:ConfiguracoesViewModel">
     
@@ -8,7 +9,7 @@
         <Border Background="#F4F6F7" Padding="20">
             <Grid RowDefinitions="Auto, *">
                 
-                <TextBlock Grid.Row="0" Text="⚙️ Gestão de Equipe e Periféricos" FontSize="30" FontWeight="Black" Foreground="#2C3E50" Margin="0,0,0,20"/>
+                <TextBlock Grid.Row="0" Text="⚙️ Gestão, Hardware, Fiscal e Segurança" FontSize="28" FontWeight="Black" Foreground="#2C3E50" Margin="0,0,0,20"/>
 
                 <TabControl Grid.Row="1" Background="Transparent">
                     
@@ -99,7 +100,7 @@
                                                           SelectedItem="{Binding LarguraBobina}"
                                                           HorizontalAlignment="Stretch" Background="#F4F6F7" BorderThickness="0" Padding="10" CornerRadius="6"/>
                                             </StackPanel>
-                                            
+
                                             <StackPanel Grid.Column="1" Spacing="5" Margin="8,0,0,0">
                                                 <TextBlock Text="Porta de Comunicação:" FontSize="13" FontWeight="SemiBold" Foreground="#7F8C8D"/>
                                                 <ComboBox ItemsSource="{Binding PortasComunicacaoDisponiveis}" 
@@ -108,44 +109,41 @@
                                             </StackPanel>
                                         </Grid>
 
-                                        <CheckBox IsChecked="{Binding CortarPapelAutomatico}" Margin="0,5,0,0">
-                                            <TextBlock Text="Acionar guilhotina (corte automático) ao final do cupom" FontSize="13" Foreground="#34495E"/>
-                                        </CheckBox>
+                                        <CheckBox Content="Cortar papel automaticamente após impressão (Guilhotina)" 
+                                                  IsChecked="{Binding CortarPapelAutomatico}" 
+                                                  FontWeight="SemiBold" Foreground="#34495E"/>
 
-                                        <CheckBox IsChecked="{Binding ImprimirComandaBalcaoAutomatico}">
-                                            <TextBlock Text="Imprimir cupom de conferência automaticamente no balcão" FontSize="13" Foreground="#34495E"/>
-                                        </CheckBox>
-
-                                        <!-- Botão Testar Impressão -->
                                         <Button Command="{Binding TestarImpressaoCupomCommand}" 
-                                                Content="🖨️ Visualizar / Testar Cupom ESC/POS" 
+                                                Content="🖨️ Testar Impressão ESC/POS (Prévia)" 
                                                 Background="#3498DB" Foreground="White" FontWeight="Bold" FontSize="14" 
                                                 HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" CornerRadius="8" Cursor="Hand" Margin="0,10,0,0"/>
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Coluna 2: Modo Fiscal & Balança de Checkout -->
+                                <!-- Coluna 2: Modos de Impressão & Balança Checkout -->
                                 <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="25" Margin="15,0,0,0" BoxShadow="0 4 15 0 #1A000000" VerticalAlignment="Top">
                                     <StackPanel Spacing="16">
-                                        <TextBlock Text="⚖️ Balança &amp; Padrões de Emissão" FontSize="18" FontWeight="Bold" Foreground="#2C3E50"/>
+                                        <TextBlock Text="⚖️ Fluxo Operacional e Balança de Checkout" FontSize="18" FontWeight="Bold" Foreground="#2C3E50"/>
 
                                         <StackPanel Spacing="5">
-                                            <TextBlock Text="Modo Padrão de Impressão ao Finalizar Venda:" FontSize="13" FontWeight="SemiBold" Foreground="#7F8C8D"/>
+                                            <TextBlock Text="Comportamento Padrão na Venda:" FontSize="13" FontWeight="SemiBold" Foreground="#7F8C8D"/>
                                             <ComboBox ItemsSource="{Binding ModosImpressaoDisponiveis}" 
                                                       SelectedItem="{Binding ModoImpressaoPadrao}"
                                                       HorizontalAlignment="Stretch" Background="#F4F6F7" BorderThickness="0" Padding="10" CornerRadius="6"/>
                                         </StackPanel>
 
-                                        <Border Height="1" Background="#ECF0F1" Margin="0,10"/>
+                                        <CheckBox Content="Imprimir comanda de balcão automaticamente na pré-venda" 
+                                                  IsChecked="{Binding ImprimirComandaBalcaoAutomatico}" 
+                                                  FontWeight="SemiBold" Foreground="#34495E" Margin="0,5"/>
 
-                                        <TextBlock Text="Integração de Balança de Check-out" FontSize="16" FontWeight="Bold" Foreground="#34495E"/>
+                                        <Border Height="1" Background="#ECF0F1" Margin="0,5"/>
 
-                                        <CheckBox IsChecked="{Binding IntegracaoBalancaHabilitada}">
-                                            <TextBlock Text="Habilitar leitura serial automática de peso de balança" FontSize="13" Foreground="#34495E"/>
-                                        </CheckBox>
+                                        <CheckBox Content="Habilitar integração contínua com Balança de Peso" 
+                                                  IsChecked="{Binding IntegracaoBalancaHabilitada}" 
+                                                  FontWeight="Bold" Foreground="#2C3E50"/>
 
-                                        <StackPanel Spacing="5" IsVisible="{Binding IntegracaoBalancaHabilitada}">
-                                            <TextBlock Text="Protocolo / Marca da Balança:" FontSize="13" FontWeight="SemiBold" Foreground="#7F8C8D"/>
+                                        <StackPanel Spacing="5" IsEnabled="{Binding IntegracaoBalancaHabilitada}">
+                                            <TextBlock Text="Protocolo de Balança Homologado:" FontSize="13" FontWeight="SemiBold" Foreground="#7F8C8D"/>
                                             <ComboBox ItemsSource="{Binding ModelosBalancaDisponiveis}" 
                                                       SelectedItem="{Binding ModeloBalanca}"
                                                       HorizontalAlignment="Stretch" Background="#F4F6F7" BorderThickness="0" Padding="10" CornerRadius="6"/>
@@ -164,6 +162,136 @@
                             </Grid>
                         </ScrollViewer>
                     </TabItem>
+
+                    <!-- ABA 3: FECHAMENTO FISCAL MENSAL (.ZIP CONTÁBIL) -->
+                    <TabItem Header="📦 Fechamento Fiscal (.ZIP)" FontSize="16" FontWeight="SemiBold">
+                        <Grid ColumnDefinitions="1.2*, *" Margin="0,20,0,0">
+                            <!-- Painel de Disparo do Pacote Contábil -->
+                            <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="25" Margin="0,0,15,0" BoxShadow="0 4 15 0 #1A000000" VerticalAlignment="Top">
+                                <StackPanel Spacing="16">
+                                    <TextBlock Text="📁 Exportação Mensal de XMLs para Contabilidade" FontSize="20" FontWeight="Bold" Foreground="#2C3E50"/>
+                                    <TextBlock Text="Gera um pacote .ZIP padronizado contendo pastas separadas de notas Autorizadas, notas Canceladas e um relatório resumo em CSV com faturamento exato." FontSize="13" Foreground="#7F8C8D" TextWrapping="Wrap"/>
+
+                                    <Grid ColumnDefinitions="*, *" Margin="0,10,0,0">
+                                        <StackPanel Grid.Column="0" Spacing="5" Margin="0,0,10,0">
+                                            <TextBlock Text="Mês Fiscal:" FontWeight="SemiBold" FontSize="13" Foreground="#7F8C8D"/>
+                                            <ComboBox ItemsSource="{Binding MesesDisponiveis}" SelectedItem="{Binding MesFechamentoFiscal}" HorizontalAlignment="Stretch" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Spacing="5" Margin="10,0,0,0">
+                                            <TextBlock Text="Ano Fiscal:" FontWeight="SemiBold" FontSize="13" Foreground="#7F8C8D"/>
+                                            <ComboBox ItemsSource="{Binding AnosDisponiveis}" SelectedItem="{Binding AnoFechamentoFiscal}" HorizontalAlignment="Stretch" Padding="10" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Button Command="{Binding GerarFechamentoFiscalCommand}" 
+                                            IsEnabled="{Binding !IsGerandoFechamento}"
+                                            Content="📦 Gerar Pacote Mensal (.ZIP)" 
+                                            Background="#8E44AD" Foreground="White" FontWeight="Bold" FontSize="15" 
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="14" CornerRadius="8" Cursor="Hand" Margin="0,15,0,0"/>
+
+                                    <!-- Feedback de Execução -->
+                                    <Border Background="#F5EEF8" BorderBrush="#D2B4DE" BorderThickness="1" CornerRadius="8" Padding="12" IsVisible="{Binding MensagemFechamentoFiscal, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                        <TextBlock Text="{Binding MensagemFechamentoFiscal}" Foreground="#6C3483" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Informações de Apoio ao Contador -->
+                            <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="25" Margin="15,0,0,0" BoxShadow="0 4 15 0 #1A000000" VerticalAlignment="Top">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Text="📋 Estrutura do Pacote Gerado" FontSize="18" FontWeight="Bold" Foreground="#2C3E50"/>
+                                    
+                                    <Border Background="#F8F9F9" CornerRadius="6" Padding="12" BorderBrush="#BDC3C7" BorderThickness="1">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="📁 FechamentoFiscal_[CNPJ]_[ANO]_[MES].zip" FontWeight="Bold" Foreground="#2980B9" FontSize="13"/>
+                                            <TextBlock Text="  ├── 📁 Autorizadas/ (XMLs de NFC-e 4.00 emitidas)" FontSize="12" Foreground="#27AE60"/>
+                                            <TextBlock Text="  ├── 📁 Canceladas/ (XMLs do Evento 110111)" FontSize="12" Foreground="#C0392B"/>
+                                            <TextBlock Text="  └── 📄 Resumo_Fiscal_YYYY_MM.csv" FontSize="12" Foreground="#34495E"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="💡 Dica Fiscal: Envie este arquivo compactado mensalmente ao seu contador até o 5º dia útil para apuração correta do Simples Nacional ou Lucro Presumido." FontSize="12" Foreground="#7F8C8D" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <!-- ABA 4: BACKUP E RESILIÊNCIA SQLITE -->
+                    <TabItem Header="🛡️ Backup &amp; Resiliência" FontSize="16" FontWeight="SemiBold">
+                        <Grid ColumnDefinitions="1.2*, *" Margin="0,20,0,0">
+                            <!-- Ações de Backup -->
+                            <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="25" Margin="0,0,15,0" BoxShadow="0 4 15 0 #1A000000">
+                                <StackPanel Spacing="16">
+                                    <TextBlock Text="🛡️ Snapshot Resiliente do Banco de Dados SQLite" FontSize="20" FontWeight="Bold" Foreground="#2C3E50"/>
+                                    <TextBlock Text="Utiliza clone atômico não concorrente (VACUUM INTO) sem bloquear as vendas do caixa. Os backups são compactados em arquivos .ZIP de alta compressão." FontSize="13" Foreground="#7F8C8D" TextWrapping="Wrap"/>
+
+                                    <!-- Métricas Rápidas -->
+                                    <Grid ColumnDefinitions="*, *, *" Margin="0,10">
+                                        <Border Grid.Column="0" Background="#EBF5FB" CornerRadius="8" Padding="12" Margin="0,0,6,0">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="ÚLTIMO BACKUP" FontSize="11" FontWeight="Bold" Foreground="#7FB3D5"/>
+                                                <TextBlock Text="{Binding DataUltimoBackupTexto}" FontSize="13" FontWeight="Black" Foreground="#2980B9" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="1" Background="#EAF2F8" CornerRadius="8" Padding="12" Margin="3,0,3,0">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="TAMANHO" FontSize="11" FontWeight="Bold" Foreground="#7FB3D5"/>
+                                                <TextBlock Text="{Binding TamanhoUltimoBackupTexto}" FontSize="16" FontWeight="Black" Foreground="#2471A3"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="2" Background="#E8F8F5" CornerRadius="8" Padding="12" Margin="6,0,0,0">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="CÓPIAS SALVAS" FontSize="11" FontWeight="Bold" Foreground="#76D7C4"/>
+                                                <TextBlock Text="{Binding TotalBackupsArmazenados, StringFormat='{}{0} arquivos'}" FontSize="16" FontWeight="Black" Foreground="#16A085"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Botões de Execução -->
+                                    <Grid ColumnDefinitions="*, *">
+                                        <Button Grid.Column="0" Command="{Binding ExecutarBackupManualCommand}" 
+                                                IsEnabled="{Binding !IsExecutandoBackup}"
+                                                Content="💾 Criar Backup Agora" 
+                                                Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="14" 
+                                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" CornerRadius="8" Cursor="Hand" Margin="0,0,6,0"/>
+                                        <Button Grid.Column="1" Command="{Binding LimparBackupsAntigosCommand}" 
+                                                Content="🧹 Limpar Antigos (> 30d)" 
+                                                Background="#E67E22" Foreground="White" FontWeight="Bold" FontSize="14" 
+                                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" CornerRadius="8" Cursor="Hand" Margin="6,0,0,0"/>
+                                    </Grid>
+
+                                    <!-- Mensagem de Status -->
+                                    <Border Background="#EAFAF1" BorderBrush="#2ECC71" BorderThickness="1" CornerRadius="6" Padding="10" IsVisible="{Binding MensagemBackupStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                        <TextBlock Text="{Binding MensagemBackupStatus}" Foreground="#1E8449" FontWeight="Bold" FontSize="13" TextWrapping="Wrap"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Lista de Backups Recentes -->
+                            <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="25" Margin="15,0,0,0" BoxShadow="0 4 15 0 #1A000000">
+                                <Grid RowDefinitions="Auto, *">
+                                    <TextBlock Grid.Row="0" Text="📂 Histórico de Cópias de Segurança" FontSize="18" FontWeight="Bold" Foreground="#2C3E50" Margin="0,0,0,12"/>
+                                    <ListBox Grid.Row="1" ItemsSource="{Binding ListaBackups}" Background="Transparent" MaxHeight="340">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="services:InformacaoBackupDto">
+                                                <Border Background="#F8F9F9" CornerRadius="6" Padding="10" Margin="0,3" BorderBrush="#E2E8F0" BorderThickness="1">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                            <TextBlock Text="{Binding NomeArquivo}" FontWeight="Bold" FontSize="12" Foreground="#2C3E50"/>
+                                                            <TextBlock Text="{Binding DataHoraCriacao, StringFormat='Criado em {0:dd/MM/yyyy HH:mm}'}" FontSize="11" Foreground="#7F8C8D"/>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="1" Text="{Binding TamanhoBytes, StringFormat='{}{0:N0} B'}" FontWeight="Black" FontSize="12" Foreground="#27AE60" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
                 </TabControl>
             </Grid>
         </Border>

@@ -13,11 +13,13 @@ public partial class PdvService
 {
     private readonly AppDbContext _db;
     private readonly ILogger<PdvService> _logger;
+    private readonly IBackupDatabaseService? _backupService;
 
-    public PdvService(AppDbContext db, ILogger<PdvService> logger)
+    public PdvService(AppDbContext db, ILogger<PdvService> logger, IBackupDatabaseService? backupService = null)
     {
         _db = db;
         _logger = logger;
+        _backupService = backupService;
     }
 
     public async Task InicializarBancoDadosAsync()
@@ -73,6 +75,13 @@ public partial class PdvService
         await _db.SaveChangesAsync();
     }
 
+    public async Task AdicionarVendedorAsync(Vendedor vendedor)
+    {
+        if (vendedor == null || string.IsNullOrWhiteSpace(vendedor.Nome)) return;
+        _db.Vendedores.Add(vendedor);
+        await _db.SaveChangesAsync();
+    }
+
     public async Task AdicionarVendedorAsync(string nome)
     {
         if(string.IsNullOrWhiteSpace(nome)) return;
@@ -122,7 +131,29 @@ public partial class PdvService
         return produtos.Where(p => terms.All(t => p.Nome.ToLowerInvariant().Contains(t))).ToList();
     }
 
-    public async Task SalvarPedidoAsync(
+    public async Task<Venda?> ObterUltimaVendaAsync()
+    {
+        return await _db.Vendas
+            .Include(v => v.Itens)
+            .OrderByDescending(v => v.Id)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task VincularDadosFiscaisVendaAsync(int vendaId, string chaveAcesso, long numero, int serie, string xml)
+    {
+        var venda = await _db.Vendas.FindAsync(vendaId);
+        if (venda != null)
+        {
+            venda.ChaveAcessoNfce = chaveAcesso;
+            venda.NumeroNfce = numero;
+            venda.SerieNfce = serie;
+            venda.XmlNfce = xml;
+            venda.ProtocoloAutorizacaoNfce = $"135{DateTime.Now:yy}000{numero:D6}";
+            await _db.SaveChangesAsync();
+        }
+    }
+
+    public async Task<Venda> SalvarPedidoAsync(
         int vendedorId, 
         IEnumerable<(Produto Produto, int Quantidade)> carrinho, 
         string formaPagamento = "Dinheiro",
@@ -150,7 +181,9 @@ public partial class PdvService
             {
                 VendedorId = vendedorId,
                 DataHora = DateTime.Now,
-                ValorTotal = valorTotal
+                ValorTotal = valorTotal,
+                FormaPagamento = formaPagamento,
+                Status = "AUTORIZADA"
             };
             _db.Vendas.Add(venda);
             await _db.SaveChangesAsync();
@@ -203,6 +236,7 @@ public partial class PdvService
             await _db.SaveChangesAsync();
             await transaction.CommitAsync();
             _logger.LogInformation("Venda concluída com sucesso! Total: {Total}, VendedorId: {VendedorId}, Pagamento: {Forma}", venda.ValorTotal, vendedorId, formaPagamento);
+            return venda;
         }
         catch (Exception ex) { 
             _logger.LogError(ex, "Erro ao salvar o pedido no banco de dados. Fazendo rollback da transação.");

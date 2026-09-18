@@ -51,16 +51,19 @@ public partial class App : Application
             collection.AddSingleton<IServiceProvider>(sp => sp);
 
             collection.AddDbContext<AppDbContext>();
+            collection.AddSingleton<IBackupDatabaseService, BackupDatabaseService>();
             collection.AddSingleton<PdvService>();
             collection.AddSingleton<NfeXmlParserService>();
             collection.AddSingleton<CupomTermicoService>();
             collection.AddSingleton<EstacaoKioskService>();
 
-            // Módulo Fiscal NFC-e (Zeus Automação & DANFE A4 QuestPDF)
+            // Módulo Fiscal NFC-e (Zeus Automação, DANFE A4 QuestPDF, Cancelamento e Fechamento Contábil)
             collection.AddSingleton<ConfiguracaoFiscalEmpresa>();
             collection.AddSingleton<DanfeNfceTermicaService>();
             collection.AddSingleton<DanfeA4PdfService>();
             collection.AddSingleton<NfceEmissaoService>();
+            collection.AddSingleton<INfceCancelamentoService, NfceCancelamentoService>();
+            collection.AddSingleton<IFechamentoFiscalService, FechamentoFiscalService>();
             
             // Nossas ViewModels
             collection.AddTransient<MainViewModel>();           // O Navigation Shell (Janela)

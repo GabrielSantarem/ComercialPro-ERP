@@ -35,7 +35,7 @@
                             <TextBlock Text="[F6] Suprimento" FontWeight="Bold"/>
                         </Button>
                         <Button Command="{Binding AbrirModalSangriaCommand}" IsVisible="{Binding IsCaixaAberto}" Background="#E67E22" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand">
-                            <TextBlock Text="[F7] Sangria" FontWeight="Bold"/>
+                            <TextBlock Text="[F8] Sangria" FontWeight="Bold"/>
                         </Button>
                         <Button Command="{Binding AbrirModalFechamentoCaixaCommand}" IsVisible="{Binding IsCaixaAberto}" Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8,6" CornerRadius="4" Cursor="Hand">
                             <TextBlock Text="[F9] Fechar Turno" FontWeight="Bold"/>
@@ -172,11 +172,14 @@
                     </Border>
 
                     <!-- Botões de Ação Rápida -->
-                    <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0,15,0,0">
-                        <Button Grid.Column="0" Command="{Binding CancelarItemSelecionadoCommand}" Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="14" Padding="12" Margin="0,0,5,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
-                            <TextBlock Text="[F8] Excluir Item" FontWeight="Bold"/>
+                    <Grid Grid.Row="2" ColumnDefinitions="*, *, *" Margin="0,15,0,0">
+                        <Button Grid.Column="0" Command="{Binding CancelarItemSelecionadoCommand}" Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="13" Padding="10" Margin="0,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="[DEL] Excluir Item" FontWeight="Bold"/>
                         </Button>
-                        <Button Grid.Column="1" Command="{Binding AbrirModalPagamentoCommand}" Background="#F39C12" Foreground="White" FontWeight="Black" FontSize="15" Padding="12" Margin="5,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                        <Button Grid.Column="1" Command="{Binding AbrirModalCancelamentoCommand}" Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="13" Padding="10" Margin="4,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="❌ [F7] Cancelar NFC-e" FontWeight="Bold"/>
+                        </Button>
+                        <Button Grid.Column="2" Command="{Binding AbrirModalPagamentoCommand}" Background="#F39C12" Foreground="White" FontWeight="Black" FontSize="14" Padding="10" Margin="4,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
                             <TextBlock Text="💰 [F12] RECEBER NOTA" FontWeight="Black"/>
                         </Button>
                     </Grid>
@@ -191,10 +194,11 @@
                     <TextBlock Text="[F4] Fila do Balcão  |  " Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[ENTER] Lançar/Confirmar  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F2] Foco Busca  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
-                    <TextBlock Text="[F8] Excluir Item  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[DEL] Excluir Item  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F7] Cancelar NFC-e  |  " Foreground="#E74C3C" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F8] Sangria  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F12] Receber Nota  |  " Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F6] Suprimento  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
-                    <TextBlock Text="[F7] Sangria  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F9] Fechar Turno  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[ESC] Limpar/Fechar" Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                 </WrapPanel>
@@ -441,6 +445,60 @@
                         <Button Grid.Column="2" Command="{Binding FecharModalNfceEmitidaCommand}" Content="🖨️ [ENTER] Imprimir Térmico" Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="13" Padding="10" Margin="4,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
                     </Grid>
                 </Grid>
+            </Border>
+        </Border>
+
+        <!-- CAMADA 6: MODAL DE CANCELAMENTO FISCAL [F7] (REV-002) -->
+        <Border Background="#F2000000" 
+                IsVisible="{Binding ModalCancelamentoAberto}" 
+                IsHitTestVisible="{Binding ModalCancelamentoAberto}" 
+                ZIndex="130"
+                KeyboardNavigation.TabNavigation="Cycle">
+            <Border Background="White" Width="560" CornerRadius="12" Padding="25" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AA2C3E50">
+                <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBlock Grid.Column="0" Text="❌ Cancelamento de NFC-e (Evento 110111)" FontSize="18" FontWeight="Black" Foreground="#C0392B"/>
+                        <Border Grid.Column="1" Background="#FDEDEC" CornerRadius="4" Padding="6,2">
+                            <TextBlock Text="[F7]" Foreground="#C0392B" FontWeight="Black" FontSize="12"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- Detalhes da Venda Selecionada -->
+                    <Border Background="#F8F9F9" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, *">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding VendaCancelamento.Id, StringFormat='Venda ID: #{0}'}" FontWeight="Bold" FontSize="14" Foreground="#2C3E50"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding VendaCancelamento.ValorTotal, StringFormat='Total: R$ {0:N2}'}" FontWeight="Black" FontSize="14" Foreground="#27AE60" HorizontalAlignment="Right"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding VendaCancelamento.DataHora, StringFormat='Data: {0:dd/MM/yyyy HH:mm}'}" FontSize="12" Foreground="#7F8C8D" Margin="0,4,0,0"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding VendaCancelamento.Status, StringFormat='Status: {0}'}" FontSize="12" FontWeight="Bold" Foreground="#E67E22" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Mensagem de Retorno / Status SEFAZ -->
+                    <Border Background="#EAFAF1" BorderBrush="#2ECC71" BorderThickness="1" CornerRadius="6" Padding="10" IsVisible="{Binding MensagemCancelamentoStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="{Binding MensagemCancelamentoStatus}" Foreground="#1E8449" FontWeight="Bold" FontSize="13" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- Campo Justificativa Obrigatória (Mínimo 15 caracteres) -->
+                    <StackPanel Spacing="4">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Grid.Column="0" Text="Justificativa do Cancelamento (Mínimo 15 caracteres - SEFAZ):" FontWeight="Bold" FontSize="13" Foreground="#34495E"/>
+                            <TextBlock Grid.Column="1" Text="{Binding JustificativaCancelamento.Length, StringFormat='{}{0}/15'}" FontSize="12" FontWeight="Bold" Foreground="#7F8C8D"/>
+                        </Grid>
+                        <TextBox x:Name="TxtJustificativaCancelamento" Text="{Binding JustificativaCancelamento}" PlaceholderText="Informe o motivo detalhado do cancelamento..." FontSize="13" Height="65" AcceptsReturn="False" TextWrapping="Wrap" Padding="8" Background="#FAFAFA" BorderBrush="#BDC3C7" CornerRadius="4"/>
+                    </StackPanel>
+
+                    <!-- Senha do Supervisor / Gerente -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Senha do Supervisor / Gerente:" FontWeight="Bold" FontSize="13" Foreground="#34495E"/>
+                        <TextBox x:Name="TxtSenhaSupervisorCancelamento" Text="{Binding SenhaSupervisorCancelamento}" PasswordChar="*" PlaceholderText="Digite a senha master/supervisor..." FontSize="14" Padding="8" Background="#FAFAFA" BorderBrush="#BDC3C7" CornerRadius="4"/>
+                    </StackPanel>
+
+                    <!-- Botões de Ação Zero Mouse -->
+                    <Grid ColumnDefinitions="*, *" Margin="0,10,0,0">
+                        <Button Grid.Column="0" Command="{Binding FecharModalCancelamentoCommand}" Content="[ESC] Cancelar" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="14" Padding="10" Margin="0,0,8,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="1" Command="{Binding ConfirmarCancelamentoNfceCommand}" IsEnabled="{Binding !IsCancelandoProcessando}" Content="[ENTER] Confirmar na SEFAZ" Background="#C0392B" Foreground="White" FontWeight="Black" FontSize="14" Padding="10" Margin="8,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                    </Grid>
+                </StackPanel>
             </Border>
         </Border>
 

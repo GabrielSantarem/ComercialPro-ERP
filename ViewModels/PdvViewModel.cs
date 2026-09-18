@@ -40,20 +40,22 @@ public partial class PdvViewModel : ViewModelBase
     [ObservableProperty]
     private string _textoPesquisa = string.Empty;
 
-    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto || ModalFilaBalcaoAberto || ModalNfceEmitidaAberto;
+    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto || ModalFilaBalcaoAberto || ModalNfceEmitidaAberto || ModalCancelamentoAberto;
 
     public PdvViewModel(
         PdvService pdvService, 
         ILogger<PdvViewModel> logger,
         NfceEmissaoService? nfceService = null,
         ConfiguracaoFiscalEmpresa? fiscalConfig = null,
-        DanfeA4PdfService? danfePdfService = null)
+        DanfeA4PdfService? danfePdfService = null,
+        INfceCancelamentoService? cancelamentoService = null)
     {
         _pdvService = pdvService;
         _logger = logger;
         _nfceService = nfceService;
         _fiscalConfig = fiscalConfig;
         _danfePdfService = danfePdfService;
+        _cancelamentoService = cancelamentoService;
     }
 
     public async Task InicializarAsync()

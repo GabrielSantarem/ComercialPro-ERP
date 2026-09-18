@@ -3,7 +3,6 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using GetStartedApp.ViewModels;
 using Serilog;
@@ -14,17 +13,10 @@ public partial class PdvView : UserControl
 {
     public PdvView()
     {
-        AvaloniaXamlLoader.Load(this);
-
+        InitializeComponent();
         this.Focusable = true;
-
-        // Intercepta teclas no nível mais alto do UserControl via Tunnel
         this.AddHandler(InputElement.KeyDownEvent, PdvView_KeyDownTunnel, RoutingStrategies.Tunnel);
-
-        this.AttachedToVisualTree += (s, e) =>
-        {
-            FocarBusca();
-        };
+        this.AttachedToVisualTree += (s, e) => FocarBusca();
     }
 
     private void FocarBusca()
@@ -66,7 +58,35 @@ public partial class PdvView : UserControl
         if (this.DataContext is not PdvViewModel vm) return;
 
         // ==========================================
-        // 0. SE O MODAL DE NFC-E EMITIDA ESTIVER ABERTO:
+        // 0. SE O MODAL DE CANCELAMENTO FISCAL [F7] ESTIVER ABERTO:
+        // ==========================================
+        if (vm.ModalCancelamentoAberto)
+        {
+            if (e.Key == Key.Escape)
+            {
+                Log.Information("[PDV CANCELAMENTO] ESC -> Fechando modal de cancelamento");
+                vm.FecharModalCancelamentoCommand.Execute(null);
+                FocarBusca();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                if (!vm.IsCancelandoProcessando)
+                {
+                    Log.Information("[PDV CANCELAMENTO] ENTER -> Confirmando cancelamento da NFC-e");
+                    await vm.ConfirmarCancelamentoNfceCommand.ExecuteAsync(null);
+                    e.Handled = true;
+                }
+                return;
+            }
+
+            return;
+        }
+
+        // ==========================================
+        // 1. SE O MODAL DE NFC-E EMITIDA ESTIVER ABERTO:
         // ==========================================
         if (vm.ModalNfceEmitidaAberto)
         {
@@ -91,7 +111,7 @@ public partial class PdvView : UserControl
         }
 
         // ==========================================
-        // 1. SE O MODAL DE OPERAÇÕES DE CAIXA ESTIVER ABERTO:
+        // 2. SE O MODAL DE OPERAÇÕES DE CAIXA ESTIVER ABERTO:
         // ==========================================
         if (vm.ModalCaixaAberto)
         {
@@ -115,19 +135,21 @@ public partial class PdvView : UserControl
         }
 
         // ==========================================
-        // 2. SE O MODAL DA FILA DO BALCÃO [F4] ESTIVER ABERTO:
+        // 3. SE O MODAL DA FILA DO BALCÃO [F4] ESTIVER ABERTO:
         // ==========================================
         if (vm.ModalFilaBalcaoAberto)
         {
+            // ESC: Fecha o modal da fila
             if (e.Key == Key.Escape)
             {
+                Log.Information("[PDV MODAL FILA] ESC pressionado -> Fechando modal da fila");
                 vm.FecharModalFilaBalcaoCommand.Execute(null);
                 FocarBusca();
                 e.Handled = true;
                 return;
             }
 
-            // SETA PARA BAIXO / CIMA navega entre as comandas na fila
+            // Teclas de navegação UP / DOWN na lista de pedidos
             if (e.Key == Key.Down && vm.FilaFiltrada.Count > 0)
             {
                 var lista = vm.FilaFiltrada.ToList();
@@ -161,7 +183,7 @@ public partial class PdvView : UserControl
         }
 
         // ==========================================
-        // 3. SE O MODAL DE PAGAMENTO ESTIVER ABERTO:
+        // 4. SE O MODAL DE PAGAMENTO ESTIVER ABERTO:
         // ==========================================
         if (vm.IsModalAberto)
         {
@@ -201,7 +223,7 @@ public partial class PdvView : UserControl
         }
 
         // ==========================================
-        // 4. ATALHOS NA TELA PRINCIPAL DO PDV (BOCA DE CAIXA):
+        // 5. ATALHOS NA TELA PRINCIPAL DO PDV (BOCA DE CAIXA):
         // ==========================================
 
         // F4: Abre o modal de Fila do Balcão
@@ -240,8 +262,17 @@ public partial class PdvView : UserControl
             return;
         }
 
-        // F7: Sangria (se aberto)
-        if (e.Key == Key.F7 && vm.IsCaixaAberto)
+        // F7: Cancelar Última Venda / NFC-e (REV-002)
+        if (e.Key == Key.F7)
+        {
+            Log.Information("[PDV ATALHO] F7 -> Cancelar Última Venda / NFC-e");
+            await vm.AbrirModalCancelamentoAsync();
+            e.Handled = true;
+            return;
+        }
+
+        // F8: Sangria (se aberto)
+        if (e.Key == Key.F8 && vm.IsCaixaAberto)
         {
             vm.AbrirModalSangriaCommand.Execute(null);
             e.Handled = true;
@@ -269,8 +300,29 @@ public partial class PdvView : UserControl
         {
             if (vm.ItemSelecionado != null)
             {
-                Log.Information("[PDV ATALHO] DELETE -> Removendo item {Item}", vm.ItemSelecionado.Produto.Nome);
+                Log.Information("[PDV ATALHO] DELETE -> Removendo item: {Item}", vm.ItemSelecionado.Produto.Nome);
                 vm.RemoverItemCommand.Execute(vm.ItemSelecionado);
+                FocarBusca();
+                e.Handled = true;
+                return;
+            }
+        }
+
+        // Se pressionar ENTER no campo de busca e houver produto selecionado, insere no carrinho
+        if (e.Key == Key.Enter || e.Key == Key.Return)
+        {
+            if (vm.ProdutoPesquisaSelecionado != null)
+            {
+                vm.AdicionarItemCommand.Execute(vm.ProdutoPesquisaSelecionado);
+                FocarBusca();
+                e.Handled = true;
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(vm.TextoPesquisa))
+            {
+                vm.LancarProdutoCommand.Execute(null);
+                FocarBusca();
                 e.Handled = true;
                 return;
             }

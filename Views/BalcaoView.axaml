@@ -122,7 +122,7 @@
                             <Grid>
                                 <TextBox x:Name="TxtPesquisa" 
                                          Text="{Binding TextoPesquisa, Mode=TwoWay}" 
-                                         Watermark="Nome ou Código de Barras... [ENTER]" 
+                                         PlaceholderText="Nome ou Código de Barras... [ENTER]" 
                                          FontSize="16" Height="45" VerticalContentAlignment="Center" 
                                          CornerRadius="4" BorderThickness="2" BorderBrush="#3498DB"/>
 
@@ -216,7 +216,7 @@
                     <!-- Campo CPF/CNPJ -->
                     <StackPanel Spacing="6">
                         <TextBlock Text="CPF / CNPJ na Nota (Opcional):" FontWeight="Bold" Foreground="#34495E"/>
-                        <TextBox Text="{Binding ClienteCpf, Mode=TwoWay}" Watermark="000.000.000-00" FontSize="15" Height="40" VerticalContentAlignment="Center"/>
+                        <TextBox Text="{Binding ClienteCpf, Mode=TwoWay}" PlaceholderText="000.000.000-00" FontSize="15" Height="40" VerticalContentAlignment="Center"/>
                     </StackPanel>
 
                     <Border Background="#EBF5FB" CornerRadius="6" Padding="12">

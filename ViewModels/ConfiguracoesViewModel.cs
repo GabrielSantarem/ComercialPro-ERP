@@ -2,9 +2,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using GetStartedApp.Models;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Fiscal;
 using GetStartedApp.Services.Impressao;
 
 namespace GetStartedApp.ViewModels;
@@ -13,6 +16,8 @@ public partial class ConfiguracoesViewModel : ViewModelBase
 {
     private readonly PdvService _service;
     private readonly CupomTermicoService _cupomService = new();
+    private readonly IFechamentoFiscalService? _fechamentoFiscalService;
+    private readonly IBackupDatabaseService? _backupDatabaseService;
 
     public ObservableCollection<Vendedor> VendedoresLista { get; } = new();
 
@@ -99,9 +104,52 @@ public partial class ConfiguracoesViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool ModalCupomTesteVisivel { get; set; } = false;
 
-    public ConfiguracoesViewModel(PdvService service)
+    // === MÓDULO 2: FECHAMENTO FISCAL MENSAL (.ZIP CONTÁBIL) ===
+    [ObservableProperty]
+    public partial int MesFechamentoFiscal { get; set; } = DateTime.Now.Month;
+
+    public ObservableCollection<int> MesesDisponiveis { get; } = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+    [ObservableProperty]
+    public partial int AnoFechamentoFiscal { get; set; } = DateTime.Now.Year;
+
+    public ObservableCollection<int> AnosDisponiveis { get; } = [2024, 2025, 2026, 2027];
+
+    [ObservableProperty]
+    public partial string MensagemFechamentoFiscal { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string UltimoArquivoFechamento { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool IsGerandoFechamento { get; set; } = false;
+
+    // === MÓDULO 3: BACKUP E RESILIÊNCIA SQLITE ===
+    [ObservableProperty]
+    public partial string DataUltimoBackupTexto { get; set; } = "Nenhum backup recente";
+
+    [ObservableProperty]
+    public partial string TamanhoUltimoBackupTexto { get; set; } = "0 KB";
+
+    [ObservableProperty]
+    public partial int TotalBackupsArmazenados { get; set; } = 0;
+
+    [ObservableProperty]
+    public partial string MensagemBackupStatus { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool IsExecutandoBackup { get; set; } = false;
+
+    public ObservableCollection<InformacaoBackupDto> ListaBackups { get; } = new();
+
+    public ConfiguracoesViewModel(
+        PdvService service,
+        IFechamentoFiscalService? fechamentoFiscalService = null,
+        IBackupDatabaseService? backupDatabaseService = null)
     {
         _service = service;
+        _fechamentoFiscalService = fechamentoFiscalService;
+        _backupDatabaseService = backupDatabaseService;
         _ = CarregarDadosIniciaisAsync();
     }
 
@@ -109,6 +157,7 @@ public partial class ConfiguracoesViewModel : ViewModelBase
     {
         await CarregarVendedoresAsync();
         await CarregarConfiguracoesHardwareAsync();
+        await CarregarStatusBackupAsync();
     }
 
     [RelayCommand]
@@ -177,6 +226,114 @@ public partial class ConfiguracoesViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    public async Task GerarFechamentoFiscalAsync()
+    {
+        if (_fechamentoFiscalService == null)
+        {
+            MensagemFechamentoFiscal = "❌ Serviço de Fechamento Fiscal não configurado no container de injeção.";
+            return;
+        }
+
+        IsGerandoFechamento = true;
+        MensagemFechamentoFiscal = "Compilando XMLs fiscais e gerando resumo CSV...";
+
+        try
+        {
+            var pastaDestino = Path.Combine(AppContext.BaseDirectory, "fechamentos_fiscais");
+            var resumo = await _fechamentoFiscalService.GerarPacoteMensalAsync(AnoFechamentoFiscal, MesFechamentoFiscal, pastaDestino);
+
+            UltimoArquivoFechamento = resumo.CaminhoArquivoZip;
+            MensagemFechamentoFiscal = $"✅ Pacote gerado com sucesso!\n• Autorizadas: {resumo.TotalAutorizadas} | Canceladas: {resumo.TotalCanceladas}\n• Faturamento: R$ {resumo.FaturamentoTotal:N2} | Tributos Aprox: R$ {resumo.TotalImpostosAproximados:N2}\n• Arquivo: {resumo.CaminhoArquivoZip}";
+        }
+        catch (Exception ex)
+        {
+            MensagemFechamentoFiscal = $"⚠️ {ex.Message}";
+        }
+        finally
+        {
+            IsGerandoFechamento = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ExecutarBackupManualAsync()
+    {
+        if (_backupDatabaseService == null)
+        {
+            MensagemBackupStatus = "❌ Serviço de Backup não configurado.";
+            return;
+        }
+
+        IsExecutandoBackup = true;
+        MensagemBackupStatus = "Executando snapshot atômico SQLite via VACUUM INTO...";
+
+        try
+        {
+            var backup = await _backupDatabaseService.ExecutarBackupAsync("Painel_Manual");
+            MensagemBackupStatus = $"✅ Backup criado com sucesso! Arquivo: {backup.NomeArquivo} ({backup.TamanhoBytes / 1024:N0} KB)";
+            await CarregarStatusBackupAsync();
+        }
+        catch (Exception ex)
+        {
+            MensagemBackupStatus = $"❌ Falha ao criar backup: {ex.Message}";
+        }
+        finally
+        {
+            IsExecutandoBackup = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task LimparBackupsAntigosAsync()
+    {
+        if (_backupDatabaseService == null) return;
+
+        try
+        {
+            var removidos = await _backupDatabaseService.LimparBackupsAntigosAsync(30);
+            MensagemBackupStatus = $"🧹 Limpeza concluída: {removidos} arquivo(s) com mais de 30 dias foram removidos.";
+            await CarregarStatusBackupAsync();
+        }
+        catch (Exception ex)
+        {
+            MensagemBackupStatus = $"❌ Falha na limpeza: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public async Task CarregarStatusBackupAsync()
+    {
+        if (_backupDatabaseService == null) return;
+
+        try
+        {
+            var backups = await _backupDatabaseService.ListarBackupsExistentesAsync();
+            ListaBackups.Clear();
+            foreach (var b in backups)
+            {
+                ListaBackups.Add(b);
+            }
+
+            TotalBackupsArmazenados = backups.Count;
+            var ultimo = backups.FirstOrDefault();
+            if (ultimo != null)
+            {
+                DataUltimoBackupTexto = ultimo.DataHoraCriacao.ToString("dd/MM/yyyy HH:mm:ss");
+                TamanhoUltimoBackupTexto = $"{ultimo.TamanhoBytes / 1024:N0} KB";
+            }
+            else
+            {
+                DataUltimoBackupTexto = "Nenhum backup encontrado";
+                TamanhoUltimoBackupTexto = "0 KB";
+            }
+        }
+        catch
+        {
+            // Supressão defensiva em inicialização
+        }
+    }
+
+    [RelayCommand]
     private async Task CarregarVendedoresAsync()
     {
         VendedoresLista.Clear();
@@ -188,7 +345,7 @@ public partial class ConfiguracoesViewModel : ViewModelBase
     private async Task AdicionarVendedorAsync()
     {
         if (string.IsNullOrWhiteSpace(NovoVendedorNome)) return;
-        await _service.AdicionarVendedorAsync(NovoVendedorNome);
+        await _service.AdicionarVendedorAsync(new Vendedor { Nome = NovoVendedorNome });
 
         NovoVendedorNome = string.Empty;
         MensagemAviso = "Funcionário habilitado com sucesso!";

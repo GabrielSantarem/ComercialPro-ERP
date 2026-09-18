@@ -1,6 +1,6 @@
 # COMERCIAL PRO ERP — DOCUMENTAÇÃO TÉCNICA E OPERACIONAL DO SISTEMA
 
-> **Versão:** 1.2.0  
+> **Versão:** 1.3.0 (Homologado com 208 Testes Unitários)  
 > **Framework:** .NET 10 (C# 14)  
 > **UI Toolkit:** Avalonia UI 11.2 (Cross-Platform / Linux Wayland & X11 / Windows)  
 > **Persistência:** Entity Framework Core 9 / SQLite com Integridade Transacional  
@@ -234,6 +234,38 @@ Localização: [EstoqueView.axaml](file:///home/tomate/Lixeira/dotnet/C#/GetStar
    - Coluna de conferência física (linha para anotação e conferência de quebras/perdas).
 
 ---
+
+
+---
+
+### 4.4 Tríade Crítica de Produção (REV-002)
+
+#### 4.4.1 Cancelamento Oficial de NFC-e (Evento 110111)
+- **Serviço:** [NfceCancelamentoService.cs](file:///home/tomate/Lixeira/dotnet/C#/GetStartedApp/Services/Fiscal/NfceCancelamentoService.cs) / [INfceCancelamentoService.cs](file:///home/tomate/Lixeira/dotnet/C#/GetStartedApp/Services/Fiscal/INfceCancelamentoService.cs)
+- **Regras:**
+  - Justificativa mínima de 15 caracteres (exigência SEFAZ).
+  - Senha de supervisor (`1234` ou `admin`) obrigatória para prevenir fraudes.
+  - Janela de cancelamento de até 30 minutos a partir da emissão (Rejeição 220).
+  - Reincorporação automática e atômica ao estoque físico via `AjustesEstoque` (`TipoAjuste = "ENTRADA_AVULSA"`).
+  - Abatimento correspondente no turno de caixa ativo (`CaixaTurno`).
+  - Interface do PDV equipada com atalho `[F7]` e modal flutuante com bloqueio de eventos em segundo plano.
+
+#### 4.4.2 Fechamento Fiscal Mensal (.ZIP Contábil)
+- **Serviço:** [FechamentoFiscalService.cs](file:///home/tomate/Lixeira/dotnet/C#/GetStartedApp/Services/Fiscal/FechamentoFiscalService.cs) / [IFechamentoFiscalService.cs](file:///home/tomate/Lixeira/dotnet/C#/GetStartedApp/Services/Fiscal/IFechamentoFiscalService.cs)
+- **Regras:**
+  - Varredura de vendas autorizadas e canceladas de um determinado mês e ano.
+  - Empacotamento em `FechamentoFiscal_[CNPJ]_[ANO]_[MES].zip`.
+  - Estrutura de pastas padronizada: `Autorizadas/` (XMLs nfeProc), `Canceladas/` (XMLs procEventoNFe) e `Resumo_Fiscal_AAAA_MM.csv`.
+  - Exportação e integração direta na aba "Fechamento Fiscal" em Configurações.
+
+#### 4.4.3 Backup Resiliente do Banco SQLite (`pdv.db`)
+- **Serviço:** [BackupDatabaseService.cs](file:///home/tomate/Lixeira/dotnet/C#/GetStartedApp/Services/BackupDatabaseService.cs) / [IBackupDatabaseService.cs](file:///home/tomate/Lixeira/dotnet/C#/GetStartedApp/Services/IBackupDatabaseService.cs)
+- **Regras:**
+  - Snapshot seguro em runtime usando `VACUUM INTO` (sem bloquear leituras/escritas concorrentes em modo WAL).
+  - Compactação automática em arquivo ZIP nomeado com timestamp (`pdv_backup_yyyyMMdd_HHmmss.zip`).
+  - Retenção programada com expurgo automático de arquivos com mais de 30 dias (mantendo no mínimo 5 backups).
+  - Disparo automático integrado no Fechamento de Caixa (`PdvService.Caixa.cs`).
+  - Restauração assistida na aba "Backup do Sistema" em Configurações.
 
 ## 5. CICLO DE VIDA DO BANCO DE DADOS & MIGRAÇÕES
 

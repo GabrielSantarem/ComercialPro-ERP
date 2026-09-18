@@ -11,6 +11,22 @@ public class Venda
     public DateTime DataHora { get; set; }
     public decimal ValorTotal { get; set; }
     
+    public string Status { get; set; } = "FINALIZADA"; // "FINALIZADA", "CANCELADA"
+    public string FormaPagamento { get; set; } = "Dinheiro";
+
+    // Dados Fiscais NFC-e (SEFAZ)
+    public string? ChaveAcessoNfce { get; set; }
+    public long? NumeroNfce { get; set; }
+    public int? SerieNfce { get; set; }
+    public string? ProtocoloAutorizacaoNfce { get; set; }
+    public string? XmlNfce { get; set; }
+
+    // Dados de Cancelamento Oficial (Evento 110111)
+    public DateTime? DataHoraCancelamento { get; set; }
+    public string? ProtocoloCancelamento { get; set; }
+    public string? JustificativaCancelamento { get; set; }
+    public string? XmlCancelamento { get; set; }
+
     // Assinatura de cadeia antifraude (Blockchain local SHA-256)
     public string HashSeguranca { get; set; } = string.Empty;
 

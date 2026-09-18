@@ -139,6 +139,21 @@ public partial class PdvService
         _logger.LogInformation("Caixa #{Id} fechado. Esperado: R$ {Esperado:N2}, Informado: R$ {Informado:N2}, Diferença: R$ {Dif:N2}",
             turno.Id, turno.SaldoEsperadoEmDinheiro, saldoInformado, turno.DiferencaQuebra);
 
+        // Módulo 3: Gatilho automático de Backup Resiliente no fechamento de turno
+        if (_backupService != null)
+        {
+            try
+            {
+                _logger.LogInformation("Disparando backup automático SQLite após fechamento do Turno #{Id}", turno.Id);
+                await _backupService.ExecutarBackupAsync($"FechamentoTurno_{turno.Id}");
+                await _backupService.LimparBackupsAntigosAsync(30);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro no backup automático pós-fechamento do turno #{Id}", turno.Id);
+            }
+        }
+
         return turno;
     }
 
