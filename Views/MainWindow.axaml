@@ -3,11 +3,11 @@
         xmlns:vm="using:GetStartedApp.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="GetStartedApp.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Comercial Pro ERP"
+        Title="Comercial Pro ERP - Automação Comercial"
         WindowState="Maximized">
 
     <Design.DataContext>
@@ -16,32 +16,158 @@
 
     <Grid RowDefinitions="Auto, *">
         
-        <!-- CABEÇALHO GLOBAL (Substitui a velha barra lateral) -->
+        <!-- CABEÇALHO GLOBAL -->
         <Border Grid.Row="0" Background="#2C3E50" Height="70" Padding="20,0" BoxShadow="0 2 10 0 #55000000" ZIndex="100">
-            <Grid ColumnDefinitions="Auto, *, Auto, Auto">
+            <Grid ColumnDefinitions="Auto, *, Auto, Auto, Auto">
                 
-                <!-- Logo -->
+                <!-- Logo & Nome do Sistema -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Spacing="10">
                     <TextBlock Text="🛒" FontSize="28"/>
                     <TextBlock Text="Comercial Pro ERP" Foreground="White" FontSize="22" FontWeight="Black" VerticalAlignment="Center" LetterSpacing="1"/>
                 </StackPanel>
 
-                <!-- Status Usuário -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0" IsVisible="{Binding !IsHome}">
-                    <TextBlock Text="Operador: Padrão" Foreground="#95A5A6" FontSize="14" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                <!-- Botão Atalhos Globais [F1] -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
+                    <Button Content="⌨️ Atalhos [F1]" 
+                            Command="{Binding ToggleAjudaAtalhosCommand}"
+                            Background="#34495E" Foreground="#BDC3C7" FontWeight="Bold" FontSize="13" Padding="12,6" CornerRadius="6" Cursor="Hand"/>
                 </StackPanel>
 
-                <!-- Botão Voltar (Hub) - Escondido se já estiver na Home -->
-                <Button Grid.Column="3" Content="⬅️ Voltar aos Módulos" 
-                        Command="{Binding NavigateToHomeCommand}" 
+                <!-- Badge Kiosk de Estação Dedicada [F12] -->
+                <Button Grid.Column="3" 
+                        Command="{Binding AbrirConfiguracaoTerminalCommand}"
+                        Background="#1ABC9C" Foreground="White" FontWeight="Bold" FontSize="13" Padding="14,6" CornerRadius="6" Cursor="Hand" Margin="0,0,15,0"
+                        ToolTip.Tip="Clique ou pressione [F12] para alterar o modo de estação ou liberar acesso gerencial">
+                    <TextBlock Text="{Binding BadgeEstacaoTexto}" FontWeight="Black"/>
+                </Button>
+
+                <!-- Botão Voltar (Hub de Módulos) -->
+                <Button Grid.Column="4" Content="⬅️ Menu Principal" 
+                        Command="{Binding SolicitarRetornoAoHubCommand}" 
                         IsVisible="{Binding !IsHome}"
-                        Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="16" Padding="15,8" CornerRadius="8" Cursor="Hand" VerticalAlignment="Center"/>
+                        Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="15" Padding="14,8" CornerRadius="8" Cursor="Hand" VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
-        <!-- ESPAÇO DE TRABALHO (Carrega Pdv, Estoque ou Dashboard) -->
+        <!-- ESPAÇO DE TRABALHO -->
         <Border Grid.Row="1" Background="#ECF0F1">
             <TransitioningContentControl Content="{Binding CurrentPage}" />
+        </Border>
+
+        <!-- ========================================================================= -->
+        <!-- MODAL 1: AUTENTICAÇÃO E CONFIGURAÇÃO DO TERMINAL KIOSK [F12]               -->
+        <!-- ========================================================================= -->
+        <Border Grid.Row="0" Grid.RowSpan="2" Background="#CC000000" IsVisible="{Binding ExibirModalAcessoGerencial}" ZIndex="500" Padding="30">
+            <Border Background="White" CornerRadius="12" Padding="25" MaxWidth="560" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 30 0 #88000000">
+                <StackPanel Spacing="15">
+                    <!-- Título -->
+                    <Grid ColumnDefinitions="*, Auto">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="🛡️ Acesso Gerencial &amp; Terminal Kiosk" FontSize="18" FontWeight="Black" Foreground="#2C3E50"/>
+                            <TextBlock Text="Terminal restrito. Insira a senha master para desbloquear ou reconfigurar." FontSize="12" Foreground="#7F8C8D" Margin="0,3,0,0"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="✕" Command="{Binding FecharModalAcessoCommand}" Background="Transparent" Foreground="#7F8C8D" FontSize="16" FontWeight="Bold" Cursor="Hand"/>
+                    </Grid>
+
+                    <Separator Background="#E0E0E0"/>
+
+                    <!-- Senha Master -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Senha Master do Gerente:" FontWeight="Bold" FontSize="13" Foreground="#2C3E50"/>
+                        <TextBox Text="{Binding SenhaGerencialDigitada, Mode=TwoWay}" PasswordChar="●" Height="40" FontSize="16" VerticalContentAlignment="Center" PlaceholderText="Digite a senha master (padrão: admin)"/>
+                        <TextBlock Text="{Binding MensagemErroAcesso}" Foreground="#E74C3C" FontWeight="Bold" FontSize="12" IsVisible="{Binding MensagemErroAcesso, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    </StackPanel>
+
+                    <!-- Botão Liberar Acesso ao Hub -->
+                    <Button Content="🔓 Desbloquear e Ir ao Menu Principal" 
+                            Command="{Binding ConfirmarAcessoGerencialCommand}" 
+                            Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="14" Height="42" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
+
+                    <!-- Painel de Reconfiguração do Terminal -->
+                    <Expander Header="⚙️ Reconfigurar Função Desta Máquina (Kiosk)" IsExpanded="{Binding PermissaoGerencialConcedida}">
+                        <StackPanel Spacing="12" Margin="0,10,0,0">
+                            <TextBlock Text="Selecione a função dedicada deste computador na loja:" FontSize="12" Foreground="#555"/>
+                            
+                            <Grid ColumnDefinitions="*, *">
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Modo da Estação:" FontWeight="Bold" FontSize="12"/>
+                                    <ComboBox ItemsSource="{Binding ModosDisponiveis}" SelectedItem="{Binding ModoParaConfigurar, Mode=TwoWay}" HorizontalAlignment="Stretch" Height="36"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <TextBlock Text="Nome do Terminal:" FontWeight="Bold" FontSize="12"/>
+                                    <TextBox Text="{Binding NomeParaConfigurar, Mode=TwoWay}" Height="36" PlaceholderText="Ex: BALCAO-01"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Alterar Senha Master (opcional):" FontSize="12" FontWeight="Bold"/>
+                                <TextBox Text="{Binding NovaSenhaMaster, Mode=TwoWay}" PasswordChar="●" Height="36" PlaceholderText="Deixe em branco para manter a atual"/>
+                            </StackPanel>
+
+                            <Button Content="💾 Salvar Configuração da Máquina" 
+                                    Command="{Binding SalvarConfiguracaoEstacaoCommand}" 
+                                    Background="#2980B9" Foreground="White" FontWeight="Bold" Height="38" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- ========================================================================= -->
+        <!-- MODAL 2: GUIA RÁPIDO DE TECLADO ZERO MOUSE [F1]                            -->
+        <!-- ========================================================================= -->
+        <Border Grid.Row="0" Grid.RowSpan="2" Background="#CC000000" IsVisible="{Binding ExibirModalAjudaAtalhos}" ZIndex="500" Padding="30">
+            <Border Background="White" CornerRadius="12" Padding="25" MaxWidth="620" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 10 30 0 #88000000">
+                <StackPanel Spacing="15">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="⌨️ Atalhos de Teclado Universais (Zero Mouse)" FontSize="18" FontWeight="Black" Foreground="#2C3E50"/>
+                            <TextBlock Text="Opere todo o sistema com agilidade sem tirar as mãos do teclado." FontSize="12" Foreground="#7F8C8D" Margin="0,3,0,0"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="✕" Command="{Binding ToggleAjudaAtalhosCommand}" Background="Transparent" Foreground="#7F8C8D" FontSize="16" FontWeight="Bold" Cursor="Hand"/>
+                    </Grid>
+
+                    <Separator Background="#E0E0E0"/>
+
+                    <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto">
+                        <!-- Linha 1 -->
+                        <Border Grid.Row="0" Grid.Column="0" Padding="8" Background="#F8F9FA" Margin="4" CornerRadius="6">
+                            <TextBlock Text="[F1] Ajuda &amp; Guia de Atalhos" FontWeight="Bold" Foreground="#2C3E50"/>
+                        </Border>
+                        <Border Grid.Row="0" Grid.Column="1" Padding="8" Background="#F8F9FA" Margin="4" CornerRadius="6">
+                            <TextBlock Text="[F2] Terminal Balcão (Pré-Venda)" FontWeight="Bold" Foreground="#2980B9"/>
+                        </Border>
+
+                        <!-- Linha 2 -->
+                        <Border Grid.Row="1" Grid.Column="0" Padding="8" Background="#F8F9FA" Margin="4" CornerRadius="6">
+                            <TextBlock Text="[F3] ou [F4] Boca de Caixa (PDV)" FontWeight="Bold" Foreground="#27AE60"/>
+                        </Border>
+                        <Border Grid.Row="1" Grid.Column="1" Padding="8" Background="#F8F9FA" Margin="4" CornerRadius="6">
+                            <TextBlock Text="[F10] Turno (Abertura / Sangria)" FontWeight="Bold" Foreground="#D35400"/>
+                        </Border>
+
+                        <!-- Linha 3 -->
+                        <Border Grid.Row="2" Grid.Column="0" Padding="8" Background="#F8F9FA" Margin="4" CornerRadius="6">
+                            <TextBlock Text="[F12] Acesso Gerencial &amp; Kiosk" FontWeight="Bold" Foreground="#8E44AD"/>
+                        </Border>
+                        <Border Grid.Row="2" Grid.Column="1" Padding="8" Background="#F8F9FA" Margin="4" CornerRadius="6">
+                            <TextBlock Text="[ESC] Voltar ou Fechar Modais" FontWeight="Bold" Foreground="#C0392B"/>
+                        </Border>
+
+                        <!-- Linha 4: Dicas Operacionais -->
+                        <Border Grid.Row="3" Grid.ColumnSpan="2" Padding="12" Background="#EBF5FB" Margin="4,10,4,4" CornerRadius="6">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="💡 Multiplicador no Balcão e Caixa:" FontWeight="Bold" Foreground="#2980B9"/>
+                                <TextBlock Text="Digite '10*arroz' ou '5*7890001' para lançar múltiplas unidades direto." FontSize="12" Foreground="#34495E"/>
+                                <TextBlock Text="Pressione [F4] no Caixa para abrir a fila de comandas aguardando pagamento." FontSize="12" Foreground="#34495E"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Button Content="Entendido [ESC]" Command="{Binding ToggleAjudaAtalhosCommand}" Background="#2C3E50" Foreground="White" FontWeight="Bold" Height="38" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
         </Border>
         
     </Grid>

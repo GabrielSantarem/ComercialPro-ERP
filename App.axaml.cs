@@ -53,6 +53,7 @@ public partial class App : Application
             collection.AddSingleton<PdvService>();
             collection.AddSingleton<NfeXmlParserService>();
             collection.AddSingleton<CupomTermicoService>();
+            collection.AddSingleton<EstacaoKioskService>();
             
             // Nossas ViewModels
             collection.AddTransient<MainViewModel>();           // O Navigation Shell (Janela)
