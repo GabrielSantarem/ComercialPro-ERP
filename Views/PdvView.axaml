@@ -246,6 +246,11 @@
                         </Grid>
                     </Border>
 
+                    <!-- Opção de Emissão Fiscal NFC-e -->
+                    <CheckBox IsChecked="{Binding EmitirNfceAoFinalizar}" Margin="0,5,0,0">
+                        <TextBlock Text="🏛️ Emitir Cupom Fiscal NFC-e (Zeus Automação)" FontWeight="Bold" Foreground="#2980B9" FontSize="14"/>
+                    </CheckBox>
+
                     <Grid ColumnDefinitions="*, *" Margin="0,15,0,0">
                         <Button Grid.Column="0" Command="{Binding FecharModalPagamentoCommand}" Content="[ESC] Cancelar" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="16" Padding="12" Margin="0,0,10,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
                         <Button Grid.Column="1" Command="{Binding ConfirmarPagamentoCommand}" Content="✅ [ENTER] Confirmar Recebimento" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="17" Padding="12" Margin="10,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="{Binding PodeConfirmarPagamento}" Cursor="Hand"/>
@@ -350,6 +355,32 @@
                         <Button Grid.Column="1" Command="{Binding ConfirmarAcaoCaixaCommand}" Content="[ENTER] Confirmar" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="15" Padding="12" Margin="10,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
                     </Grid>
                 </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- CAMADA 5: MODAL DE VISUALIZAÇÃO DA NFC-e EMITIDA -->
+        <Border Background="#F2000000" 
+                IsVisible="{Binding ModalNfceEmitidaAberto}" 
+                IsHitTestVisible="{Binding ModalNfceEmitidaAberto}"
+                ZIndex="120">
+            <Border Background="White" Width="680" CornerRadius="12" Padding="25" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #44000000">
+                <Grid RowDefinitions="Auto, *, Auto">
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,10">
+                        <TextBlock Text="{Binding UltimaNfceMensagemStatus}" FontSize="18" FontWeight="Black" Foreground="#27AE60"/>
+                        <TextBlock Text="{Binding UltimaNfceChaveAcesso, StringFormat='Chave: {0}'}" FontSize="12" Foreground="#7F8C8D" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Background="#1E1E1E" CornerRadius="6" Padding="15" MaxHeight="380">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <TextBlock Text="{Binding UltimaNfceDanfeTexto}" FontFamily="Courier New, Monospace" FontSize="11" Foreground="#00FF66"/>
+                        </ScrollViewer>
+                    </Border>
+
+                    <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0,15,0,0">
+                        <Button Grid.Column="0" Command="{Binding FecharModalNfceEmitidaCommand}" Content="[ESC] Fechar Visualização" Background="#7F8C8D" Foreground="White" FontWeight="Bold" FontSize="14" Padding="10" Margin="0,0,5,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                        <Button Grid.Column="1" Command="{Binding FecharModalNfceEmitidaCommand}" Content="🖨️ [ENTER] Imprimir Cupom Térmico" Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="14" Padding="10" Margin="5,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                    </Grid>
+                </Grid>
             </Border>
         </Border>
 

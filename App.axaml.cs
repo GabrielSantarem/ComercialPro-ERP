@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using GetStartedApp.Data;
+using GetStartedApp.Models.Fiscal;
 using GetStartedApp.Services;
 using GetStartedApp.Services.Fiscal;
 using GetStartedApp.Services.Impressao;
@@ -34,9 +35,9 @@ public partial class App : Application
 
         try
         {
-            Log.Information("Iniciando Aplicação Comercial Pro ERP...");
+            Log.Information("Aplicação inicializada pelo Splash Screen.");
 
-            // 1. Configurar injeção de dependência (DI)!
+            // === 1. Container de Injeção de Dependência (DI) ===
             var collection = new ServiceCollection();
             
             // Plugar o Serilog na injeção de dependências do .NET
@@ -54,6 +55,11 @@ public partial class App : Application
             collection.AddSingleton<NfeXmlParserService>();
             collection.AddSingleton<CupomTermicoService>();
             collection.AddSingleton<EstacaoKioskService>();
+
+            // Módulo Fiscal NFC-e (Zeus Automação)
+            collection.AddSingleton<ConfiguracaoFiscalEmpresa>();
+            collection.AddSingleton<DanfeNfceTermicaService>();
+            collection.AddSingleton<NfceEmissaoService>();
             
             // Nossas ViewModels
             collection.AddTransient<MainViewModel>();           // O Navigation Shell (Janela)

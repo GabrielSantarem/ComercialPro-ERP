@@ -1,9 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using GetStartedApp.Models;
+using GetStartedApp.Models.Fiscal;
 using Microsoft.Extensions.Logging;
 
 namespace GetStartedApp.ViewModels;
@@ -40,6 +42,23 @@ public partial class PdvViewModel
     public decimal Troco => ValorRecebido > TotalComTaxa ? ValorRecebido - TotalComTaxa : 0m;
     public bool PodeConfirmarPagamento => ValorRecebido >= TotalComTaxa && TotalComTaxa > 0;
 
+    // === CONTROLE FISCAL NFC-e (ZEUS) ===
+    [ObservableProperty]
+    public partial bool EmitirNfceAoFinalizar { get; set; } = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsBloqueadoPorModal))]
+    public partial bool ModalNfceEmitidaAberto { get; set; }
+
+    [ObservableProperty]
+    public partial string? UltimaNfceDanfeTexto { get; set; }
+
+    [ObservableProperty]
+    public partial string? UltimaNfceChaveAcesso { get; set; }
+
+    [ObservableProperty]
+    public partial string? UltimaNfceMensagemStatus { get; set; }
+
     [RelayCommand]
     public void AbrirModalPagamento()
     {
@@ -70,11 +89,47 @@ public partial class PdvViewModel
     }
 
     [RelayCommand]
+    public void FecharModalNfceEmitida()
+    {
+        ModalNfceEmitidaAberto = false;
+    }
+
+    [RelayCommand]
     private async Task ConfirmarPagamentoAsync()
     {
         if (!PodeConfirmarPagamento) return;
 
         _logger.LogInformation("Confirmando Checkout do Carrinho. Itens: {Qtd}, Cliente: {Cliente}", Carrinho.Count, ClienteIdentificacao);
+
+        // Copiar itens para emissão fiscal
+        var itensParaNfce = Carrinho.Select((i, idx) => new ItemEmissaoNfceDto
+        {
+            ItemNumero = idx + 1,
+            CodigoProduto = i.Produto.Id.ToString(),
+            CodigoBarrasEan = string.IsNullOrWhiteSpace(i.Produto.CodigoBarras) ? "SEM GTIN" : i.Produto.CodigoBarras,
+            DescricaoProduto = i.Produto.Nome,
+            Ncm = "22021000",
+            Cfop = 5102,
+            UnidadeComercial = "UN",
+            Quantidade = i.Quantidade,
+            ValorUnitario = i.Produto.Preco,
+            Csosn = "102",
+            AliquotaTributosAproximadosPercentual = 15.00m
+        }).ToList();
+
+        var formaCod = FormaPagamentoSelecionada switch
+        {
+            "Dinheiro" => "01",
+            "PIX" => "17",
+            "Débito" => "04",
+            "Crédito (+2%)" => "03",
+            _ => "99"
+        };
+
+        var pagamentosNfce = new System.Collections.Generic.List<PagamentoEmissaoNfceDto>
+        {
+            new PagamentoEmissaoNfceDto { MeioPagamento = formaCod, Valor = ValorRecebido }
+        };
 
         if (PedidoBalcaoEmAtendimento != null)
         {
@@ -88,6 +143,35 @@ public partial class PdvViewModel
             var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
             var vendedorId = VendedorSelecionado?.Id ?? 1;
             await _pdvService.SalvarPedidoAsync(vendedorId, itens, FormaPagamentoSelecionada);
+        }
+
+        // Emissão Fiscal Automática NFC-e se estiver ativo
+        if (EmitirNfceAoFinalizar && _nfceService != null && _fiscalConfig != null)
+        {
+            var dadosNfce = new DadosEmissaoNfce
+            {
+                CpfConsumidor = string.IsNullOrWhiteSpace(ClienteIdentificacao) ? null : ClienteIdentificacao,
+                NomeConsumidor = string.IsNullOrWhiteSpace(ClienteIdentificacao) ? null : "CLIENTE BALCAO",
+                Itens = itensParaNfce,
+                Pagamentos = pagamentosNfce,
+                ValorTroco = Troco,
+                ModoContingenciaOffline = false
+            };
+
+            var retornoNfce = _nfceService.EmitirNfce(dadosNfce, _fiscalConfig);
+            if (retornoNfce.Sucesso)
+            {
+                UltimaNfceDanfeTexto = retornoNfce.DanfeTextoTermica;
+                UltimaNfceChaveAcesso = retornoNfce.ChaveAcesso;
+                UltimaNfceMensagemStatus = $"✅ NFC-e Nº {retornoNfce.NumeroNota:D6} emitida e assinada com sucesso!";
+                ModalNfceEmitidaAberto = true;
+                _logger.LogInformation("NFC-e emitida com sucesso. Chave: {Chave}", retornoNfce.ChaveAcesso);
+            }
+            else
+            {
+                UltimaNfceMensagemStatus = $"⚠️ Erro na emissão fiscal: {retornoNfce.Mensagem}";
+                _logger.LogWarning("Falha ao emitir NFC-e: {Msg}", retornoNfce.Mensagem);
+            }
         }
 
         Carrinho.Clear();

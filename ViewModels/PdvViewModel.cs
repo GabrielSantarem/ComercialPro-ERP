@@ -6,7 +6,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using GetStartedApp.Models;
+using GetStartedApp.Models.Fiscal;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Fiscal;
 using Microsoft.Extensions.Logging;
 
 namespace GetStartedApp.ViewModels;
@@ -15,6 +17,8 @@ public partial class PdvViewModel : ViewModelBase
 {
     private readonly PdvService _pdvService;
     private readonly ILogger<PdvViewModel> _logger;
+    private readonly NfceEmissaoService? _nfceService;
+    private readonly ConfiguracaoFiscalEmpresa? _fiscalConfig;
 
     public ObservableCollection<ProdutoItem> Carrinho { get; } = [];
     public ObservableCollection<Produto> ResultadosPesquisa { get; } = [];
@@ -35,12 +39,18 @@ public partial class PdvViewModel : ViewModelBase
     [ObservableProperty]
     private string _textoPesquisa = string.Empty;
 
-    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto || ModalFilaBalcaoAberto;
+    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto || ModalFilaBalcaoAberto || ModalNfceEmitidaAberto;
 
-    public PdvViewModel(PdvService pdvService, ILogger<PdvViewModel> logger)
+    public PdvViewModel(
+        PdvService pdvService, 
+        ILogger<PdvViewModel> logger,
+        NfceEmissaoService? nfceService = null,
+        ConfiguracaoFiscalEmpresa? fiscalConfig = null)
     {
         _pdvService = pdvService;
         _logger = logger;
+        _nfceService = nfceService;
+        _fiscalConfig = fiscalConfig;
     }
 
     public async Task InicializarAsync()
@@ -157,8 +167,10 @@ public partial class PdvViewModel : ViewModelBase
         AdicionarAoCarrinho(produto, 1);
     }
 
-    private void AdicionarAoCarrinho(Produto produto, int quantidade)
+    public void AdicionarAoCarrinho(Produto produto, int quantidade)
     {
+        if (produto == null || quantidade <= 0) return;
+
         var itemExistente = Carrinho.FirstOrDefault(x => x.Produto.Id == produto.Id);
         if (itemExistente != null)
         {
@@ -171,6 +183,37 @@ public partial class PdvViewModel : ViewModelBase
             Carrinho.Add(new ProdutoItem { Produto = produto, Quantidade = quantidade });
         }
 
+        AtualizarTotal();
+    }
+
+    [RelayCommand]
+    private void IncrementarItem(ProdutoItem item)
+    {
+        if (item == null) return;
+        item.Quantidade++;
+        AtualizarTotal();
+    }
+
+    [RelayCommand]
+    private void DecrementarItem(ProdutoItem item)
+    {
+        if (item == null) return;
+        if (item.Quantidade > 1)
+        {
+            item.Quantidade--;
+        }
+        else
+        {
+            Carrinho.Remove(item);
+        }
+        AtualizarTotal();
+    }
+
+    [RelayCommand]
+    private void RemoverItem(ProdutoItem item)
+    {
+        if (item == null) return;
+        Carrinho.Remove(item);
         AtualizarTotal();
     }
 
