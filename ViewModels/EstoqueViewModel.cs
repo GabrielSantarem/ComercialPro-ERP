@@ -67,6 +67,7 @@ public partial class EstoqueViewModel : ViewModelBase
         _ = BuscarGiroEstoqueAsync();
         _ = CarregarHistoricoEntradasAsync();
         _ = CarregarHistoricoAjustesAsync();
+        _ = CarregarAuditoriaAsync();
     }
 
     partial void OnSomenteEstoqueCriticoChanged(bool value)
@@ -278,4 +279,111 @@ public partial class EstoqueViewModel : ViewModelBase
         await Task.Delay(4000);
         MensagemAviso = string.Empty;
     }
+
+    // === ABA: AUDITORIA & INVENTÁRIO FÍSICO ===
+    public ObservableCollection<ItemAuditoriaEstoqueDto> ItensAuditoria { get; } = [];
+    [ObservableProperty] public partial ResumoAuditoriaDto ResumoAuditoria { get; set; } = new();
+    [ObservableProperty] public partial string TermoBuscaAuditoria { get; set; } = string.Empty;
+    [ObservableProperty] public partial string ResponsavelInventario { get; set; } = "Gerente de Loja";
+    [ObservableProperty] public partial string ObservacaoInventario { get; set; } = "Inventário Físico Periódico";
+    [ObservableProperty] public partial bool ExibirFolhaContagem { get; set; } = false;
+    [ObservableProperty] public partial string FolhaContagemTexto { get; set; } = string.Empty;
+
+    [ObservableProperty] public partial string EntradaCodigoOuNomeContagem { get; set; } = string.Empty;
+    [ObservableProperty] public partial int EntradaQtdFisicaContada { get; set; } = 1;
+
+    [RelayCommand]
+    public async Task CarregarAuditoriaAsync()
+    {
+        ItensAuditoria.Clear();
+        var lista = await _service.ObterItensParaAuditoriaAsync();
+        foreach (var item in lista)
+        {
+            ItensAuditoria.Add(item);
+        }
+        RecalcularResumoAuditoria();
+    }
+
+    public void RecalcularResumoAuditoria()
+    {
+        ResumoAuditoria = _service.CalcularResumoAuditoria(ItensAuditoria);
+    }
+
+    [RelayCommand]
+    public void LancarContagemRapida()
+    {
+        if (string.IsNullOrWhiteSpace(EntradaCodigoOuNomeContagem)) return;
+
+        var termo = EntradaCodigoOuNomeContagem.Trim().ToLower();
+        var item = ItensAuditoria.FirstOrDefault(i => 
+            i.CodigoBarras.Equals(termo, StringComparison.OrdinalIgnoreCase) ||
+            i.ProdutoId.ToString() == termo ||
+            i.ProdutoNome.ToLower().Contains(termo));
+
+        if (item != null)
+        {
+            item.SaldoFisicoContado = EntradaQtdFisicaContada;
+            RecalcularResumoAuditoria();
+            MensagemAviso = $"Contagem de '{item.ProdutoNome}' definida para {EntradaQtdFisicaContada} {item.UnidadeMedida}.";
+            EntradaCodigoOuNomeContagem = string.Empty;
+            EntradaQtdFisicaContada = 1;
+        }
+        else
+        {
+            MensagemAviso = "⚠️ Produto não encontrado na lista de inventário!";
+        }
+
+        _ = LimparAvisoDepoisAsync();
+    }
+
+    [RelayCommand]
+    public void GerarFolhaContagem()
+    {
+        FolhaContagemTexto = _service.GerarTextoFolhaContagemCega(ItensAuditoria);
+        ExibirFolhaContagem = true;
+    }
+
+    [RelayCommand]
+    public void FecharFolhaContagem()
+    {
+        ExibirFolhaContagem = false;
+    }
+
+    [RelayCommand]
+    public async Task EfetivarInventarioAsync()
+    {
+        var contados = ItensAuditoria.Where(i => i.SaldoFisicoContado.HasValue).ToList();
+        if (contados.Count == 0)
+        {
+            MensagemAviso = "⚠️ Nenhum item teve contagem física informada ainda!";
+            _ = LimparAvisoDepoisAsync();
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ResponsavelInventario))
+        {
+            MensagemAviso = "⚠️ Informe o nome do responsável pela conferência do inventário!";
+            _ = LimparAvisoDepoisAsync();
+            return;
+        }
+
+        try
+        {
+            var pares = contados.Select(i => (i.ProdutoId, i.SaldoFisicoContado!.Value)).ToList();
+            int ajustados = await _service.EfetivarInventarioFisicoAsync(pares, ResponsavelInventario, ObservacaoInventario);
+
+            MensagemAviso = $"✅ Inventário efetivado com sucesso! {ajustados} produtos com divergência foram corrigidos no estoque.";
+
+            await CarregarProdutosAsync();
+            await CarregarHistoricoAjustesAsync();
+            await CarregarAuditoriaAsync();
+        }
+        catch (Exception ex)
+        {
+            MensagemAviso = $"❌ Erro ao efetivar inventário: {ex.Message}";
+        }
+
+        _ = LimparAvisoDepoisAsync();
+    }
+
 }

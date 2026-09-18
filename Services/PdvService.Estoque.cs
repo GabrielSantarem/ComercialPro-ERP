@@ -8,6 +8,39 @@ using GetStartedApp.Models;
 
 namespace GetStartedApp.Services;
 
+
+public class ItemAuditoriaEstoqueDto
+{
+    public int ProdutoId { get; set; }
+    public string ProdutoNome { get; set; } = string.Empty;
+    public string CodigoBarras { get; set; } = string.Empty;
+    public string UnidadeMedida { get; set; } = "UN";
+    public decimal PrecoVenda { get; set; }
+    public decimal CustoUnitario { get; set; }
+    public int SaldoSistema { get; set; }
+    public int? SaldoFisicoContado { get; set; }
+
+    public int Diferenca => (SaldoFisicoContado ?? SaldoSistema) - SaldoSistema;
+    public decimal ImpactoCusto => Diferenca * CustoUnitario;
+    public decimal ImpactoVenda => Diferenca * PrecoVenda;
+
+    public string StatusDivergencia => SaldoFisicoContado == null
+        ? "PENDENTE"
+        : (Diferenca == 0 ? "BATIDO_OK" : (Diferenca < 0 ? "QUEBRA" : "SOBRA"));
+}
+
+public class ResumoAuditoriaDto
+{
+    public int TotalItensAuditados { get; set; }
+    public int TotalItensQuebra { get; set; }
+    public int TotalItensSobra { get; set; }
+    public int TotalItensBatidos { get; set; }
+    public decimal PrejuizoQuebrasCusto { get; set; }
+    public decimal ValorSobrasCusto { get; set; }
+    public decimal SaldoLiquidoCusto => ValorSobrasCusto - PrejuizoQuebrasCusto;
+    public List<ItemAuditoriaEstoqueDto> Itens { get; set; } = [];
+}
+
 public partial class PdvService
 {
     // === GESTÃO DE INVENTÁRIO ===
@@ -301,4 +334,133 @@ public partial class PdvService
         _logger.LogInformation("Estoque mínimo do produto #{Id} ('{Nome}') atualizado para {Min} unidades.",
             produto.Id, produto.Nome, novoMinimo);
     }
+
+    // === AUDITORIA & INVENTÁRIO FÍSICO ===
+
+    public async Task<List<ItemAuditoriaEstoqueDto>> ObterItensParaAuditoriaAsync()
+    {
+        var produtos = await _db.Produtos.OrderBy(p => p.Nome).ToListAsync();
+        return produtos.Select(p => new ItemAuditoriaEstoqueDto
+        {
+            ProdutoId = p.Id,
+            ProdutoNome = p.Nome,
+            CodigoBarras = p.CodigoBarras ?? string.Empty,
+            UnidadeMedida = p.UnidadeMedida ?? "UN",
+            PrecoVenda = p.Preco,
+            CustoUnitario = p.CustoUltimaCompra,
+            SaldoSistema = p.Estoque,
+            SaldoFisicoContado = null
+        }).ToList();
+    }
+
+    public ResumoAuditoriaDto CalcularResumoAuditoria(IEnumerable<ItemAuditoriaEstoqueDto> itens)
+    {
+        var lista = itens.ToList();
+        var contados = lista.Where(x => x.SaldoFisicoContado.HasValue).ToList();
+
+        var resumo = new ResumoAuditoriaDto
+        {
+            TotalItensAuditados = contados.Count,
+            TotalItensQuebra = contados.Count(x => x.Diferenca < 0),
+            TotalItensSobra = contados.Count(x => x.Diferenca > 0),
+            TotalItensBatidos = contados.Count(x => x.Diferenca == 0),
+            PrejuizoQuebrasCusto = contados.Where(x => x.Diferenca < 0).Sum(x => Math.Abs(x.ImpactoCusto)),
+            ValorSobrasCusto = contados.Where(x => x.Diferenca > 0).Sum(x => x.ImpactoCusto),
+            Itens = lista
+        };
+
+        return resumo;
+    }
+
+    public string GerarTextoFolhaContagemCega(IEnumerable<ItemAuditoriaEstoqueDto> itens)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("================================================================================");
+        sb.AppendLine("                 FOLHA DE AUDITORIA E CONTAGEM CEGA DE ESTOQUE                  ");
+        sb.AppendLine($" Data de Emissão: {DateTime.Now:dd/MM/yyyy HH:mm} | Loja / Depósito Principal");
+        sb.AppendLine(" REGRA: Anote a contagem física real. Não consulte o sistema durante a contagem.");
+        sb.AppendLine("================================================================================");
+        sb.AppendLine(string.Format("{0,-14} | {1,-38} | {2,-4} | {3,-12}", "CÓD. BARRAS", "DESCRIÇÃO DO PRODUTO", "UN", "CONTAGEM FÍSICA"));
+        sb.AppendLine("--------------------------------------------------------------------------------");
+
+        foreach (var item in itens)
+        {
+            var ean = string.IsNullOrWhiteSpace(item.CodigoBarras) ? $"#{item.ProdutoId:D5}" : item.CodigoBarras;
+            var desc = item.ProdutoNome.Length > 38 ? item.ProdutoNome.Substring(0, 35) + "..." : item.ProdutoNome;
+            sb.AppendLine(string.Format("{0,-14} | {1,-38} | {2,-4} | [ _________ ]", ean, desc, item.UnidadeMedida));
+        }
+
+        sb.AppendLine("================================================================================");
+        sb.AppendLine(" Responsável pela Contagem: ____________________________________________________");
+        sb.AppendLine(" Visto do Gerente / Conferência: _______________________________________________");
+        return sb.ToString();
+    }
+
+    public async Task<int> EfetivarInventarioFisicoAsync(
+        List<(int ProdutoId, int SaldoFisicoContado)> contagens,
+        string responsavel,
+        string observacao = "Inventário Físico Periódico")
+    {
+        if (string.IsNullOrWhiteSpace(responsavel))
+        {
+            throw new ArgumentException("O nome do responsável pela auditoria é obrigatório.", nameof(responsavel));
+        }
+
+        foreach (var c in contagens)
+        {
+            if (c.SaldoFisicoContado < 0)
+            {
+                throw new ArgumentException($"O saldo físico contado não pode ser negativo (Produto #{c.ProdutoId} informado: {c.SaldoFisicoContado}).", nameof(contagens));
+            }
+        }
+
+        using var transaction = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            int alterados = 0;
+            foreach (var c in contagens)
+            {
+                var produto = await _db.Produtos.FindAsync(c.ProdutoId);
+                if (produto == null) continue;
+
+                if (produto.Estoque != c.SaldoFisicoContado)
+                {
+                    var estoqueAnterior = produto.Estoque;
+                    var diferenca = c.SaldoFisicoContado - estoqueAnterior;
+
+                    produto.Estoque = c.SaldoFisicoContado;
+
+                    var ajuste = new AjusteEstoque
+                    {
+                        ProdutoId = produto.Id,
+                        DataHora = DateTime.Now,
+                        TipoAjuste = "BALANCO_FISICO",
+                        QuantidadeDiferenca = diferenca,
+                        EstoqueAnterior = estoqueAnterior,
+                        EstoqueNovo = c.SaldoFisicoContado,
+                        Motivo = string.IsNullOrWhiteSpace(observacao) ? "Inventário Físico Periódico" : observacao.Trim(),
+                        Responsavel = responsavel.Trim()
+                    };
+
+                    _db.AjustesEstoque.Add(ajuste);
+                    alterados++;
+                }
+            }
+
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Inventário Físico efetivado por '{Responsavel}'. {Alterados} produtos ajustados com sucesso.",
+                responsavel, alterados);
+
+            return alterados;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Erro ao efetivar inventário físico");
+            throw;
+        }
+    }
+
 }
