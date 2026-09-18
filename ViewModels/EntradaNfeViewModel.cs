@@ -112,7 +112,8 @@ public partial class EntradaNfeViewModel : ViewModelBase
             QuantidadeFaturada = 5,
             FatorConversao = 2500,
             PrecoUnitarioFaturado = 120.00m,
-            RateioDespesas = 15.00m
+            RateioDespesas = 15.00m,
+            MarkupPercentual = 50.0m
         });
 
         ItensNota.Add(new ItemNotaFiscalVm
@@ -125,7 +126,8 @@ public partial class EntradaNfeViewModel : ViewModelBase
             QuantidadeFaturada = 10,
             FatorConversao = 1000,
             PrecoUnitarioFaturado = 45.00m,
-            RateioDespesas = 30.00m
+            RateioDespesas = 30.00m,
+            MarkupPercentual = 50.0m
         });
 
         ValorFrete = 45.00m;
@@ -261,6 +263,7 @@ public partial class EntradaNfeViewModel : ViewModelBase
             QuantidadeFaturada = ItemQtdFaturada > 0 ? ItemQtdFaturada : 1,
             FatorConversao = ItemFatorConversao > 0 ? ItemFatorConversao : 1,
             PrecoUnitarioFaturado = ItemPrecoFaturado,
+            MarkupPercentual = 50.0m,
             ProdutoVinculado = ItemSelecionadoCatalogo
         };
 
@@ -371,6 +374,7 @@ public partial class EntradaNfeViewModel : ViewModelBase
                 FatorConversao = 1,
                 PrecoUnitarioFaturado = itemXml.ValorUnitario,
                 RateioDespesas = rateio,
+                MarkupPercentual = 50.0m,
                 ProdutoVinculado = correspondente
             };
 
@@ -412,9 +416,19 @@ public partial class EntradaNfeViewModel : ViewModelBase
             return;
         }
 
+        // Validação ACT-06: Preço de Venda não pode ser zero ou negativo
+        foreach (var item in ItensNota)
+        {
+            if (item.PrecoVendaFinal <= 0)
+            {
+                MensagemFeedback = $"⚠️ O item #{item.NumeroItem} ({item.DescricaoFornecedor}) está com preço de venda zerado! Ajuste o preço ou markup antes de dar entrada.";
+                return;
+            }
+        }
+
         var listaRegistro = new System.Collections.Generic.List<(int ProdutoId, int Quantidade, decimal CustoUnitario)>();
 
-        // Para cada item da nota, garante que o produto existe ou cria no catálogo
+        // Para cada item da nota, garante que o produto existe ou cria no catálogo e atualiza preço de venda
         foreach (var item in ItensNota)
         {
             var prod = item.ProdutoVinculado;
@@ -426,10 +440,17 @@ public partial class EntradaNfeViewModel : ViewModelBase
                     item.CodigoEan,
                     item.Ncm,
                     item.UnidadeFornecedor,
-                    precoVendaSugerido: 0,
+                    precoVendaSugerido: item.PrecoVendaFinal,
                     custoUnitario: item.CustoUnitarioEstoque);
 
                 item.ProdutoVinculado = prod;
+            }
+            else
+            {
+                // Atualiza o preço de venda e custo no produto existente
+                prod.Preco = item.PrecoVendaFinal;
+                prod.CustoUltimaCompra = item.CustoUnitarioEstoque;
+                await _service.SalvarProdutoAsync(prod);
             }
 
             listaRegistro.Add((prod.Id, item.QuantidadeEstoque, item.CustoUnitarioEstoque));

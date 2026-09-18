@@ -78,6 +78,7 @@ public partial class BalcaoView : UserControl
             if (e.Key == Key.Enter || e.Key == Key.Return || e.Key == Key.F12)
             {
                 await vm.ConfirmarEnvioAoCaixaCommand.ExecuteAsync(null);
+                FocarBusca();
                 e.Handled = true;
                 return;
             }

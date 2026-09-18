@@ -56,6 +56,9 @@ public partial class BalcaoViewModel : ViewModelBase
     [ObservableProperty] private Produto? _produtoPesquisaSelecionado;
     [ObservableProperty] private string _textoPesquisa = string.Empty;
 
+    // === FEEDBACK VISUAL RÁPIDO (BANNER NÃO-BLOQUEANTE) ===
+    [ObservableProperty] public partial string? BannerComandaSucesso { get; set; }
+
     // === MODAL DE COMANDA GERADA COM CUPOM TÉRMICO (PROTÓTIPO ESC/POS) ===
     [ObservableProperty] public partial bool IsModalConfirmacaoAberto { get; set; }
     [ObservableProperty] public partial string MensagemConfirmacao { get; set; } = string.Empty;
@@ -148,6 +151,7 @@ public partial class BalcaoViewModel : ViewModelBase
             TextoPesquisa = string.Empty;
             ResultadosPesquisa.Clear();
             ProdutoPesquisaSelecionado = null;
+            BannerComandaSucesso = null; // Limpa banner ao iniciar novo item
         }
     }
 
@@ -185,6 +189,7 @@ public partial class BalcaoViewModel : ViewModelBase
         ClienteNome = "Cliente Balcão";
         ClienteCpf = string.Empty;
         ModalIdentificacaoAberto = false;
+        BannerComandaSucesso = null;
         AtualizarTotal();
     }
 
@@ -245,6 +250,9 @@ public partial class BalcaoViewModel : ViewModelBase
 
         MensagemConfirmacao = $"Pedido {pedido.NumeroComanda} gerado com sucesso!\nCliente: {pedido.ClienteNome} | Vendedor: {VendedorSelecionado.Nome}\n\nOriente o cliente a apresentar esta comanda no Caixa Central.";
 
+        // Feedback discreto e não-bloqueante (ACT-07)
+        BannerComandaSucesso = $"✅ Comanda #{pedido.NumeroComanda} gerada com sucesso! Total: R$ {pedido.ValorTotal:N2} | Cliente: {pedido.ClienteNome}";
+
         Carrinho.Clear();
         ClienteNome = "Cliente Balcão";
         ClienteCpf = string.Empty;
@@ -253,7 +261,16 @@ public partial class BalcaoViewModel : ViewModelBase
         AtualizarTotal();
 
         ModalIdentificacaoAberto = false;
-        IsModalConfirmacaoAberto = true;
+        IsModalConfirmacaoAberto = false; // Desbloqueia tela imediatamente para o próximo atendimento
+    }
+
+    [RelayCommand]
+    public void AbrirModalConfirmacao()
+    {
+        if (UltimoPedidoGerado != null)
+        {
+            IsModalConfirmacaoAberto = true;
+        }
     }
 
     [RelayCommand]
@@ -264,10 +281,9 @@ public partial class BalcaoViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void FecharModalConfirmacao()
+    public void FecharModalConfirmacao()
     {
         IsModalConfirmacaoAberto = false;
-        UltimoPedidoGerado = null;
         StatusImpressaoFeedback = string.Empty;
     }
 }

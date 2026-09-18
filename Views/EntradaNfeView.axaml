@@ -3,6 +3,7 @@
              xmlns:vm="using:GetStartedApp.ViewModels"
              xmlns:models="using:GetStartedApp.Models"
              x:Class="GetStartedApp.Views.EntradaNfeView"
+             x:Name="RootEntradaView"
              x:DataType="vm:EntradaNfeViewModel">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -24,7 +25,7 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,15,0">
                         <Button Click="BtnImportarXml_Click" Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="14" Padding="15,10" CornerRadius="6" Cursor="Hand" ToolTip.Tip="Abre caixa de diálogo para escolher arquivo .xml físico">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="📂"/>
+                                <TextBlock Text="📁"/>
                                 <TextBlock Text="Selecionar Arquivo .XML"/>
                             </StackPanel>
                         </Button>
@@ -128,85 +129,113 @@
                     
                     <Grid ColumnDefinitions="*, Auto">
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="📦 Itens da Nota Fiscal &amp; Conversão de Estoque (De/Para)" FontSize="18" FontWeight="Black" Foreground="#2C3E50"/>
-                            <TextBlock Text="O sistema converte fardos/caixas em unidades reais e calcula o custo com rateio de frete" FontSize="13" Foreground="#7F8C8D"/>
+                            <TextBlock Text="📦 Itens da Nota Fiscal &amp; Formação de Preço (DataGrid)" FontSize="18" FontWeight="Black" Foreground="#2C3E50"/>
+                            <TextBlock Text="Grade de alta densidade com colunas redimensionáveis, conversão de estoque, markup e preço de venda" FontSize="13" Foreground="#7F8C8D"/>
                         </StackPanel>
                         <TextBlock Grid.Column="1" Text="{Binding ItensNota.Count, StringFormat='{}Total de Itens: {0}'}" FontSize="15" FontWeight="Bold" Foreground="#2980B9" VerticalAlignment="Center"/>
                     </Grid>
 
-                    <!-- GRADE DE ALTA DENSIDADE -->
+                    <!-- DATAGRID PROFISSIONAL COM COLUNAS REDIMENSIONÁVEIS -->
                     <Border BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
-                        <Grid RowDefinitions="Auto, *">
-                            
-                            <!-- Cabeçalho da Grade -->
-                            <Border Grid.Row="0" Background="#2C3E50" Padding="12,10">
-                                <Grid ColumnDefinitions="0.4*, 1.2*, 2.5*, 0.8*, 0.6*, 0.8*, 0.8*, 1*, 1*, 1*, 1*, 1.8*, Auto">
-                                    <TextBlock Grid.Column="0" Text="#" Foreground="White" FontWeight="Bold" FontSize="12"/>
-                                    <TextBlock Grid.Column="1" Text="CÓD. FORN." Foreground="White" FontWeight="Bold" FontSize="12"/>
-                                    <TextBlock Grid.Column="2" Text="DESCRIÇÃO NA NOTA" Foreground="White" FontWeight="Bold" FontSize="12"/>
-                                    <TextBlock Grid.Column="3" Text="NCM" Foreground="White" FontWeight="Bold" FontSize="12"/>
-                                    <TextBlock Grid.Column="4" Text="UN." Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
-                                    <TextBlock Grid.Column="5" Text="QTD NOTA" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
-                                    <TextBlock Grid.Column="6" Text="FATOR (X)" Foreground="#F1C40F" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
-                                    <TextBlock Grid.Column="7" Text="QTD REAL" Foreground="#2ECC71" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
-                                    <TextBlock Grid.Column="8" Text="PREÇO NOTA" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
-                                    <TextBlock Grid.Column="9" Text="DESP. RATEIO" Foreground="White" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
-                                    <TextBlock Grid.Column="10" Text="CUSTO UN." Foreground="#E67E22" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right"/>
-                                    <TextBlock Grid.Column="11" Text="PRODUTO NO SEU ERP" Foreground="#3498DB" FontWeight="Bold" FontSize="12" Margin="10,0,0,0"/>
-                                    <TextBlock Grid.Column="12" Text="AÇÃO" Foreground="White" FontWeight="Bold" FontSize="12" Margin="10,0,0,0"/>
-                                </Grid>
-                            </Border>
+                        <DataGrid ItemsSource="{Binding ItensNota}"
+                                  AutoGenerateColumns="False"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  GridLinesVisibility="All"
+                                  MinHeight="220"
+                                  MaxHeight="450"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Auto">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="#" Binding="{Binding NumeroItem}" IsReadOnly="True" Width="45"/>
+                                
+                                <DataGridTemplateColumn Header="CÓDIGO / EAN" Width="140">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ItemNotaFiscalVm">
+                                            <StackPanel VerticalAlignment="Center" Margin="5,2">
+                                                <TextBlock Text="{Binding CodigoFornecedor}" FontFamily="Monospace" FontWeight="SemiBold" FontSize="11" Foreground="#34495E"/>
+                                                <TextBlock Text="{Binding CodigoEan, StringFormat='{}EAN: {0}'}" FontSize="10" Foreground="#7F8C8D" IsVisible="{Binding CodigoEan.Length}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <!-- Linhas da Grade -->
-                            <ListBox Grid.Row="1" ItemsSource="{Binding ItensNota}" Background="Transparent" BorderThickness="0" MinHeight="160">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:ItemNotaFiscalVm">
-                                        <Border Padding="10,8" BorderBrush="#ECF0F1" BorderThickness="0,0,0,1">
-                                            <Grid ColumnDefinitions="0.4*, 1.2*, 2.5*, 0.8*, 0.6*, 0.8*, 0.8*, 1*, 1*, 1*, 1*, 1.8*, Auto">
-                                                <TextBlock Grid.Column="0" Text="{Binding NumeroItem}" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding CodigoFornecedor}" FontFamily="Monospace" FontSize="12" Foreground="#34495E" VerticalAlignment="Center"/>
-                                                
-                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
-                                                    <TextBlock Text="{Binding DescricaoFornecedor}" FontWeight="SemiBold" Foreground="#2C3E50" TextWrapping="Wrap"/>
-                                                    <TextBlock Text="{Binding CodigoEan, StringFormat='{}EAN: {0}'}" FontSize="11" Foreground="#7F8C8D" IsVisible="{Binding CodigoEan.Length}"/>
-                                                </StackPanel>
+                                <DataGridTemplateColumn Header="DESCRIÇÃO NA NOTA" Width="2*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ItemNotaFiscalVm">
+                                            <TextBlock Text="{Binding DescricaoFornecedor}" FontWeight="SemiBold" Foreground="#2C3E50" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                                                <TextBlock Grid.Column="3" Text="{Binding Ncm}" FontSize="12" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="4" Text="{Binding UnidadeFornecedor}" FontWeight="Bold" Foreground="#8E44AD" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                
-                                                <TextBlock Grid.Column="5" Text="{Binding QuantidadeFaturada}" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                
-                                                <!-- Fator Editável -->
-                                                <NumericUpDown Grid.Column="6" Value="{Binding FatorConversao}" Minimum="1" Increment="1" FontSize="12" Padding="4" Margin="5,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                
-                                                <TextBlock Grid.Column="7" Text="{Binding QuantidadeEstoque, StringFormat='{}{0} un'}" FontWeight="Black" Foreground="#27AE60" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="8" Text="{Binding PrecoUnitarioFaturado, StringFormat='{}R$ {0:N2}'}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="9" Text="{Binding RateioDespesas, StringFormat='{}+ R$ {0:N2}'}" Foreground="#7F8C8D" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="10" Text="{Binding CustoUnitarioEstoque, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" Foreground="#E67E22" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                <DataGridTextColumn Header="NCM" Binding="{Binding Ncm}" IsReadOnly="True" Width="95"/>
+                                <DataGridTextColumn Header="UN." Binding="{Binding UnidadeFornecedor}" IsReadOnly="True" Width="55"/>
+                                <DataGridTextColumn Header="QTD NOTA" Binding="{Binding QuantidadeFaturada}" IsReadOnly="True" Width="80"/>
 
-                                                <!-- Vínculo De/Para com Produto do ERP -->
-                                                <StackPanel Grid.Column="11" Margin="10,0,0,0" VerticalAlignment="Center">
-                                                    <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:EntradaNfeViewModel)DataContext).ProdutosDisponiveis}" 
-                                                              SelectedItem="{Binding ProdutoVinculado}" 
-                                                              HorizontalAlignment="Stretch" 
-                                                              FontSize="12">
-                                                        <ComboBox.ItemTemplate>
-                                                            <DataTemplate x:DataType="models:Produto">
-                                                                <TextBlock Text="{Binding Nome}"/>
-                                                            </DataTemplate>
-                                                        </ComboBox.ItemTemplate>
-                                                    </ComboBox>
-                                                    <TextBlock Text="✨ Será criado novo item no catálogo" FontSize="10" Foreground="#27AE60" FontWeight="Bold" Margin="0,2,0,0" IsVisible="{Binding IsProdutoNovo}"/>
-                                                </StackPanel>
+                                <DataGridTemplateColumn Header="FATOR (X)" Width="95">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ItemNotaFiscalVm">
+                                            <NumericUpDown Value="{Binding FatorConversao}" Minimum="1" Increment="1" FontSize="12" Padding="2" Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                                                <Button Grid.Column="12" Command="{Binding $parent[UserControl].((vm:EntradaNfeViewModel)DataContext).RemoverItemCommand}" CommandParameter="{Binding}" Content="❌" Background="Transparent" Foreground="#E74C3C" Margin="10,0,0,0" Padding="5" Cursor="Hand"/>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                                <DataGridTextColumn Header="QTD REAL" Binding="{Binding QuantidadeEstoque, StringFormat='{}{0} un'}" FontWeight="Black" Foreground="#27AE60" IsReadOnly="True" Width="85"/>
+                                <DataGridTextColumn Header="CUSTO UN." Binding="{Binding CustoUnitarioEstoque, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" Foreground="#E67E22" IsReadOnly="True" Width="100"/>
 
-                        </Grid>
+                                <DataGridTemplateColumn Header="MARKUP (%)" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ItemNotaFiscalVm">
+                                            <NumericUpDown Value="{Binding MarkupPercentual}" Minimum="0" Maximum="1000" Increment="5" FormatString="N1" FontSize="12" Padding="2" Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="PREÇO VENDA (R$)" Width="135">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ItemNotaFiscalVm">
+                                            <NumericUpDown Value="{Binding PrecoVendaFinal}" Minimum="0.01" Increment="0.50" FormatString="C2" FontSize="12" Padding="2" Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="#2980B9"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="PRODUTO NO ERP" Width="2*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ItemNotaFiscalVm">
+                                            <StackPanel Margin="5,2" VerticalAlignment="Center">
+                                                <ComboBox ItemsSource="{Binding #RootEntradaView.((vm:EntradaNfeViewModel)DataContext).ProdutosDisponiveis}" 
+                                                          SelectedItem="{Binding ProdutoVinculado}" 
+                                                          HorizontalAlignment="Stretch" 
+                                                          FontSize="12">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate x:DataType="models:Produto">
+                                                            <TextBlock Text="{Binding Nome}"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock Text="✨ Criará item no catálogo com este Preço de Venda" FontSize="10" Foreground="#27AE60" FontWeight="Bold" Margin="0,2,0,0" IsVisible="{Binding IsProdutoNovo}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="AÇÃO" Width="60">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:ItemNotaFiscalVm">
+                                            <Button Command="{Binding #RootEntradaView.((vm:EntradaNfeViewModel)DataContext).RemoverItemCommand}" 
+                                                    CommandParameter="{Binding}" 
+                                                    Content="❌" 
+                                                    Background="Transparent" 
+                                                    Foreground="#E74C3C" 
+                                                    Padding="5" 
+                                                    HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center" 
+                                                    Cursor="Hand"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Border>
 
                 </StackPanel>

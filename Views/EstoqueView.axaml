@@ -112,138 +112,7 @@
                     </Grid>
                 </TabItem>
 
-                <!-- ABA 2: ENTRADA MANUAL DE NOTAS / MERCADORIAS -->
-                <TabItem Header="📥 Entrada de Notas / Compras" FontSize="16" FontWeight="SemiBold">
-                    <Grid ColumnDefinitions="4*, 2.5*" Margin="0,20,0,0">
-                        
-                        <!-- Lado Esquerdo: Dados da Nota + Itens Lançados -->
-                        <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="25" Margin="0,0,20,0" BoxShadow="0 4 15 0 #1A000000">
-                            <Grid RowDefinitions="Auto, Auto, *, Auto">
-                                
-                                <!-- Cabeçalho da Nota -->
-                                <Border Grid.Row="0" Background="#F8F9F9" Padding="15" CornerRadius="8" Margin="0,0,0,15">
-                                    <Grid ColumnDefinitions="2*, 3*, 3*" RowDefinitions="Auto, Auto">
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Nº da Nota / Doc:" FontWeight="Bold" Foreground="#34495E" FontSize="13"/>
-                                        <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding EntradaNumeroNota}" FontSize="15" Padding="8" Background="White" BorderThickness="1" BorderBrush="#BDC3C7" CornerRadius="4" PlaceholderText="Ex: 014892" Margin="0,5,10,0"/>
-
-                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Fornecedor / Razão Social:" FontWeight="Bold" Foreground="#34495E" FontSize="13"/>
-                                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EntradaFornecedor}" FontSize="15" Padding="8" Background="White" BorderThickness="1" BorderBrush="#BDC3C7" CornerRadius="4" PlaceholderText="Ex: Distribuidora Silva" Margin="0,5,10,0"/>
-
-                                        <TextBlock Grid.Row="0" Grid.Column="2" Text="Observações / Frete:" FontWeight="Bold" Foreground="#34495E" FontSize="13"/>
-                                        <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding EntradaObservacao}" FontSize="15" Padding="8" Background="White" BorderThickness="1" BorderBrush="#BDC3C7" CornerRadius="4" PlaceholderText="Ex: Entrega Caminhão 02" Margin="0,5,0,0"/>
-                                    </Grid>
-                                </Border>
-
-                                <!-- Título Itens -->
-                                <Grid Grid.Row="1" ColumnDefinitions="*, Auto" Margin="0,0,0,10">
-                                    <TextBlock Grid.Column="0" Text="Itens da Nota (Conferência Física)" FontSize="18" FontWeight="Bold" Foreground="#2C3E50"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding ItensEntrada.Count, StringFormat='{}Itens: {0}'}" FontSize="14" FontWeight="SemiBold" Foreground="#7F8C8D"/>
-                                </Grid>
-
-                                <!-- Grade de Itens da Nota -->
-                                <Border Grid.Row="2" BorderBrush="#ECF0F1" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
-                                    <Grid RowDefinitions="Auto, *">
-                                        <Border Grid.Row="0" Background="#34495E" Padding="12,10">
-                                            <Grid ColumnDefinitions="3*, 1*, 1.5*, 1.5*, Auto">
-                                                <TextBlock Grid.Column="0" Text="PRODUTO" Foreground="White" FontWeight="Bold" FontSize="13"/>
-                                                <TextBlock Grid.Column="1" Text="QTD ENTRADA" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" Text="CUSTO UN." Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Right"/>
-                                                <TextBlock Grid.Column="3" Text="TOTAL ITEM" Foreground="White" FontWeight="Bold" FontSize="13" HorizontalAlignment="Right"/>
-                                                <TextBlock Grid.Column="4" Text="AÇÃO" Foreground="White" FontWeight="Bold" FontSize="13" Margin="20,0,0,0"/>
-                                            </Grid>
-                                        </Border>
-
-                                        <ListBox Grid.Row="1" ItemsSource="{Binding ItensEntrada}" Background="Transparent" BorderThickness="0" MinHeight="180">
-                                            <ListBox.ItemTemplate>
-                                                <DataTemplate x:DataType="vm:ItemEntradaTemp">
-                                                    <Border Padding="10,8" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1">
-                                                        <Grid ColumnDefinitions="3*, 1*, 1.5*, 1.5*, Auto">
-                                                            <TextBlock Grid.Column="0" Text="{Binding Produto.Nome}" FontSize="15" FontWeight="SemiBold" Foreground="#2C3E50" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="1" Text="{Binding Quantidade, StringFormat='{}+{0}'}" FontSize="15" FontWeight="Bold" Foreground="#27AE60" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="2" Text="{Binding CustoUnitario, StringFormat='{}R$ {0:N2}'}" FontSize="15" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                            <TextBlock Grid.Column="3" Text="{Binding CustoTotal, StringFormat='{}R$ {0:N2}'}" FontSize="15" FontWeight="Bold" Foreground="#2C3E50" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                                            <Button Grid.Column="4" Command="{Binding $parent[UserControl].((vm:EstoqueViewModel)DataContext).RemoverItemDaNotaCommand}" CommandParameter="{Binding}" Content="❌" Background="Transparent" Foreground="#E74C3C" Margin="15,0,0,0" Padding="5" Cursor="Hand"/>
-                                                        </Grid>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ListBox.ItemTemplate>
-                                        </ListBox>
-                                    </Grid>
-                                </Border>
-
-                                <!-- Rodapé da Nota: Totalizador e Botão Salvar -->
-                                <Border Grid.Row="3" Background="#EAEDED" CornerRadius="8" Padding="15" Margin="0,15,0,0">
-                                    <Grid ColumnDefinitions="*, Auto, Auto">
-                                        <TextBlock Grid.Column="0" Text="Total da Nota a Pagar:" FontSize="18" FontWeight="Black" Foreground="#2C3E50" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding TotalNotaEntrada, StringFormat='{}R$ {0:N2}'}" FontSize="24" FontWeight="Black" Foreground="#E67E22" VerticalAlignment="Center" Margin="0,0,25,0"/>
-                                        <Button Grid.Column="2" Command="{Binding ConfirmarEntradaNotaCommand}" Content="✅ Confirmar Entrada no Estoque" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="16" Padding="20,12" CornerRadius="8" Cursor="Hand"/>
-                                    </Grid>
-                                </Border>
-
-                            </Grid>
-                        </Border>
-
-                        <!-- Lado Direito: Adicionar Item na Nota + Histórico Rápido -->
-                        <Grid Grid.Column="1" RowDefinitions="Auto, *">
-                            
-                            <!-- Formulário de Inserção de Item -->
-                            <Border Grid.Row="0" Background="White" CornerRadius="12" Padding="20" BoxShadow="0 4 15 0 #1A000000" Margin="0,0,0,15">
-                                <StackPanel Spacing="12">
-                                    <TextBlock Text="📦 Inserir Item na Nota" FontSize="18" FontWeight="Black" Foreground="#34495E"/>
-
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Text="Selecionar Produto Cadastrado:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
-                                        <ComboBox ItemsSource="{Binding ProdutosLista}" SelectedItem="{Binding EntradaProdutoSelecionado}" HorizontalAlignment="Stretch" FontSize="14">
-                                            <ComboBox.ItemTemplate>
-                                                <DataTemplate x:DataType="models:Produto">
-                                                    <TextBlock Text="{Binding Nome}"/>
-                                                </DataTemplate>
-                                            </ComboBox.ItemTemplate>
-                                        </ComboBox>
-                                    </StackPanel>
-
-                                    <Grid ColumnDefinitions="*, *">
-                                        <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,8,0">
-                                            <TextBlock Text="Qtd Recebida:" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
-                                            <NumericUpDown Value="{Binding EntradaQtdItem}" Minimum="1" Increment="1" FontSize="15" Padding="8" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="1" Spacing="4" Margin="8,0,0,0">
-                                            <TextBlock Text="Custo Unit. (R$):" FontSize="13" Foreground="#7F8C8D" FontWeight="SemiBold"/>
-                                            <NumericUpDown Value="{Binding EntradaCustoItem}" Minimum="0" Increment="0.5" FontSize="15" Padding="8" Background="#F4F6F7" BorderThickness="0" CornerRadius="6" FormatString="N2"/>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <Button Command="{Binding AdicionarItemNaNotaCommand}" Content="➕ Adicionar Item à Grade" Background="#3498DB" Foreground="White" FontWeight="Bold" FontSize="15" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" CornerRadius="6" Cursor="Hand" Margin="0,5,0,0"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Histórico de Notas Já Lançadas -->
-                            <Border Grid.Row="1" Background="White" CornerRadius="12" Padding="20" BoxShadow="0 4 15 0 #1A000000">
-                                <Grid RowDefinitions="Auto, *">
-                                    <TextBlock Grid.Row="0" Text="📜 Últimas Entradas" FontSize="16" FontWeight="Bold" Foreground="#34495E" Margin="0,0,0,10"/>
-                                    <ListBox Grid.Row="1" ItemsSource="{Binding HistoricoEntradas}" Background="Transparent" BorderThickness="0">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate x:DataType="models:EntradaMercadoria">
-                                                <Border Padding="8" Margin="0,4" Background="#F8F9F9" CornerRadius="6" BorderBrush="#ECF0F1" BorderThickness="1">
-                                                    <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto">
-                                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding NumeroNota, StringFormat='{}NF: {0}'}" FontWeight="Bold" Foreground="#2C3E50" FontSize="14"/>
-                                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ValorTotal, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" Foreground="#27AE60" FontSize="14"/>
-                                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Fornecedor}" Foreground="#7F8C8D" FontSize="12"/>
-                                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DataEntrada, StringFormat='{}{0:dd/MM HH:mm}'}" Foreground="#95A5A6" FontSize="12"/>
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                </Grid>
-                            </Border>
-
-                        </Grid>
-                    </Grid>
-                </TabItem>
-
-                <!-- ABA 3: PERDAS, AVARIAS E AJUSTES (NOVO!) -->
+                <!-- ABA 2: PERDAS, AVARIAS E AJUSTES (ACT-08: Rota simplificada e sem redundância de compra) -->
                 <TabItem Header="⚠️ Avarias &amp; Ajustes de Saldo" FontSize="16" FontWeight="SemiBold">
                     <Grid ColumnDefinitions="3*, 4*" Margin="0,20,0,0">
                         
@@ -345,7 +214,7 @@
                     </Grid>
                 </TabItem>
 
-                <!-- ABA 4: RELATÓRIO / CONTAGEM FISICA CAIXA -->
+                <!-- ABA 3: RELATÓRIO / CONTAGEM FISICA CAIXA -->
                 <TabItem Header="🔄 Fechamento Físico (Giro do Dia)" FontSize="16" FontWeight="SemiBold">
                      <Border Background="White" CornerRadius="12" Padding="25" Margin="0,20,0,0" BoxShadow="0 4 15 0 #1A000000">
                         <Grid RowDefinitions="Auto, *">
@@ -387,7 +256,7 @@
                      </Border>
                 </TabItem>
 
-                <!-- ABA 5: AUDITORIA & INVENTÁRIO FÍSICO (CONFERÊNCIA CEGA) -->
+                <!-- ABA 4: AUDITORIA & INVENTÁRIO FÍSICO (CONFERÊNCIA CEGA) -->
                 <TabItem Header="🔍 Auditoria &amp; Inventário Físico" FontSize="16" FontWeight="SemiBold">
                     <Grid RowDefinitions="Auto, *">
                         <!-- BANNER / KPIS DE CONFERÊNCIA -->
@@ -537,7 +406,7 @@
                     </Grid>
                 </TabItem>
 
-                <!-- ABA 6: PONTO DE PEDIDO & SUGESTÃO DE COMPRAS -->
+                <!-- ABA 5: PONTO DE PEDIDO & SUGESTÃO DE COMPRAS -->
                 <TabItem Header="🛒 Ponto de Pedido &amp; Compras" FontSize="16" FontWeight="SemiBold">
                     <Grid RowDefinitions="Auto, *">
                         <!-- BANNER KPIS DE COMPRAS -->
@@ -681,7 +550,7 @@
                                         <TextBox Grid.Row="1" Text="{Binding FolhaCotacaoTexto}" FontFamily="Monospace" FontSize="12" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"/>
 
                                         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,15,0,0">
-                                            <TextBlock Text="💡 Copie ou envie este texto pronto diretamente por WhatsApp ou E-mail para o representante." FontSize="12" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                            <TextBlock Text="💡 Copie ou envie este texto diretamente por WhatsApp ou E-mail para o representante." FontSize="12" Foreground="#7F8C8D" VerticalAlignment="Center"/>
                                             <Button Content="Concluir Visualização" Command="{Binding FecharModalCotacaoCommand}" Background="#2980B9" Foreground="White" FontWeight="Bold" Padding="15,8" CornerRadius="6" Cursor="Hand"/>
                                         </StackPanel>
                                     </Grid>

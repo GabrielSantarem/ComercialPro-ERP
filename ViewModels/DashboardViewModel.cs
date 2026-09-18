@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using GetStartedApp.Services;
 using Microsoft.EntityFrameworkCore;
 using GetStartedApp.Data;
+using Serilog;
 
 namespace GetStartedApp.ViewModels;
 
@@ -104,14 +105,14 @@ public partial class DashboardViewModel : ViewModelBase
                 RankingVendedores.Add(v);
             }
 
-            // 2. Saúde Geral do Estoque (Patrimônio)
+            // 2. Saúde Geral do Estoque (Patrimônio) baseado no Custo Real de Aquisição
             var produtos = await _db.Produtos.ToListAsync();
             TotalProdutosEstoque = produtos.Sum(p => p.Estoque);
-            ValorEstoque = produtos.Sum(p => p.Preco * p.Estoque);
+            ValorEstoque = produtos.Sum(p => (p.CustoUltimaCompra > 0 ? p.CustoUltimaCompra : p.Preco * 0.6m) * p.Estoque);
         }
-        catch
+        catch (Exception ex)
         {
-            /* Proteção contra falhas transitórias de conexão */
+            Log.Error(ex, "Falha ao carregar indicadores gerenciais e saúde do estoque no Dashboard.");
         }
         finally
         {

@@ -180,9 +180,9 @@
                                     <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="12,10">
                                         <Grid ColumnDefinitions="80, 2*, 70, 110, 110, 110, 80, 80, 80" VerticalAlignment="Center">
                                             
-                                            <!-- Badge Classe ABC -->
-                                            <Border Grid.Column="0" CornerRadius="4" Padding="8,3" HorizontalAlignment="Left" Background="#E8F8F5">
-                                                <TextBlock Text="{Binding ClasseAbc, StringFormat='Classe {0}'}" FontWeight="Black" FontSize="11" Foreground="#27AE60"/>
+                                            <!-- Badge Classe ABC Dinâmico -->
+                                            <Border Grid.Column="0" CornerRadius="4" Padding="8,3" HorizontalAlignment="Left" Background="{Binding CorFundoBadge}">
+                                                <TextBlock Text="{Binding ClasseAbc, StringFormat='Classe {0}'}" FontWeight="Black" FontSize="11" Foreground="{Binding CorTextoBadge}"/>
                                             </Border>
 
                                             <!-- Nome e Código -->

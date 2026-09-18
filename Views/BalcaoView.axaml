@@ -9,7 +9,7 @@
 
     <Grid Background="#1E272E">
         <!-- CAMADA 1: INTERFACE PRINCIPAL DO BALCÃO -->
-        <Grid RowDefinitions="Auto, *, Auto" IsEnabled="{Binding !IsBloqueadoPorModal}">
+        <Grid RowDefinitions="Auto, Auto, *, Auto" IsEnabled="{Binding !IsBloqueadoPorModal}">
             
             <!-- TOPO: Identificação Limpa do Terminal e Vendedor -->
             <Border Grid.Row="0" Background="#2C3E50" Padding="15,10" BorderBrush="#000" BorderThickness="0,0,0,3">
@@ -58,8 +58,16 @@
                 </Grid>
             </Border>
 
+            <!-- BANNER DISCRETO DE COMANDA GERADA (NÃO-BLOQUEANTE - ACT-07) -->
+            <Border Grid.Row="1" Background="#27AE60" Padding="16,10" IsVisible="{Binding BannerComandaSucesso, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <Grid ColumnDefinitions="*, Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding BannerComandaSucesso}" Foreground="White" FontWeight="Black" FontSize="14" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Command="{Binding AbrirModalConfirmacaoCommand}" Background="#1E8449" Foreground="White" FontWeight="Bold" Padding="12,5" CornerRadius="4" Content="📄 Visualizar Bobina" FontSize="12" Cursor="Hand"/>
+                </Grid>
+            </Border>
+
             <!-- MEIO: Divisão Itens + Painel de Lançamento -->
-            <Grid Grid.Row="1" ColumnDefinitions="6*, 4*">
+            <Grid Grid.Row="2" ColumnDefinitions="6*, 4*">
                 
                 <!-- Lado Esquerdo: Itens da Pré-Venda -->
                 <Border Grid.Column="0" Background="White" Margin="15" CornerRadius="4" BorderBrush="#BDC3C7" BorderThickness="2" ClipToBounds="True">
@@ -88,44 +96,57 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <Border Grid.Row="2" Background="#EAEDED" Padding="15,10" BorderBrush="#BDC3C7" BorderThickness="0,2,0,0">
-                            <Grid ColumnDefinitions="*, *">
-                                <TextBlock Grid.Column="0" Text="TOTAL DO PEDIDO:" FontSize="20" FontWeight="Black" Foreground="#7F8C8D" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="{Binding TotalVenda, StringFormat='{}R$ {0:N2}'}" FontSize="28" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Right"/>
+                        <!-- Totalizador Compacto da Lista -->
+                        <Border Grid.Row="2" Background="#EAEDED" Padding="15,10">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBlock Grid.Column="0" Text="RESUMO DO PEDIDO" FontWeight="Bold" Foreground="#7F8C8D" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Carrinho.Count, StringFormat='Total de Itens: {0}'}" FontWeight="Black" Foreground="#2C3E50" FontSize="14"/>
                             </Grid>
                         </Border>
                     </Grid>
                 </Border>
 
-                <!-- Lado Direito: Busca Rápida + Ação de Enviar ao Caixa -->
-                <Grid Grid.Column="1" RowDefinitions="Auto, *, Auto" Margin="0,15,15,15">
+                <!-- Lado Direito: Busca Rápida + Caixa de Subtotal + Atalhos -->
+                <Grid Grid.Column="1" Margin="0,15,15,15" RowDefinitions="Auto, *, Auto">
                     
-                    <!-- Busca e Lançamento Direto -->
-                    <Border Grid.Row="0" Background="#2C3E50" CornerRadius="4" Padding="15" Margin="0,0,0,15">
+                    <!-- Campo de Lançamento Direto -->
+                    <Border Grid.Row="0" Background="White" CornerRadius="4" Padding="15" Margin="0,0,0,15" BorderBrush="#BDC3C7" BorderThickness="2">
                         <StackPanel Spacing="10">
                             <Grid ColumnDefinitions="*, Auto">
-                                <TextBlock Grid.Column="0" Text="CONSULTA OU MULTIPLICADOR (Ex: 5*sacola):" Foreground="#F1C40F" FontSize="13" FontWeight="Bold"/>
-                                <Border Grid.Column="1" Background="#34495E" CornerRadius="3" Padding="5,2">
-                                    <TextBlock Text="[F2] Foco" Foreground="#ECF0F1" FontSize="11" FontWeight="Bold"/>
+                                <TextBlock Grid.Column="0" Text="LANÇAMENTO RÁPIDO [F2]" FontWeight="Black" Foreground="#2C3E50" FontSize="14"/>
+                                <Border Grid.Column="1" Background="#F1C40F" CornerRadius="3" Padding="6,2">
+                                    <TextBlock Text="Ex: 5*arroz" Foreground="#7D6608" FontWeight="Bold" FontSize="11"/>
                                 </Border>
                             </Grid>
-                            
-                            <TextBox x:Name="TxtPesquisa" Text="{Binding TextoPesquisa, Mode=TwoWay}" FontSize="20" FontWeight="Bold" Padding="10" Background="White" BorderThickness="0" CornerRadius="4" PlaceholderText="Digite ou bipe o item..."/>
 
-                            <!-- Sugestões da Busca Flutuante -->
-                            <ListBox x:Name="ListaSugestoes" ItemsSource="{Binding ResultadosPesquisa}" SelectedItem="{Binding ProdutoPesquisaSelecionado}" MaxHeight="180" Background="White" CornerRadius="4" BorderThickness="0" IsVisible="{Binding ResultadosPesquisa.Count}">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate x:DataType="models:Produto">
-                                        <Border Padding="8,6" BorderBrush="#ECF0F1" BorderThickness="0,0,0,1">
-                                            <Grid ColumnDefinitions="*, Auto, Auto">
-                                                <TextBlock Grid.Column="0" Text="{Binding Nome}" FontSize="14" FontWeight="SemiBold" Foreground="#2C3E50"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding Estoque, StringFormat='{}Est: {0}'}" FontSize="12" Foreground="#7F8C8D" Margin="10,0"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding Preco, StringFormat='{}R$ {0:N2}'}" FontSize="14" FontWeight="Bold" Foreground="#27AE60"/>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                            <Grid>
+                                <TextBox x:Name="TxtPesquisa" 
+                                         Text="{Binding TextoPesquisa, Mode=TwoWay}" 
+                                         Watermark="Nome ou Código de Barras... [ENTER]" 
+                                         FontSize="16" Height="45" VerticalContentAlignment="Center" 
+                                         CornerRadius="4" BorderThickness="2" BorderBrush="#3498DB"/>
+
+                                <!-- Popup de Sugestões de Busca Integrado -->
+                                <Popup IsOpen="{Binding ResultadosPesquisa.Count}" 
+                                       Placement="Bottom" PlacementTarget="{Binding #TxtPesquisa}" 
+                                       MaxHeight="250" IsLightDismissEnabled="False">
+                                    <Border Background="White" BorderBrush="#3498DB" BorderThickness="1.5" CornerRadius="4" BoxShadow="0 4 12 0 #30000000" Width="360">
+                                        <ListBox ItemsSource="{Binding ResultadosPesquisa}" SelectedItem="{Binding ProdutoPesquisaSelecionado, Mode=TwoWay}">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate x:DataType="models:Produto">
+                                                    <Grid ColumnDefinitions="*, Auto" Margin="5">
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding Nome}" FontWeight="Bold" FontSize="13"/>
+                                                            <TextBlock Text="{Binding CodigoBarras}" FontSize="11" Foreground="#7F8C8D"/>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Preco, StringFormat='R$ {0:N2}'}" FontWeight="Black" Foreground="#27AE60" FontSize="13" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Border>
+                                </Popup>
+                            </Grid>
 
                             <Button Command="{Binding LancarProdutoCommand}" Background="#2980B9" Foreground="White" FontWeight="Black" FontSize="16" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" CornerRadius="4" Cursor="Hand">
                                 <TextBlock Text="[ENTER] LANÇAR NO PEDIDO" FontWeight="Black"/>
@@ -157,7 +178,7 @@
             </Grid>
 
             <!-- RODAPÉ: Guia Completo de Teclas -->
-            <Border Grid.Row="2" Background="#111" Padding="10">
+            <Border Grid.Row="3" Background="#111" Padding="10">
                 <WrapPanel HorizontalAlignment="Center">
                     <TextBlock Text="[ENTER] Lançar Item  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[5*item] Multiplicador  |  " Foreground="#F1C40F" FontSize="13" FontWeight="Bold"/>
@@ -178,32 +199,41 @@
                 ZIndex="90"
                 KeyboardNavigation.TabNavigation="Cycle">
             <Border Background="White" Width="520" CornerRadius="12" Padding="30" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AA3498DB">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="👤 IDENTIFICAÇÃO DO CLIENTE" FontSize="20" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Pressione [ENTER] para manter o padrão 'Cliente Balcão' ou digite os dados:" FontSize="13" Foreground="#7F8C8D" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
-
-                    <!-- Nome do Cliente (Foco Inicial com 'Cliente Balcão' selecionado) -->
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="Nome do Cliente:" FontWeight="Bold" FontSize="14" Foreground="#34495E"/>
-                        <TextBox x:Name="TxtNomeCliente" Text="{Binding ClienteNome}" FontSize="16" Padding="10" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4"/>
+                <StackPanel Spacing="20">
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="👤 IDENTIFICAÇÃO DO CLIENTE" FontSize="20" FontWeight="Black" Foreground="#2C3E50"/>
+                        <TextBlock Text="Opcional. Pressione [ENTER] para emitir diretamente ao balcão." FontSize="13" Foreground="#7F8C8D"/>
                     </StackPanel>
 
-                    <!-- CPF/Telefone Opcional -->
+                    <Separator Background="#ECF0F1" Height="1"/>
+
+                    <!-- Campo Nome -->
                     <StackPanel Spacing="6">
-                        <TextBlock Text="CPF / Telefone na Comanda (Opcional):" FontWeight="Bold" FontSize="14" Foreground="#34495E"/>
-                        <TextBox x:Name="TxtCpfCliente" Text="{Binding ClienteCpf}" FontSize="16" Padding="10" Background="#F8F9F9" BorderBrush="#BDC3C7" CornerRadius="4" PlaceholderText="Pressione ENTER para deixar em branco"/>
+                        <TextBlock Text="Nome do Cliente (ou Descrição):" FontWeight="Bold" Foreground="#34495E"/>
+                        <TextBox x:Name="TxtNomeCliente" Text="{Binding ClienteNome, Mode=TwoWay}" FontSize="15" Height="40" VerticalContentAlignment="Center"/>
                     </StackPanel>
 
-                    <Border Background="#E8F8F5" CornerRadius="6" Padding="12">
-                        <Grid ColumnDefinitions="*, *">
-                            <TextBlock Grid.Column="0" Text="Total a Pagar no Caixa:" FontSize="15" FontWeight="Bold" Foreground="#16A085" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{Binding TotalVenda, StringFormat='{}R$ {0:N2}'}" FontSize="22" FontWeight="Black" Foreground="#27AE60" HorizontalAlignment="Right"/>
+                    <!-- Campo CPF/CNPJ -->
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="CPF / CNPJ na Nota (Opcional):" FontWeight="Bold" Foreground="#34495E"/>
+                        <TextBox Text="{Binding ClienteCpf, Mode=TwoWay}" Watermark="000.000.000-00" FontSize="15" Height="40" VerticalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <Border Background="#EBF5FB" CornerRadius="6" Padding="12">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <TextBlock Grid.Column="0" Text="ℹ️" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Grid.Column="1" Text="Ao confirmar, o pedido entrará na fila do Caixa Central e poderá ser faturado imediatamente." Foreground="#2980B9" FontSize="12" TextWrapping="Wrap"/>
                         </Grid>
                     </Border>
 
-                    <Grid ColumnDefinitions="*, *" Margin="0,10,0,0">
-                        <Button Grid.Column="0" Command="{Binding CancelarIdentificacaoCommand}" Content="[ESC] Voltar aos Itens" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="14" Padding="12" Margin="0,0,8,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
-                        <Button Grid.Column="1" Command="{Binding ConfirmarEnvioAoCaixaCommand}" Content="✅ [ENTER] Gerar Comanda" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="14" Padding="12" Margin="8,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                    <!-- Botões -->
+                    <Grid ColumnDefinitions="*, *">
+                        <Button Grid.Column="0" Command="{Binding CancelarIdentificacaoCommand}" Background="#BDC3C7" Foreground="#2C3E50" FontWeight="Bold" FontSize="14" Padding="12" Margin="0,0,5,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand">
+                            <TextBlock Text="[ESC] Voltar"/>
+                        </Button>
+                        <Button Grid.Column="1" Command="{Binding ConfirmarEnvioAoCaixaCommand}" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="14" Padding="12" Margin="5,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand">
+                            <TextBlock Text="[ENTER] Gerar Comanda"/>
+                        </Button>
                     </Grid>
                 </StackPanel>
             </Border>
@@ -259,7 +289,7 @@
                                     Background="#2980B9" Foreground="White" FontWeight="Bold" FontSize="14" Padding="12" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
                             
                             <Button Command="{Binding FecharModalConfirmacaoCommand}" 
-                                    Content="⏎ [ENTER] Novo Atendimento" 
+                                    Content="⏎ [ENTER] Voltar ao Balcão" 
                                     Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="15" Padding="14" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="6" Cursor="Hand"/>
                         </StackPanel>
                     </StackPanel>

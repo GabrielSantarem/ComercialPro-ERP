@@ -20,6 +20,20 @@ public class ItemCurvaAbcDto
     public decimal PercentualDoTotal { get; set; }
     public decimal PercentualAcumulado { get; set; }
     public string ClasseAbc { get; set; } = "C"; // "A", "B", "C"
+
+    public string CorFundoBadge => ClasseAbc switch
+    {
+        "A" => "#E8F8F5",
+        "B" => "#FEF9E7",
+        _ => "#EBEDEF"
+    };
+
+    public string CorTextoBadge => ClasseAbc switch
+    {
+        "A" => "#27AE60",
+        "B" => "#D35400",
+        _ => "#7F8C8D"
+    };
 }
 
 public class DreGerencialDto
@@ -148,6 +162,7 @@ public partial class PdvService
 
         var cmv = gruposProduto.Sum(p => p.CustoTotal);
 
+        // 4. DRE Gerencial Consolidado
         resumo.Dre = new DreGerencialDto
         {
             PeriodoInicio = dataIni,
@@ -157,22 +172,21 @@ public partial class PdvService
             DespesasOperacionaisPagas = despesasPagas
         };
 
-        // 4. Ranking de Vendedores
-        resumo.RankingVendedores = vendas
+        // 5. Ranking de Vendedores
+        var ranking = vendas
+            .Where(v => v.Vendedor != null)
             .GroupBy(v => v.VendedorId)
-            .Select(g =>
+            .Select(g => new VendedorDesempenhoDto
             {
-                var vendedorNome = g.First().Vendedor?.Nome ?? $"Vendedor #{g.Key}";
-                return new VendedorDesempenhoDto
-                {
-                    VendedorId = g.Key,
-                    VendedorNome = vendedorNome,
-                    QuantidadeVendas = g.Count(),
-                    TotalFaturado = g.Sum(x => x.ValorTotal)
-                };
+                VendedorId = g.Key,
+                VendedorNome = g.First().Vendedor?.Nome ?? $"Vendedor #{g.Key}",
+                QuantidadeVendas = g.Count(),
+                TotalFaturado = g.Sum(v => v.ValorTotal)
             })
-            .OrderByDescending(x => x.TotalFaturado)
+            .OrderByDescending(v => v.TotalFaturado)
             .ToList();
+
+        resumo.RankingVendedores = ranking;
 
         return resumo;
     }

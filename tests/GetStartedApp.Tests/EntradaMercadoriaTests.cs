@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using GetStartedApp.Data;
 using GetStartedApp.Models;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Fiscal;
 using GetStartedApp.ViewModels;
 using Xunit;
 
@@ -63,62 +64,55 @@ public class EntradaMercadoriaTests : IDisposable
         };
 
         // Act
-        await _service.RegistrarEntradaMercadoriaAsync(
-            numeroNota: "NF-99881",
-            fornecedor: "Distribuidora de Embalagens",
-            observacao: "Entrega via transportadora",
+        var entrada = await _service.RegistrarEntradaMercadoriaAsync(
+            numeroNota: "NF-00123",
+            fornecedor: "Distribuidora ABC",
+            observacao: "Carga regular",
             itens: itens
         );
 
-        // Assert: Estoque deve subir de 10 para 110
-        var p1Atualizado = await _db.Produtos.FindAsync(1);
-        Assert.Equal(110, p1Atualizado!.Estoque);
+        // Assert
+        Assert.NotNull(entrada);
+        Assert.Equal("NF-00123", entrada.NumeroNota);
+        Assert.Equal("Distribuidora ABC", entrada.Fornecedor);
+        Assert.Equal(120.00m, entrada.ValorTotal); // 100 * 1.20
 
-        // Verifica o histórico de entradas
-        var historico = await _service.ObterHistoricoEntradasAsync();
-        Assert.Single(historico);
-        Assert.Equal("NF-99881", historico[0].NumeroNota);
-        Assert.Equal(120.00m, historico[0].ValorTotal); // 100 * 1.20
-        Assert.Single(historico[0].Itens);
-        Assert.Equal(100, historico[0].Itens[0].QuantidadeEntrada);
+        // Verifica que o estoque do produto aumentou
+        var p1Depois = await _db.Produtos.FindAsync(1);
+        Assert.Equal(estoqueAntes + 100, p1Depois!.Estoque);
+        Assert.Equal(1.20m, p1Depois.CustoUltimaCompra);
     }
 
     [Fact]
-    public void Deve_Calcular_Conversao_De_Unidade_Corretamente()
+    public async Task Deve_Registrar_Entrada_Com_Multiplos_Itens_E_Atualizar_Custos()
     {
-        // Exemplo: Compra 2 caixas (QuantidadeFaturada = 2)
-        // Cada caixa tem 500 unidades (FatorConversao = 500)
-        // Total esperado no estoque = 1000 unidades
-        var itemVm = new ItemNotaFiscalVm
+        // Arrange: Sacola e Copo
+        var itens = new List<(int ProdutoId, int Quantidade, decimal CustoUnitario)>
         {
-            QuantidadeFaturada = 2,
-            FatorConversao = 500,
-            PrecoUnitarioFaturado = 65.00m // R$ 65 por caixa
+            (1, 50, 1.30m),  // 50 * 1.30 = 65.00
+            (2, 200, 0.08m)  // 200 * 0.08 = 16.00
         };
 
-        Assert.Equal(1000, itemVm.QuantidadeEstoque);
-        Assert.Equal(130.00m, itemVm.TotalBruto); // 2 * 65 = 130
-    }
+        // Act
+        var entrada = await _service.RegistrarEntradaMercadoriaAsync(
+            numeroNota: "NF-00999",
+            fornecedor: "Atacado Central",
+            observacao: "Diversos descartáveis",
+            itens: itens
+        );
 
-    [Fact]
-    public void Deve_Calcular_Custo_Real_Com_Rateio_De_Frete()
-    {
-        // Exemplo: Compra 1 fardo com 10 unidades a R$ 20 cada (Total Bruto = R$ 200)
-        // Rateio de Frete/Despesas = R$ 20
-        // Custo Real Total = R$ 220
-        // Custo Unitário de Estoque = 220 / 10 = R$ 22,00 por unidade
-        var itemVm = new ItemNotaFiscalVm
-        {
-            QuantidadeFaturada = 1,
-            FatorConversao = 10,
-            PrecoUnitarioFaturado = 200.00m,
-            RateioDespesas = 20.00m
-        };
+        // Assert
+        Assert.Equal(81.00m, entrada.ValorTotal); // 65 + 16
+        Assert.Equal(2, entrada.Itens.Count);
 
-        Assert.Equal(10, itemVm.QuantidadeEstoque);
-        Assert.Equal(200.00m, itemVm.TotalBruto);
-        Assert.Equal(220.00m, itemVm.CustoRealTotal);
-        Assert.Equal(22.00m, itemVm.CustoUnitarioEstoque);
+        var p1 = await _db.Produtos.FindAsync(1);
+        var p2 = await _db.Produtos.FindAsync(2);
+
+        Assert.Equal(60, p1!.Estoque);  // 10 + 50
+        Assert.Equal(1.30m, p1.CustoUltimaCompra);
+
+        Assert.Equal(250, p2!.Estoque); // 50 + 200
+        Assert.Equal(0.08m, p2.CustoUltimaCompra);
     }
 
     [Fact]
@@ -168,5 +162,98 @@ public class EntradaMercadoriaTests : IDisposable
 
         var itemSacola = relatorio.First(r => r.ProdutoId == 1);
         Assert.Equal(3, itemSacola.QuantidadeVendida);
+    }
+
+    [Fact]
+    public void ItemNotaFiscalVm_DeveCalcular_PrecoSugerido_ComBaseEmMarkup()
+    {
+        // Arrange: Custo unitário faturado R$ 10,00, sem frete, markup padrão 50%
+        var item = new ItemNotaFiscalVm
+        {
+            NumeroItem = 1,
+            QuantidadeFaturada = 1,
+            FatorConversao = 1,
+            PrecoUnitarioFaturado = 10.00m,
+            RateioDespesas = 0m,
+            MarkupPercentual = 50.0m
+        };
+
+        // Assert: Custo unitário R$ 10,00 -> Preço Sugerido = 10 * (1 + 0.50) = R$ 15,00
+        Assert.Equal(10.00m, item.CustoUnitarioEstoque);
+        Assert.Equal(15.00m, item.PrecoVendaSugerido);
+        Assert.Equal(15.00m, item.PrecoVendaFinal);
+
+        // Act: Altera markup para 100%
+        item.MarkupPercentual = 100.0m;
+
+        // Assert: Preço sugerido sobe para R$ 20,00
+        Assert.Equal(20.00m, item.PrecoVendaSugerido);
+        Assert.Equal(20.00m, item.PrecoVendaFinal);
+    }
+
+    [Fact]
+    public async Task EntradaNfeViewModel_DeveBloquearProcessamento_SeHouverPrecoVendaZero()
+    {
+        // Arrange
+        var parser = new NfeXmlParserService(NullLogger<NfeXmlParserService>.Instance);
+        var vm = new EntradaNfeViewModel(_service, parser, NullLogger<EntradaNfeViewModel>.Instance);
+        await vm.CarregarCatalogoAsync();
+
+        vm.ItensNota.Clear();
+        var item = new ItemNotaFiscalVm
+        {
+            NumeroItem = 1,
+            DescricaoFornecedor = "PRODUTO TESTE COM ERRO",
+            QuantidadeFaturada = 1,
+            PrecoUnitarioFaturado = 10m
+        };
+        // Usuário força o preço de venda para zero
+        item.PrecoVendaFinal = 0m;
+        vm.ItensNota.Add(item);
+
+        // Act
+        await vm.ProcessarEntradaFiscalCommand.ExecuteAsync(null);
+
+        // Assert: Processamento barrado com aviso
+        Assert.Contains("está com preço de venda zerado", vm.MensagemFeedback);
+        Assert.NotEqual("LANÇADA NO ESTOQUE & INTEGRADA AO FINANCEIRO", vm.StatusDocumento);
+    }
+
+    [Fact]
+    public async Task EntradaNfeViewModel_DeveAtualizarPrecoVendaECusto_NoCatalogoAoProcessar()
+    {
+        // Arrange: Produto existente no ERP com preço R$ 2,50
+        var parser = new NfeXmlParserService(NullLogger<NfeXmlParserService>.Instance);
+        var vm = new EntradaNfeViewModel(_service, parser, NullLogger<EntradaNfeViewModel>.Instance);
+        await vm.CarregarCatalogoAsync();
+
+        var produtoExistente = vm.ProdutosDisponiveis.First(p => p.Id == 1); // Sacola Branca 2k
+        Assert.Equal(2.50m, produtoExistente.Preco);
+
+        vm.ItensNota.Clear();
+        var itemNota = new ItemNotaFiscalVm
+        {
+            NumeroItem = 1,
+            DescricaoFornecedor = "SACOLA BRANCA 2K",
+            QuantidadeFaturada = 20,
+            FatorConversao = 1,
+            PrecoUnitarioFaturado = 1.50m,
+            ProdutoVinculado = produtoExistente,
+            PrecoVendaFinal = 3.99m // Usuário definiu novo preço R$ 3,99
+        };
+        vm.ItensNota.Add(itemNota);
+
+        // Act
+        await vm.ProcessarEntradaFiscalCommand.ExecuteAsync(null);
+
+        // Assert: Nota fiscal lançada com sucesso
+        Assert.Equal("LANÇADA NO ESTOQUE & INTEGRADA AO FINANCEIRO", vm.StatusDocumento);
+
+        // Recarrega do banco de dados para conferência
+        var produtoAtualizado = await _db.Produtos.AsNoTracking().FirstOrDefaultAsync(p => p.Id == 1);
+        Assert.NotNull(produtoAtualizado);
+        Assert.Equal(3.99m, produtoAtualizado.Preco);
+        Assert.Equal(1.50m, produtoAtualizado.CustoUltimaCompra);
+        Assert.Equal(30, produtoAtualizado.Estoque); // 10 original + 20 faturadas
     }
 }

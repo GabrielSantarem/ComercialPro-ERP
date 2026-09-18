@@ -93,7 +93,10 @@ public partial class PdvService
         _logger.LogInformation("Pedido {Comanda} cancelado. Motivo: {Motivo}", pedido.NumeroComanda, motivo);
     }
 
-    public async Task<Venda> FaturarPedidoBalcaoNoCaixaAsync(int pedidoBalcaoId, string formaPagamento)
+    public async Task<Venda> FaturarPedidoBalcaoNoCaixaAsync(
+        int pedidoBalcaoId, 
+        string formaPagamento,
+        IEnumerable<(string Forma, decimal Valor)>? pagamentosDetalhados = null)
     {
         var turnoAtivo = await _db.CaixasTurno.FirstOrDefaultAsync(c => c.Status == "ABERTO");
         if (turnoAtivo == null)
@@ -152,14 +155,30 @@ public partial class PdvService
             pedido.Status = "FATURADO";
             pedido.VendaId = venda.Id;
 
-            // Acumula o valor no turno de caixa aberto
-            if (formaPagamento.Equals("Dinheiro", StringComparison.OrdinalIgnoreCase))
+            // Acumula o valor no turno de caixa aberto considerando split payments
+            var parcelas = pagamentosDetalhados?.ToList();
+            if (parcelas != null && parcelas.Count > 0)
             {
-                turnoAtivo.TotalVendasDinheiro += venda.ValorTotal;
+                var valorDinheiro = parcelas
+                    .Where(p => p.Forma.Contains("Dinheiro", StringComparison.OrdinalIgnoreCase))
+                    .Sum(p => p.Valor);
+                var valorOutros = parcelas
+                    .Where(p => !p.Forma.Contains("Dinheiro", StringComparison.OrdinalIgnoreCase))
+                    .Sum(p => p.Valor);
+
+                turnoAtivo.TotalVendasDinheiro += valorDinheiro;
+                turnoAtivo.TotalVendasOutros += valorOutros;
             }
             else
             {
-                turnoAtivo.TotalVendasOutros += venda.ValorTotal;
+                if (formaPagamento.Contains("Dinheiro", StringComparison.OrdinalIgnoreCase))
+                {
+                    turnoAtivo.TotalVendasDinheiro += venda.ValorTotal;
+                }
+                else
+                {
+                    turnoAtivo.TotalVendasOutros += venda.ValorTotal;
+                }
             }
 
             await _db.SaveChangesAsync();
