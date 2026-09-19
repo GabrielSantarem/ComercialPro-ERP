@@ -1,6 +1,6 @@
 # COMERCIAL PRO ERP — DOCUMENTAÇÃO TÉCNICA E OPERACIONAL DO SISTEMA
 
-> **Versão:** 1.3.0 (Homologado com 208 Testes Unitários)  
+> **Versão:** 1.4.0 (Homologado com 226 Testes Unitários - 0 Falhas)  
 > **Framework:** .NET 10 (C# 14)  
 > **UI Toolkit:** Avalonia UI 11.2 (Cross-Platform / Linux Wayland & X11 / Windows)  
 > **Persistência:** Entity Framework Core 9 / SQLite com Integridade Transacional  
@@ -317,6 +317,28 @@ tail -f logs/pdv_log_*.txt
   ```csharp
   this.AddHandler(InputElement.KeyDownEvent, Handler_KeyDownTunnel, RoutingStrategies.Tunnel);
   ```
+
+---
+
+## 7. OPERAÇÃO COMERCIAL & INTELIGÊNCIA DE ESTOQUE (REV-003)
+
+### 7.1 Trocas, Devoluções & Emissão de Vale-Crédito
+- **Atalho Zero Mouse:**  no PDV abre o modal direto de troca e devolução.
+- **Identificador Único:** Código criptograficamente legível no formato .
+- **Destinação e Reincorporação de Estoque:** Suporte à reincorporação ao estoque comercial ou redirecionamento para avaria/quarentena (), auditado com motivo em logs.
+- **Resgate Atômico no Checkout:** Validação no PDV via token ou leitor de código de barras com abatimento parcial ou total do saldo e gravação do meio de pagamento SEFAZ  (Outros).
+
+### 7.2 Gestão de Clientes & Crediário ("Fiado")
+- **Validação Algorítmica da Receita Federal:** Implementação estrita de cálculo de dígitos verificadores para CPF (11 dígitos) e CNPJ (14 dígitos), rejeitando sequências nulas e formatos inválidos.
+- **Controle de Risco de Crédito:**
+  - Limite pré-aprovado de crédito configurável por cliente.
+  - Bloqueio automático de vendas fiado no checkout do PDV caso o saldo devedor mais a nova compra ultrapasse o limite disponível.
+  - Trava automática por inadimplência quando existirem títulos vencidos há mais de 5 dias.
+  - Meio de pagamento SEFAZ  (Crédito Loja).
+
+### 7.3 Radar de Sem Giro & Comissões de Atendentes
+- **Radar de Produtos Parados:** Identificação de produtos sem giro há 30, 60 ou 90+ dias com cálculo de Capital Parado Total (Estoque Atual $	imes$ Custo Unitário). Proteção contra falsos positivos para itens recém-cadastrados via $\min(	ext{DataUltimaVenda}, 	ext{DataCadastro})$.
+- **Relatório de Comissões de Atendentes:** Apuração do faturamento por operador de venda excluindo notas canceladas, aplicando a alíquota de comissão individual cadastrada na equipe de vendas.
 
 ---
 

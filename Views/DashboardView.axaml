@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GetStartedApp.ViewModels"
              xmlns:services="using:GetStartedApp.Services"
+             xmlns:intel="using:GetStartedApp.Services.Inteligencia"
              x:Class="GetStartedApp.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
              
@@ -257,6 +258,113 @@
                                    Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="15"
                                    IsVisible="{Binding !RankingVendedores.Count}"/>
 
+                    </StackPanel>
+                </Border>
+
+
+                <!-- 5. RADAR DE ESTOQUE SEM GIRO & CAPITAL PARADO (REV-003) -->
+                <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="🧭 Radar de Produtos Sem Giro &amp; Capital Parado" FontSize="16" FontWeight="Black" Foreground="#D35400"/>
+                                <TextBlock Text="Identifique mercadorias encalhadas e tome decisões ágeis de liquidação para liberar capital de giro" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="#FDEDEC" CornerRadius="6" Padding="12,6" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="TOTAL CAPITAL PARADO:" FontWeight="Bold" FontSize="11" Foreground="#C0392B" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding CapitalTotalParado, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" FontSize="15" Foreground="#C0392B" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Dias de Corte Sem Vendas:" FontWeight="Bold" FontSize="12" Foreground="#34495E" VerticalAlignment="Center"/>
+                            <Button Command="{Binding AlterarCorteSemGiroCommand}" CommandParameter="30" Content="30+ Dias" Padding="10,4" Background="#EAEDED" FontWeight="Bold" FontSize="11" CornerRadius="4" Cursor="Hand"/>
+                            <Button Command="{Binding AlterarCorteSemGiroCommand}" CommandParameter="60" Content="60+ Dias" Padding="10,4" Background="#EAEDED" FontWeight="Bold" FontSize="11" CornerRadius="4" Cursor="Hand"/>
+                            <Button Command="{Binding AlterarCorteSemGiroCommand}" CommandParameter="90" Content="90+ Dias" Padding="10,4" Background="#EAEDED" FontWeight="Bold" FontSize="11" CornerRadius="4" Cursor="Hand"/>
+                        </StackPanel>
+
+                        <Border Background="#F8F9F9" Padding="12,8" CornerRadius="4">
+                            <Grid ColumnDefinitions="2*, 100, 110, 130, 110">
+                                <TextBlock Grid.Column="0" Text="PRODUTO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="ESTOQUE" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Text="CUSTO UNIT." FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="CAPITAL PARADO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="4" Text="DIAS S/ GIRO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
+
+                        <ItemsControl ItemsSource="{Binding ProdutosSemGiro}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="intel:ItemProdutoSemGiroDto">
+                                    <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="12,10">
+                                        <Grid ColumnDefinitions="2*, 100, 110, 130, 110" VerticalAlignment="Center">
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Nome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="13"/>
+                                                <TextBlock Text="{Binding CodigoBarras}" Foreground="#95A5A6" FontSize="11"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="{Binding SaldoEstoque}" FontWeight="Bold" Foreground="#34495E" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding CustoUnitario, StringFormat='R$ {0:N2}'}" Foreground="#7F8C8D" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding CapitalParadoTotal, StringFormat='R$ {0:N2}'}" FontWeight="Black" Foreground="#C0392B" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding DiasSemGiro, StringFormat='{}{0} dias'}" FontWeight="Bold" Foreground="#E67E22" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Nenhum produto atende aos critérios de estoque parado para o corte selecionado." 
+                                   Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="15"
+                                   IsVisible="{Binding !ProdutosSemGiro.Count}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- 6. RELATÓRIO DE COMISSÕES DE VENDEDORES (REV-003) -->
+                <Border Background="White" CornerRadius="8" Padding="20" BorderBrush="#BDC3C7" BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="💼 Relatório e Apuração de Comissões de Atendentes" FontSize="16" FontWeight="Black" Foreground="#16A085"/>
+                                <TextBlock Text="Cálculo automático de comissões baseado nas vendas faturadas do período selecionado" FontSize="12" Foreground="#7F8C8D"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="#E8F8F5" CornerRadius="6" Padding="12,6" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="TOTAL COMISSÕES:" FontWeight="Bold" FontSize="11" Foreground="#16A085" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalComissoesAPagar, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" FontSize="15" Foreground="#16A085" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Background="#F8F9F9" Padding="12,8" CornerRadius="4">
+                            <Grid ColumnDefinitions="2*, 100, 130, 90, 130">
+                                <TextBlock Grid.Column="0" Text="VENDEDOR / ATENDENTE" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="VENDAS" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Text="TOTAL FATURADO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="% COMISSÃO" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="4" Text="VALOR A PAGAR" FontWeight="Bold" Foreground="#7F8C8D" FontSize="11" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
+
+                        <ItemsControl ItemsSource="{Binding ComissoesVendedores}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="intel:ComissaoVendedorDto">
+                                    <Border BorderBrush="#ECF0F1" BorderThickness="0,0,0,1" Padding="12,10">
+                                        <Grid ColumnDefinitions="2*, 100, 130, 90, 130" VerticalAlignment="Center">
+                                            <TextBlock Grid.Column="0" Text="{Binding VendedorNome}" FontWeight="Bold" Foreground="#2C3E50" FontSize="13"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding TotalVendas}" FontWeight="SemiBold" Foreground="#34495E" FontSize="13" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding FaturamentoTotal, StringFormat='R$ {0:N2}'}" FontWeight="Black" Foreground="#27AE60" FontSize="13" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding PercentualComissao, StringFormat='{}{0:N1}%'}" FontWeight="Bold" Foreground="#2980B9" FontSize="13" HorizontalAlignment="Right"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding ValorComissaoTotal, StringFormat='R$ {0:N2}'}" FontWeight="Black" Foreground="#16A085" FontSize="13" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Nenhum vendedor elegível a comissão no período filtrado." 
+                                   Foreground="#95A5A6" FontStyle="Italic" HorizontalAlignment="Center" Margin="15"
+                                   IsVisible="{Binding !ComissoesVendedores.Count}"/>
                     </StackPanel>
                 </Border>
 

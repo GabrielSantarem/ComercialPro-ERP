@@ -15,6 +15,7 @@ public class ContaPagar
     public string NumeroParcela { get; set; } = string.Empty;
     
     public decimal Valor { get; set; }
+    public decimal ValorOriginal => Valor;
     public DateTime DataEmissao { get; set; } = DateTime.Today;
     public DateTime DataVencimento { get; set; }
     

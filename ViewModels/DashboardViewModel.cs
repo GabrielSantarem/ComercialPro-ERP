@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Inteligencia;
 using Microsoft.EntityFrameworkCore;
 using GetStartedApp.Data;
 using Serilog;
@@ -15,6 +16,7 @@ public partial class DashboardViewModel : ViewModelBase
 {
     private readonly PdvService _pdvService;
     private readonly AppDbContext _db;
+    private readonly IInteligenciaComercialService? _inteligenciaService;
 
     [ObservableProperty]
     private bool _carregando;
@@ -37,6 +39,19 @@ public partial class DashboardViewModel : ViewModelBase
     public ObservableCollection<ItemCurvaAbcDto> ItensCurvaAbc { get; } = [];
     public ObservableCollection<VendedorDesempenhoDto> RankingVendedores { get; } = [];
 
+    // Inteligência de Estoque Sem Giro & Comissões (REV-003)
+    public ObservableCollection<ItemProdutoSemGiroDto> ProdutosSemGiro { get; } = [];
+    public ObservableCollection<ComissaoVendedorDto> ComissoesVendedores { get; } = [];
+
+    [ObservableProperty]
+    private int _diasCorteSemGiro = 60;
+
+    [ObservableProperty]
+    private decimal _capitalTotalParado;
+
+    [ObservableProperty]
+    private decimal _totalComissoesAPagar;
+
     // Indicadores de Estoque Global
     [ObservableProperty]
     private int _totalProdutosEstoque;
@@ -44,15 +59,44 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _valorEstoque;
 
-    public DashboardViewModel(PdvService pdvService, AppDbContext db)
+    public DashboardViewModel(PdvService pdvService, AppDbContext db, IInteligenciaComercialService? inteligenciaService = null)
     {
         _pdvService = pdvService;
         _db = db;
+        _inteligenciaService = inteligenciaService;
     }
 
     partial void OnFiltroPeriodoSelecionadoChanged(string value)
     {
         _ = CarregarMetricasAsync();
+    }
+
+    [RelayCommand]
+    public async Task AlterarCorteSemGiroAsync(string diasStr)
+    {
+        if (int.TryParse(diasStr, out int dias))
+        {
+            DiasCorteSemGiro = dias;
+            await CarregarProdutosSemGiroAsync();
+        }
+    }
+
+    [RelayCommand]
+    public async Task CarregarProdutosSemGiroAsync()
+    {
+        if (_inteligenciaService == null) return;
+
+        try
+        {
+            var semGiro = await _inteligenciaService.ObterProdutosSemGiroAsync(DiasCorteSemGiro);
+            ProdutosSemGiro.Clear();
+            foreach (var item in semGiro) ProdutosSemGiro.Add(item);
+            CapitalTotalParado = semGiro.Sum(s => s.CapitalParadoTotal);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Erro ao obter produtos sem giro.");
+        }
     }
 
     [RelayCommand]
@@ -109,6 +153,17 @@ public partial class DashboardViewModel : ViewModelBase
             var produtos = await _db.Produtos.ToListAsync();
             TotalProdutosEstoque = produtos.Sum(p => p.Estoque);
             ValorEstoque = produtos.Sum(p => (p.CustoUltimaCompra > 0 ? p.CustoUltimaCompra : p.Preco * 0.6m) * p.Estoque);
+
+            // 3. Inteligência Comercial REV-003: Produtos Sem Giro & Comissões de Atendentes
+            if (_inteligenciaService != null)
+            {
+                await CarregarProdutosSemGiroAsync();
+
+                var comissoes = await _inteligenciaService.CalcularComissoesAsync(dataIni, dataFim);
+                ComissoesVendedores.Clear();
+                foreach (var c in comissoes) ComissoesVendedores.Add(c);
+                TotalComissoesAPagar = comissoes.Sum(c => c.ValorComissaoTotal);
+            }
         }
         catch (Exception ex)
         {

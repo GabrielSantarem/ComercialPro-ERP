@@ -172,15 +172,18 @@
                     </Border>
 
                     <!-- Botões de Ação Rápida -->
-                    <Grid Grid.Row="2" ColumnDefinitions="*, *, *" Margin="0,15,0,0">
-                        <Button Grid.Column="0" Command="{Binding CancelarItemSelecionadoCommand}" Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="13" Padding="10" Margin="0,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
-                            <TextBlock Text="[DEL] Excluir Item" FontWeight="Bold"/>
+                    <Grid Grid.Row="2" ColumnDefinitions="*, *, *, *" Margin="0,15,0,0">
+                        <Button Grid.Column="0" Command="{Binding CancelarItemSelecionadoCommand}" Background="#E74C3C" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8" Margin="0,0,3,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="[DEL] Excluir" FontWeight="Bold"/>
                         </Button>
-                        <Button Grid.Column="1" Command="{Binding AbrirModalCancelamentoCommand}" Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="13" Padding="10" Margin="4,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
-                            <TextBlock Text="❌ [F7] Cancelar NFC-e" FontWeight="Bold"/>
+                        <Button Grid.Column="1" Command="{Binding AbrirModalCancelamentoCommand}" Background="#C0392B" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8" Margin="3,0,3,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="❌ [F7] Cancelar" FontWeight="Bold"/>
                         </Button>
-                        <Button Grid.Column="2" Command="{Binding AbrirModalPagamentoCommand}" Background="#F39C12" Foreground="White" FontWeight="Black" FontSize="14" Padding="10" Margin="4,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
-                            <TextBlock Text="💰 [F12] RECEBER NOTA" FontWeight="Black"/>
+                        <Button Grid.Column="2" Command="{Binding AbrirModalTrocasCommand}" Background="#E67E22" Foreground="White" FontWeight="Bold" FontSize="12" Padding="8" Margin="3,0,3,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="🔄 [F10] Trocas" FontWeight="Bold"/>
+                        </Button>
+                        <Button Grid.Column="3" Command="{Binding AbrirModalPagamentoCommand}" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="12" Padding="8" Margin="3,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                            <TextBlock Text="💰 [F12] RECEBER" FontWeight="Black"/>
                         </Button>
                     </Grid>
 
@@ -196,6 +199,7 @@
                     <TextBlock Text="[F2] Foco Busca  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[DEL] Excluir Item  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F7] Cancelar NFC-e  |  " Foreground="#E74C3C" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F10] Trocas/Vales  |  " Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F8] Sangria  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F12] Receber Nota  |  " Foreground="#2ECC71" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F6] Suprimento  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
@@ -259,6 +263,36 @@
 
                                 <Button Grid.Column="2" Command="{Binding AdicionarParcelaPagamentoCommand}" Content="➕ Dividir [F3]" Background="#2980B9" Foreground="White" FontWeight="Bold" Height="36" Padding="12,0" VerticalAlignment="Bottom" CornerRadius="6" Cursor="Hand" ToolTip.Tip="Adiciona como parcela de pagamento mista (Split Payment)"/>
                             </Grid>
+                        </Border>
+
+                        <!-- PAINEL AUXILIAR: VALE-CRÉDITO (REV-003) -->
+                        <Border Background="#FEF9E7" BorderBrush="#F39C12" BorderThickness="1" CornerRadius="8" Padding="10">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="🎟️ Resgatar Cupom de Vale-Crédito:" FontWeight="Bold" FontSize="12" Foreground="#D35400"/>
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBox Text="{Binding CodigoValeDigitado}" PlaceholderText="Digite ou bipe o Vale (ex: VALE-2026-XXXXX)..." FontSize="13" Height="34" Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1" Command="{Binding ConsultarEAplicarValeCommand}" Content="Aplicar Vale" Background="#E67E22" Foreground="White" FontWeight="Bold" FontSize="12" Height="34" Padding="10,0" CornerRadius="4" Cursor="Hand"/>
+                                </Grid>
+                                <TextBlock Text="{Binding MensagemStatusVale}" FontSize="12" FontWeight="Bold" Foreground="#D35400" IsVisible="{Binding MensagemStatusVale, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- PAINEL AUXILIAR: CREDIÁRIO / FIADO (REV-003) -->
+                        <Border Background="#F4ECF7" BorderBrush="#8E44AD" BorderThickness="1" CornerRadius="8" Padding="10">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="💳 Venda no Crediário / Fiado com Limite:" FontWeight="Bold" FontSize="12" Foreground="#8E44AD"/>
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding ClientesCrediario}" SelectedItem="{Binding ClienteCrediarioSelecionado}" HorizontalAlignment="Stretch" Height="34" Margin="0,0,8,0">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Nome}" FontSize="12"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Grid.Column="1" Command="{Binding AvaliarEAplicarCrediarioCommand}" Content="Aprovar Fiado" Background="#8E44AD" Foreground="White" FontWeight="Bold" FontSize="12" Height="34" Padding="10,0" CornerRadius="4" Cursor="Hand"/>
+                                </Grid>
+                                <TextBlock Text="{Binding MensagemStatusCrediario}" FontSize="12" FontWeight="Bold" Foreground="#C0392B" IsVisible="{Binding MensagemStatusCrediario, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                            </StackPanel>
                         </Border>
 
                         <!-- LISTA DE PARCELAS ADICIONADAS (SPLIT PAYMENT) -->
@@ -499,6 +533,100 @@
                         <Button Grid.Column="1" Command="{Binding ConfirmarCancelamentoNfceCommand}" IsEnabled="{Binding !IsCancelandoProcessando}" Content="[ENTER] Confirmar na SEFAZ" Background="#C0392B" Foreground="White" FontWeight="Black" FontSize="14" Padding="10" Margin="8,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
                     </Grid>
                 </StackPanel>
+            </Border>
+        </Border>
+
+
+        <!-- CAMADA 7: MODAL DE TROCAS, DEVOLUÇÕES & EMISSÃO DE VALE-CRÉDITO [F10] (REV-003) -->
+        <Border Background="#F2000000" 
+                IsVisible="{Binding ModalTrocasAberto}" 
+                IsHitTestVisible="{Binding ModalTrocasAberto}" 
+                ZIndex="140"
+                KeyboardNavigation.TabNavigation="Cycle">
+            <Border Background="White" Width="680" MaxHeight="720" CornerRadius="12" Padding="25" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AAF39C12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="14">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Grid.Column="0" Text="🔄 Trocas, Devoluções &amp; Emissão de Vale-Crédito" FontSize="18" FontWeight="Black" Foreground="#D35400"/>
+                            <Border Grid.Column="1" Background="#FEF9E7" CornerRadius="4" Padding="6,2">
+                                <TextBlock Text="[F10]" Foreground="#D35400" FontWeight="Black" FontSize="12"/>
+                            </Border>
+                        </Grid>
+
+                        <Border Background="#FDEDEC" BorderBrush="#E74C3C" BorderThickness="1" CornerRadius="6" Padding="8" IsVisible="{Binding TrocaMensagemErro, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <TextBlock Text="{Binding TrocaMensagemErro}" Foreground="#C0392B" FontWeight="Bold" FontSize="12" TextWrapping="Wrap"/>
+                        </Border>
+
+                        <!-- Caso Vale Gerado: Exibição do Cupom -->
+                        <Border Background="#EAFAF1" BorderBrush="#27AE60" BorderThickness="2" CornerRadius="8" Padding="15" IsVisible="{Binding ExibirValeEmitidoModal}">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="✅ VALE-CRÉDITO EMITIDO COM SUCESSO!" FontSize="16" FontWeight="Black" Foreground="#27AE60" HorizontalAlignment="Center"/>
+                                
+                                <Border Background="White" BorderBrush="#2ECC71" BorderThickness="1" CornerRadius="6" Padding="12">
+                                    <Grid RowDefinitions="Auto, Auto, Auto" ColumnDefinitions="*, *">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding ValeGeradoSucesso.Codigo, StringFormat='CÓDIGO: {0}'}" FontSize="16" FontWeight="Black" Foreground="#2C3E50"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ValeGeradoSucesso.ValorOriginal, StringFormat='VALOR: R$ {0:N2}'}" FontSize="16" FontWeight="Black" Foreground="#27AE60" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding ValeGeradoSucesso.DataValidade, StringFormat='Válido até: {0:dd/MM/yyyy}'}" FontSize="12" Foreground="#7F8C8D" Margin="0,4,0,0"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ValeGeradoSucesso.ClienteNome, StringFormat='Cliente: {0}'}" FontSize="12" Foreground="#7F8C8D" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                                        <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="Use este código para abater compras futuras no caixa." FontSize="11" Foreground="#16A085" Margin="0,6,0,0"/>
+                                    </Grid>
+                                </Border>
+
+                                <Button Command="{Binding FecharModalTrocasCommand}" Content="[ESC] Concluir e Fechar" Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="14" Padding="10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Formulário de Devolução -->
+                        <StackPanel Spacing="12" IsVisible="{Binding !ExibirValeEmitidoModal}">
+                            <Border Background="#F8F9F9" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*, *">
+                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,5,5">
+                                        <TextBlock Text="Nº Venda Origem (Opcional):" FontSize="12" FontWeight="Bold" Foreground="#34495E"/>
+                                        <TextBox Text="{Binding TrocaVendaOrigemTexto}" PlaceholderText="Ex: 105" FontSize="13" Height="32"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="5,0,0,5">
+                                        <TextBlock Text="Motivo da Devolução:" FontSize="12" FontWeight="Bold" Foreground="#34495E"/>
+                                        <TextBox Text="{Binding TrocaMotivoGeral}" FontSize="13" Height="32"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,5,5,0">
+                                        <TextBlock Text="Nome do Cliente:" FontSize="12" FontWeight="Bold" Foreground="#34495E"/>
+                                        <TextBox Text="{Binding TrocaClienteNome}" PlaceholderText="Nome do titular..." FontSize="13" Height="32"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="5,5,0,0">
+                                        <TextBlock Text="CPF do Cliente:" FontSize="12" FontWeight="Bold" Foreground="#34495E"/>
+                                        <TextBox Text="{Binding TrocaClienteCpf}" PlaceholderText="000.000.000-00" FontSize="13" Height="32"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Text="Itens Sendo Devolvidos:" FontSize="13" FontWeight="Bold" Foreground="#2C3E50"/>
+                            <Border Background="White" BorderBrush="#BDC3C7" BorderThickness="1" CornerRadius="6" MaxHeight="200">
+                                <DataGrid ItemsSource="{Binding ItensParaDevolucao}" AutoGenerateColumns="False" IsReadOnly="False" GridLinesVisibility="Horizontal">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="PRODUTO" Binding="{Binding ProdutoNome}" Width="*" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="QTD" Binding="{Binding Quantidade}" Width="60"/>
+                                        <DataGridTextColumn Header="UNIT." Binding="{Binding PrecoUnitario, StringFormat='R$ {0:N2}'}" Width="90"/>
+                                        <DataGridTextColumn Header="SUBTOTAL" Binding="{Binding Subtotal, StringFormat='R$ {0:N2}'}" Width="95" IsReadOnly="True"/>
+                                        <DataGridCheckBoxColumn Header="AVARIA?" Binding="{Binding DestinarAvaria}" Width="75"/>
+                                        <DataGridTextColumn Header="MOTIVO" Binding="{Binding Motivo}" Width="150"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Border>
+
+                            <Border Background="#FEF9E7" BorderBrush="#F39C12" BorderThickness="1" CornerRadius="6" Padding="10">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBlock Grid.Column="0" Text="VALOR TOTAL DO VALE-CRÉDITO A EMITIR:" FontWeight="Bold" FontSize="13" Foreground="#D35400" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding TotalDevolucao, StringFormat='{}R$ {0:N2}'}" FontWeight="Black" FontSize="20" Foreground="#D35400"/>
+                                </Grid>
+                            </Border>
+
+                            <Grid ColumnDefinitions="*, *" Margin="0,5,0,0">
+                                <Button Grid.Column="0" Command="{Binding FecharModalTrocasCommand}" Content="[ESC] Cancelar" Background="#95A5A6" Foreground="White" FontWeight="Bold" FontSize="14" Padding="10" Margin="0,0,8,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                                <Button Grid.Column="1" Command="{Binding ConfirmarEmissaoValeCommand}" IsEnabled="{Binding !TrocaProcessando}" Content="🎟️ [ENTER] Emitir Vale-Crédito" Background="#E67E22" Foreground="White" FontWeight="Black" FontSize="14" Padding="10" Margin="8,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand"/>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Border>
 

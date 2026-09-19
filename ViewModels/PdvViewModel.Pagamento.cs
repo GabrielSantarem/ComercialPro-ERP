@@ -31,7 +31,7 @@ public partial class PdvViewModel
     [NotifyPropertyChangedFor(nameof(Troco))]
     [NotifyPropertyChangedFor(nameof(PodeConfirmarPagamento))]
     public partial string FormaPagamentoSelecionada { get; set; } = "Dinheiro";
-    public ObservableCollection<string> FormasPagamento { get; } = ["Dinheiro", "PIX", "Débito", "Crédito (+2%)"];
+    public ObservableCollection<string> FormasPagamento { get; } = ["Dinheiro", "PIX", "Débito", "Crédito (+2%)", "Vale-Crédito", "Crediário (Fiado)"];
 
     public decimal Acrescimo => FormaPagamentoSelecionada == "Crédito (+2%)" ? TotalVenda * 0.02m : 0m;
     public decimal TotalComTaxa => TotalVenda + Acrescimo;
@@ -55,6 +55,25 @@ public partial class PdvViewModel
     public bool PodeConfirmarPagamento => PagamentosAdicionados.Count > 0
         ? TotalPago >= TotalComTaxa && TotalComTaxa > 0
         : ValorRecebido >= TotalComTaxa && TotalComTaxa > 0;
+
+    // === VALE-CRÉDITO (REV-003) ===
+    [ObservableProperty]
+    public partial string CodigoValeDigitado { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string MensagemStatusVale { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial decimal SaldoValeConsultado { get; set; }
+
+    // === CREDIÁRIO / FIADO (REV-003) ===
+    public ObservableCollection<Cliente> ClientesCrediario { get; } = [];
+
+    [ObservableProperty]
+    public partial Cliente? ClienteCrediarioSelecionado { get; set; }
+
+    [ObservableProperty]
+    public partial string MensagemStatusCrediario { get; set; } = string.Empty;
 
     // === CONTROLE FISCAL NFC-e (ZEUS) & DANFE A4 ===
     [ObservableProperty]
@@ -99,9 +118,26 @@ public partial class PdvViewModel
         ClienteIdentificacao = string.Empty;
         FormaPagamentoSelecionada = "Dinheiro";
         PagamentosAdicionados.Clear();
+        CodigoValeDigitado = string.Empty;
+        MensagemStatusVale = string.Empty;
+        MensagemStatusCrediario = string.Empty;
+        ClienteCrediarioSelecionado = null;
+
+        _ = CarregarClientesCrediarioAsync();
+
         IsModalAberto = true;
         ValorRecebido = TotalComTaxa;
         NotificarValoresPagamento();
+    }
+
+    private async Task CarregarClientesCrediarioAsync()
+    {
+        if (_clienteService != null)
+        {
+            ClientesCrediario.Clear();
+            var clientes = await _clienteService.PesquisarClientesAsync(string.Empty);
+            foreach (var c in clientes) ClientesCrediario.Add(c);
+        }
     }
 
     public void AbrirModalPagamentoParaPedidoBalcao(PedidoBalcao pedido)
@@ -130,9 +166,96 @@ public partial class PdvViewModel
 
         FormaPagamentoSelecionada = "Dinheiro";
         PagamentosAdicionados.Clear();
+        CodigoValeDigitado = string.Empty;
+        MensagemStatusVale = string.Empty;
+        MensagemStatusCrediario = string.Empty;
+        ClienteCrediarioSelecionado = null;
+
+        _ = CarregarClientesCrediarioAsync();
+
         IsModalAberto = true;
         ValorRecebido = TotalComTaxa;
         NotificarValoresPagamento();
+    }
+
+    [RelayCommand]
+    public async Task ConsultarEAplicarValeAsync()
+    {
+        if (_trocaService == null)
+        {
+            MensagemStatusVale = "Serviço de vale não disponível.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(CodigoValeDigitado))
+        {
+            MensagemStatusVale = "Informe o código do Vale-Crédito.";
+            return;
+        }
+
+        var vale = await _trocaService.ConsultarValeAsync(CodigoValeDigitado);
+        if (vale == null)
+        {
+            MensagemStatusVale = "Vale-Crédito não localizado.";
+            return;
+        }
+
+        if (vale.Status != "ATIVO" || vale.SaldoDisponivel <= 0)
+        {
+            MensagemStatusVale = $"Vale indisponível (Status: {vale.Status}, Saldo: R$ {vale.SaldoDisponivel:N2}).";
+            return;
+        }
+
+        SaldoValeConsultado = vale.SaldoDisponivel;
+        var valorNecessario = SaldoRestante > 0 ? SaldoRestante : TotalComTaxa;
+        var valorAbater = Math.Min(vale.SaldoDisponivel, valorNecessario);
+
+        PagamentosAdicionados.Add(new ItemPagamentoCheckout
+        {
+            Forma = $"Vale-Crédito ({vale.Codigo})",
+            Valor = valorAbater,
+            MeioPagamentoCodigo = "99"
+        });
+
+        NotificarValoresPagamento();
+        MensagemStatusVale = $"✅ Vale {vale.Codigo} aplicado: R$ {valorAbater:N2} abatidos!";
+        ValorRecebido = SaldoRestante;
+    }
+
+    [RelayCommand]
+    public async Task AvaliarEAplicarCrediarioAsync()
+    {
+        if (_clienteService == null)
+        {
+            MensagemStatusCrediario = "Serviço de clientes não disponível.";
+            return;
+        }
+
+        if (ClienteCrediarioSelecionado == null)
+        {
+            MensagemStatusCrediario = "Selecione um cliente para prosseguir no crediário.";
+            return;
+        }
+
+        var valorNecessario = SaldoRestante > 0 ? SaldoRestante : TotalComTaxa;
+        var avaliacao = await _clienteService.AvaliarCreditoAsync(ClienteCrediarioSelecionado.Id, valorNecessario);
+
+        if (!avaliacao.AptoParaCrediario)
+        {
+            MensagemStatusCrediario = $"❌ Crediário Recusado: {avaliacao.MotivoRestricao}";
+            return;
+        }
+
+        PagamentosAdicionados.Add(new ItemPagamentoCheckout
+        {
+            Forma = $"Crediário ({ClienteCrediarioSelecionado.Nome})",
+            Valor = valorNecessario,
+            MeioPagamentoCodigo = "05"
+        });
+
+        NotificarValoresPagamento();
+        MensagemStatusCrediario = $"✅ Crediário Aprovado: R$ {valorNecessario:N2} (Saldo Disp. Restante: R$ {(avaliacao.LimiteDisponivel - valorNecessario):N2})";
+        ValorRecebido = SaldoRestante;
     }
 
     [RelayCommand]
@@ -156,6 +279,8 @@ public partial class PdvViewModel
             "PIX" => "17",
             "Débito" => "04",
             "Crédito (+2%)" => "03",
+            "Vale-Crédito" => "99",
+            "Crediário (Fiado)" => "05",
             _ => "99"
         };
 
@@ -269,6 +394,8 @@ public partial class PdvViewModel
                 "PIX" => "17",
                 "Débito" => "04",
                 "Crédito (+2%)" => "03",
+                "Vale-Crédito" => "99",
+                "Crediário (Fiado)" => "05",
                 _ => "99"
             };
 
@@ -290,6 +417,22 @@ public partial class PdvViewModel
             var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
             var vendedorId = VendedorSelecionado?.Id ?? 1;
             vendaCriada = await _pdvService.SalvarPedidoAsync(vendedorId, itens, formaDescricao, parcelasDetalhadas);
+        }
+
+        // Se houve utilização de Vale-Crédito, resgata no serviço
+        if (_trocaService != null && vendaCriada != null)
+        {
+            var parcelasVale = PagamentosAdicionados.Where(p => p.Forma.StartsWith("Vale-Crédito")).ToList();
+            foreach (var pv in parcelasVale)
+            {
+                var inicio = pv.Forma.IndexOf('(');
+                var fim = pv.Forma.IndexOf(')');
+                if (inicio >= 0 && fim > inicio)
+                {
+                    var cod = pv.Forma.Substring(inicio + 1, fim - inicio - 1);
+                    await _trocaService.ResgatarValeCreditoAsync(cod, pv.Valor, vendaCriada.Id);
+                }
+            }
         }
 
         // Emissão Fiscal Automática NFC-e se estiver ativo

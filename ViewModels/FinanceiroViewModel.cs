@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GetStartedApp.Models;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Clientes;
 using Microsoft.Extensions.Logging;
 
 namespace GetStartedApp.ViewModels;
@@ -14,24 +15,29 @@ public partial class FinanceiroViewModel : ViewModelBase
 {
     private readonly PdvService _service;
     private readonly ILogger<FinanceiroViewModel> _logger;
+    private readonly IClienteService? _clienteService;
 
     // === CONTROLE DE NAVEGAÇÃO POR ABAS ===
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsAbaPagar))]
     [NotifyPropertyChangedFor(nameof(IsAbaReceber))]
     [NotifyPropertyChangedFor(nameof(IsAbaFluxoCaixa))]
+    [NotifyPropertyChangedFor(nameof(IsAbaClientes))]
     [NotifyPropertyChangedFor(nameof(CorAbaPagar))]
     [NotifyPropertyChangedFor(nameof(CorAbaReceber))]
     [NotifyPropertyChangedFor(nameof(CorAbaFluxoCaixa))]
-    public partial int AbaSelecionadaIndice { get; set; } = 0; // 0 = Pagar, 1 = Receber / Crediário, 2 = Fluxo de Caixa
+    [NotifyPropertyChangedFor(nameof(CorAbaClientes))]
+    public partial int AbaSelecionadaIndice { get; set; } = 0; // 0 = Pagar, 1 = Receber / Crediário, 2 = Fluxo de Caixa, 3 = Clientes & Fiado
 
     public bool IsAbaPagar => AbaSelecionadaIndice == 0;
     public bool IsAbaReceber => AbaSelecionadaIndice == 1;
     public bool IsAbaFluxoCaixa => AbaSelecionadaIndice == 2;
+    public bool IsAbaClientes => AbaSelecionadaIndice == 3;
 
     public string CorAbaPagar => IsAbaPagar ? "#EBF5FB" : "Transparent";
     public string CorAbaReceber => IsAbaReceber ? "#E8F8F5" : "Transparent";
     public string CorAbaFluxoCaixa => IsAbaFluxoCaixa ? "#FEF9E7" : "Transparent";
+    public string CorAbaClientes => IsAbaClientes ? "#F5EEF8" : "Transparent";
 
     [RelayCommand]
     public void SelecionarAba(string aba)
@@ -113,10 +119,11 @@ public partial class FinanceiroViewModel : ViewModelBase
     [ObservableProperty]
     public partial ResumoFluxoCaixaDto FluxoCaixa { get; set; } = new();
 
-    public FinanceiroViewModel(PdvService service, ILogger<FinanceiroViewModel> logger)
+    public FinanceiroViewModel(PdvService service, ILogger<FinanceiroViewModel> logger, IClienteService? clienteService = null)
     {
         _service = service;
         _logger = logger;
+        _clienteService = clienteService;
     }
 
     public async Task InicializarAsync()
@@ -130,6 +137,7 @@ public partial class FinanceiroViewModel : ViewModelBase
         await CarregarTitulosAsync();
         await CarregarTitulosReceberAsync();
         await CarregarFluxoCaixaAsync();
+        await CarregarClientesAsync();
     }
 
     partial void OnFiltroStatusSelecionadoChanged(string value) => _ = CarregarTitulosAsync();
@@ -145,15 +153,15 @@ public partial class FinanceiroViewModel : ViewModelBase
         try
         {
             Titulos.Clear();
-            var lista = await _service.ObterContasPagarAsync(statusFiltro: FiltroStatusSelecionado);
+            var lista = await _service.ObterContasPagarAsync(FiltroStatusSelecionado);
             foreach (var t in lista) Titulos.Add(t);
 
             Resumo = await _service.ObterResumoFinanceiroContasPagarAsync();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao carregar títulos do contas a pagar.");
-            MensagemFeedback = $"❌ Erro ao buscar títulos: {ex.Message}";
+            _logger.LogError(ex, "Erro ao carregar títulos a pagar.");
+            MensagemFeedback = $"❌ Erro ao carregar títulos a pagar: {ex.Message}";
         }
     }
 
@@ -163,7 +171,7 @@ public partial class FinanceiroViewModel : ViewModelBase
         if (conta.Status != "PENDENTE") return;
 
         TituloSelecionadoParaLiquidar = conta;
-        ValorPagoInformado = conta.Valor;
+        ValorPagoInformado = conta.ValorOriginal;
         FormaPagamentoSelecionada = "Boleto";
         ObservacaoPagamento = string.Empty;
         IsModalLiquidarAberto = true;
@@ -195,14 +203,14 @@ public partial class FinanceiroViewModel : ViewModelBase
                 FormaPagamentoSelecionada,
                 ObservacaoPagamento);
 
-            MensagemFeedback = $"✅ Título #{TituloSelecionadoParaLiquidar.Id} liquidado com sucesso via {FormaPagamentoSelecionada}!";
+            MensagemFeedback = $"✅ Título #{TituloSelecionadoParaLiquidar.Id} pago com sucesso!";
             FecharModalLiquidar();
             await RecarregarTudoAsync();
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao liquidar título #{Id}", TituloSelecionadoParaLiquidar.Id);
-            MensagemFeedback = $"❌ Erro: {ex.Message}";
+            MensagemFeedback = $"❌ Erro ao liquidar título: {ex.Message}";
         }
     }
 
@@ -230,7 +238,7 @@ public partial class FinanceiroViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(NovoFornecedorNome))
         {
-            MensagemFeedback = "⚠️ Informe a razão social ou nome do fornecedor!";
+            MensagemFeedback = "⚠️ O nome do fornecedor é obrigatório!";
             return;
         }
 
@@ -251,25 +259,36 @@ public partial class FinanceiroViewModel : ViewModelBase
                 NovoDataVencimento ?? DateTime.Today.AddDays(30),
                 NovaObservacao);
 
-            MensagemFeedback = "✅ Título a pagar cadastrado com sucesso!";
+            MensagemFeedback = $"✅ Título a pagar para '{NovoFornecedorNome}' cadastrado com sucesso!";
             FecharModalNovoTitulo();
             await RecarregarTudoAsync();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao criar título avulso.");
-            MensagemFeedback = $"❌ Erro: {ex.Message}";
+            _logger.LogError(ex, "Erro ao cadastrar título manual a pagar.");
+            MensagemFeedback = $"❌ Erro ao salvar título: {ex.Message}";
         }
     }
 
     [RelayCommand]
     public async Task CancelarTituloAsync(ContaPagar conta)
     {
+        await CancelarTituloInternoAsync(conta);
+    }
+
+    [RelayCommand]
+    public async Task CancelarTituloPagarAsync(ContaPagar conta)
+    {
+        await CancelarTituloInternoAsync(conta);
+    }
+
+    private async Task CancelarTituloInternoAsync(ContaPagar conta)
+    {
         if (conta == null || conta.Status != "PENDENTE") return;
 
         try
         {
-            await _service.CancelarContaPagarAsync(conta.Id, "Cancelado manualmente pelo operador financeiro");
+            await _service.CancelarContaPagarAsync(conta.Id, "Cancelado manualmente pelo usuário");
             MensagemFeedback = $"⚠️ Título #{conta.Id} cancelado.";
             await RecarregarTudoAsync();
         }

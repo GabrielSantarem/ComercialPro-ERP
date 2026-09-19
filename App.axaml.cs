@@ -5,8 +5,11 @@ using Avalonia.Markup.Xaml;
 using GetStartedApp.Data;
 using GetStartedApp.Models.Fiscal;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Clientes;
+using GetStartedApp.Services.Comercial;
 using GetStartedApp.Services.Fiscal;
 using GetStartedApp.Services.Impressao;
+using GetStartedApp.Services.Inteligencia;
 using GetStartedApp.ViewModels;
 using GetStartedApp.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,6 +67,11 @@ public partial class App : Application
             collection.AddSingleton<NfceEmissaoService>();
             collection.AddSingleton<INfceCancelamentoService, NfceCancelamentoService>();
             collection.AddSingleton<IFechamentoFiscalService, FechamentoFiscalService>();
+
+            // Módulos Comerciais, Clientes e Inteligência (REV-003)
+            collection.AddSingleton<ITrocaDevolucaoService, TrocaDevolucaoService>();
+            collection.AddSingleton<IClienteService, ClienteService>();
+            collection.AddSingleton<IInteligenciaComercialService, InteligenciaComercialService>();
             
             // Nossas ViewModels
             collection.AddTransient<MainViewModel>();           // O Navigation Shell (Janela)

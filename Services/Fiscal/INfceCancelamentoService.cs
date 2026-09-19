@@ -11,6 +11,7 @@ public class RetornoCancelamentoNfce
     public int CodigoStatusSefaz { get; set; }
     public string? ProtocoloCancelamento { get; set; }
     public string? ProtocoloEvento { get => ProtocoloCancelamento; set => ProtocoloCancelamento = value; }
+    public string? ProtocoloHomologacao { get => ProtocoloCancelamento; set => ProtocoloCancelamento = value; }
     public DateTime? DataHoraCancelamento { get; set; }
     public DateTime? DataHoraEvento { get => DataHoraCancelamento; set => DataHoraCancelamento = value; }
     public string? XmlCancelamento { get; set; }

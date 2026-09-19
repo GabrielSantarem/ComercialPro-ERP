@@ -58,6 +58,34 @@ public partial class PdvView : UserControl
         if (this.DataContext is not PdvViewModel vm) return;
 
         // ==========================================
+        // -1. SE O MODAL DE TROCAS & VALE-CRÉDITO [F10] ESTIVER ABERTO:
+        // ==========================================
+        if (vm.ModalTrocasAberto)
+        {
+            if (e.Key == Key.Escape)
+            {
+                Log.Information("[PDV TROCAS] ESC -> Fechando modal de trocas");
+                vm.FecharModalTrocasCommand.Execute(null);
+                FocarBusca();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                if (!vm.TrocaProcessando && !vm.ExibirValeEmitidoModal)
+                {
+                    Log.Information("[PDV TROCAS] ENTER -> Confirmando emissão de Vale-Crédito");
+                    await vm.ConfirmarEmissaoValeCommand.ExecuteAsync(null);
+                    e.Handled = true;
+                }
+                return;
+            }
+
+            return;
+        }
+
+        // ==========================================
         // 0. SE O MODAL DE CANCELAMENTO FISCAL [F7] ESTIVER ABERTO:
         // ==========================================
         if (vm.ModalCancelamentoAberto)
@@ -232,6 +260,15 @@ public partial class PdvView : UserControl
             Log.Information("[PDV ATALHO] F4 -> Abrir Fila do Balcão");
             await vm.AbrirModalFilaBalcaoAsync();
             if (vm.ModalFilaBalcaoAberto) FocarFiltroFila();
+            e.Handled = true;
+            return;
+        }
+
+        // F10: Trocas, Devoluções & Vale-Crédito (REV-003)
+        if (e.Key == Key.F10)
+        {
+            Log.Information("[PDV ATALHO] F10 -> Abrir Trocas & Vales");
+            vm.AbrirModalTrocasCommand.Execute(null);
             e.Handled = true;
             return;
         }

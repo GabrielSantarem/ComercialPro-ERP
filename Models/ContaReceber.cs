@@ -12,6 +12,9 @@ public class ContaReceber
     public int? PedidoBalcaoId { get; set; }
     public PedidoBalcao? PedidoBalcao { get; set; }
 
+    public int? ClienteId { get; set; }
+    public Cliente? Cliente { get; set; }
+
     public string ClienteNome { get; set; } = string.Empty;
     public string ClienteCpfCnpj { get; set; } = string.Empty;
     public string ClienteTelefone { get; set; } = string.Empty;

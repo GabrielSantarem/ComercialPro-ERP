@@ -6,6 +6,7 @@ public class Vendedor : IEquatable<Vendedor>
 {
     public int Id { get; set; }
     public string Nome { get; set; } = string.Empty;
+    public decimal PercentualComissao { get; set; } = 5.0m;
 
     public bool Equals(Vendedor? other)
     {

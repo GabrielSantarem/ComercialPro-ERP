@@ -10,8 +10,6 @@ namespace GetStartedApp.ViewModels;
 
 public partial class PdvViewModel
 {
-    private readonly INfceCancelamentoService? _cancelamentoService;
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsBloqueadoPorModal))]
     private bool _modalCancelamentoAberto;
@@ -34,20 +32,29 @@ public partial class PdvViewModel
     [RelayCommand]
     public async Task AbrirModalCancelamentoAsync()
     {
-        MensagemCancelamentoStatus = string.Empty;
-        JustificativaCancelamento = string.Empty;
-        SenhaSupervisorCancelamento = string.Empty;
-
+        _logger.LogInformation("Abrindo modal de cancelamento de NFC-e...");
+        
+        // Pega a última venda cadastrada no sistema
         var ultimaVenda = await _pdvService.ObterUltimaVendaAsync();
         if (ultimaVenda == null)
         {
-            MensagemCancelamentoStatus = "Nenhuma venda foi encontrada no sistema.";
+            _logger.LogWarning("Nenhuma venda encontrada para cancelar.");
             return;
         }
 
+        if (ultimaVenda.Status == "CANCELADA")
+        {
+            MensagemCancelamentoStatus = "A última venda já se encontra cancelada.";
+        }
+        else
+        {
+            MensagemCancelamentoStatus = string.Empty;
+        }
+
         VendaCancelamento = ultimaVenda;
+        JustificativaCancelamento = string.Empty;
+        SenhaSupervisorCancelamento = string.Empty;
         ModalCancelamentoAberto = true;
-        _logger.LogInformation("Modal de cancelamento aberto para a venda #{Id}", ultimaVenda.Id);
     }
 
     [RelayCommand]
@@ -55,10 +62,9 @@ public partial class PdvViewModel
     {
         ModalCancelamentoAberto = false;
         VendaCancelamento = null;
-        JustificativaCancelamento = string.Empty;
-        SenhaSupervisorCancelamento = string.Empty;
         MensagemCancelamentoStatus = string.Empty;
-        IsCancelandoProcessando = false;
+        SenhaSupervisorCancelamento = string.Empty;
+        JustificativaCancelamento = string.Empty;
     }
 
     [RelayCommand]
@@ -68,12 +74,12 @@ public partial class PdvViewModel
 
         if (_cancelamentoService == null)
         {
-            MensagemCancelamentoStatus = "Serviço fiscal de cancelamento não configurado.";
+            MensagemCancelamentoStatus = "Serviço de cancelamento não configurado.";
             return;
         }
 
         IsCancelandoProcessando = true;
-        MensagemCancelamentoStatus = "Comunicando com SEFAZ... Aguarde...";
+        MensagemCancelamentoStatus = "Transmitindo Evento de Cancelamento (110111) para a SEFAZ...";
 
         try
         {
@@ -84,20 +90,22 @@ public partial class PdvViewModel
 
             if (retorno.Sucesso)
             {
-                MensagemCancelamentoStatus = $"✅ {retorno.Mensagem}";
+                MensagemCancelamentoStatus = $"✅ SUCESSO: {retorno.Mensagem} (Protocolo: {retorno.ProtocoloHomologacao})";
+                _logger.LogInformation("Cancelamento homologado. Protocolo: {Prot}", retorno.ProtocoloHomologacao);
+                
+                // Recarrega estado da tela
                 await AtualizarEstadoTurnoAsync();
-                _logger.LogInformation("Venda #{Id} cancelada com sucesso via PDV.", VendaCancelamento.Id);
             }
             else
             {
-                MensagemCancelamentoStatus = $"❌ {retorno.Mensagem}";
-                _logger.LogWarning("Cancelamento da venda #{Id} rejeitado: {Msg}", VendaCancelamento.Id, retorno.Mensagem);
+                MensagemCancelamentoStatus = $"❌ REJEIÇÃO: {retorno.Mensagem}";
+                _logger.LogWarning("Falha no cancelamento: {Msg}", retorno.Mensagem);
             }
         }
         catch (Exception ex)
         {
-            MensagemCancelamentoStatus = $"❌ Falha: {ex.Message}";
-            _logger.LogError(ex, "Exceção ao cancelar venda #{Id}", VendaCancelamento.Id);
+            _logger.LogError(ex, "Erro inesperado ao cancelar NFC-e.");
+            MensagemCancelamentoStatus = $"Erro interno: {ex.Message}";
         }
         finally
         {

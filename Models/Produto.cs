@@ -1,3 +1,5 @@
+using System;
+
 namespace GetStartedApp.Models;
 
 public class Produto
@@ -13,6 +15,7 @@ public class Produto
     public string? Ncm { get; set; }
     public string? UnidadeMedida { get; set; } = "UN";
     public decimal CustoUltimaCompra { get; set; }
+    public DateTime DataCadastro { get; set; } = DateTime.Now;
 
     public bool EstaAbaixoDoMinimo => Estoque <= EstoqueMinimo;
 }

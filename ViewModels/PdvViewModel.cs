@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using GetStartedApp.Models;
 using GetStartedApp.Models.Fiscal;
 using GetStartedApp.Services;
+using GetStartedApp.Services.Clientes;
+using GetStartedApp.Services.Comercial;
 using GetStartedApp.Services.Fiscal;
 using Microsoft.Extensions.Logging;
 
@@ -20,6 +22,9 @@ public partial class PdvViewModel : ViewModelBase
     private readonly NfceEmissaoService? _nfceService;
     private readonly ConfiguracaoFiscalEmpresa? _fiscalConfig;
     private readonly DanfeA4PdfService? _danfePdfService;
+    private readonly INfceCancelamentoService? _cancelamentoService;
+    private readonly ITrocaDevolucaoService? _trocaService;
+    private readonly IClienteService? _clienteService;
 
     public ObservableCollection<ProdutoItem> Carrinho { get; } = [];
     public ObservableCollection<Produto> ResultadosPesquisa { get; } = [];
@@ -40,7 +45,7 @@ public partial class PdvViewModel : ViewModelBase
     [ObservableProperty]
     private string _textoPesquisa = string.Empty;
 
-    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto || ModalFilaBalcaoAberto || ModalNfceEmitidaAberto || ModalCancelamentoAberto;
+    public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto || ModalFilaBalcaoAberto || ModalNfceEmitidaAberto || ModalCancelamentoAberto || ModalTrocasAberto;
 
     public PdvViewModel(
         PdvService pdvService, 
@@ -48,7 +53,9 @@ public partial class PdvViewModel : ViewModelBase
         NfceEmissaoService? nfceService = null,
         ConfiguracaoFiscalEmpresa? fiscalConfig = null,
         DanfeA4PdfService? danfePdfService = null,
-        INfceCancelamentoService? cancelamentoService = null)
+        INfceCancelamentoService? cancelamentoService = null,
+        ITrocaDevolucaoService? trocaService = null,
+        IClienteService? clienteService = null)
     {
         _pdvService = pdvService;
         _logger = logger;
@@ -56,6 +63,8 @@ public partial class PdvViewModel : ViewModelBase
         _fiscalConfig = fiscalConfig;
         _danfePdfService = danfePdfService;
         _cancelamentoService = cancelamentoService;
+        _trocaService = trocaService;
+        _clienteService = clienteService;
     }
 
     public async Task InicializarAsync()
@@ -73,9 +82,8 @@ public partial class PdvViewModel : ViewModelBase
     private void AtualizarTotal()
     {
         TotalVenda = Carrinho.Sum(x => x.Produto.Preco * x.Quantidade);
-        OnPropertyChanged(nameof(Acrescimo));
-        OnPropertyChanged(nameof(TotalComTaxa));
         OnPropertyChanged(nameof(Troco));
+        OnPropertyChanged(nameof(TotalComTaxa));
         OnPropertyChanged(nameof(PodeConfirmarPagamento));
         ValorRecebido = TotalComTaxa;
     }

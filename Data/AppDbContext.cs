@@ -21,6 +21,8 @@ public class AppDbContext : DbContext
     public DbSet<ContaReceber> ContasReceber { get; set; }
     public DbSet<AjusteEstoque> AjustesEstoque { get; set; }
     public DbSet<ConfiguracaoTerminal> ConfiguracoesTerminal { get; set; }
+    public DbSet<ValeCredito> ValesCredito { get; set; }
+    public DbSet<Cliente> Clientes { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -38,5 +40,12 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ValeCredito>()
+            .HasIndex(v => v.Codigo)
+            .IsUnique();
+
+        modelBuilder.Entity<Cliente>()
+            .HasIndex(c => c.CpfCnpj);
     }
 }
