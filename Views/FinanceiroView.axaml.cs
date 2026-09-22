@@ -7,6 +7,6 @@ public partial class FinanceiroView : UserControl
 {
     public FinanceiroView()
     {
-       AvaloniaXamlLoader.Load(this);
+        AvaloniaXamlLoader.Load(this);
     }
 }
