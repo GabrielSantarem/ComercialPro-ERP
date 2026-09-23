@@ -119,6 +119,10 @@ public partial class PdvService
             existente.ImprimirComandaBalcaoAutomatico = config.ImprimirComandaBalcaoAutomatico;
             existente.IntegracaoBalancaHabilitada = config.IntegracaoBalancaHabilitada;
             existente.ModeloBalanca = config.ModeloBalanca;
+            existente.ModoBalancaEtiqueta = config.ModoBalancaEtiqueta;
+            existente.AcionarGavetaAutomaticamente = config.AcionarGavetaAutomaticamente;
+            existente.UsarEmuladorBalanca = config.UsarEmuladorBalanca;
+            existente.TamanhoCodigoBalanca = config.TamanhoCodigoBalanca;
         }
         await _db.SaveChangesAsync();
     }
@@ -128,7 +132,10 @@ public partial class PdvService
         if (string.IsNullOrWhiteSpace(texto)) return new List<Produto>();
         var terms = texto.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var produtos = await _db.Produtos.ToListAsync();
-        return produtos.Where(p => terms.All(t => p.Nome.ToLowerInvariant().Contains(t))).ToList();
+        return produtos.Where(p => terms.All(t => 
+            p.Nome.ToLowerInvariant().Contains(t) || 
+            (p.CodigoBarras != null && p.CodigoBarras.ToLowerInvariant().Contains(t)) ||
+            p.Id.ToString() == t)).ToList();
     }
 
     public async Task<Venda?> ObterUltimaVendaAsync()

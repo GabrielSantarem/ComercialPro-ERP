@@ -7,7 +7,9 @@ using GetStartedApp.Models.Fiscal;
 using GetStartedApp.Services;
 using GetStartedApp.Services.Clientes;
 using GetStartedApp.Services.Comercial;
+using GetStartedApp.Services.Etiquetas;
 using GetStartedApp.Services.Fiscal;
+using GetStartedApp.Services.Hardware;
 using GetStartedApp.Services.Impressao;
 using GetStartedApp.Services.Inteligencia;
 using GetStartedApp.ViewModels;
@@ -38,13 +40,12 @@ public partial class App : Application
 
         try
         {
-            Log.Information("Aplicação inicializada pelo Splash Screen.");
+            Log.Information(">>> INICIANDO APLICAÇÃO ERP / PDV DESKTOP AVALONIA (Fase 4: Hardware & Automação) <<<");
 
-            // === 1. Container de Injeção de Dependência (DI) ===
             var collection = new ServiceCollection();
-            
-            // Plugar o Serilog na injeção de dependências do .NET
-            collection.AddLogging(builder => 
+
+            // Configurar ILogger para usar Serilog
+            collection.AddLogging(builder =>
             {
                 builder.ClearProviders();
                 builder.AddSerilog(dispose: true);
@@ -72,6 +73,12 @@ public partial class App : Application
             collection.AddSingleton<ITrocaDevolucaoService, TrocaDevolucaoService>();
             collection.AddSingleton<IClienteService, ClienteService>();
             collection.AddSingleton<IInteligenciaComercialService, InteligenciaComercialService>();
+
+            // Automação Comercial, Hardware & Etiquetas (REV-004)
+            collection.AddSingleton<IBalancaEtiquetaParserService, BalancaEtiquetaParserService>();
+            collection.AddSingleton<IBalancaCheckoutService, BalancaMockService>();
+            collection.AddSingleton<IGavetaDinheiroService, GavetaDinheiroService>();
+            collection.AddSingleton<IEtiquetaGondolaService, EtiquetaGondolaService>();
             
             // Nossas ViewModels
             collection.AddTransient<MainViewModel>();           // O Navigation Shell (Janela)
@@ -88,16 +95,19 @@ public partial class App : Application
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                // Em vez de iniciar o Main abrindo rasgado, nós puxamos a nossa Tela de Início (Splash Screen)
-                // Ela fará o trabalho interno de configurar o BD e carregar a janela mestre.
-                desktop.MainWindow = new SplashWindow();
+                var mainVm = Services.GetRequiredService<MainViewModel>();
+                desktop.MainWindow = new MainWindow
+                {
+                    DataContext = mainVm
+                };
             }
 
             base.OnFrameworkInitializationCompleted();
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Erro fatal durante a inicialização do programa.");
+            Log.Fatal(ex, "Erro fatal ao inicializar o contêiner de injeção de dependência do App.");
+            throw;
         }
     }
 }

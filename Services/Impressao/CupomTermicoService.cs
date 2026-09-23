@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using GetStartedApp.Models;
+using GetStartedApp.Services.Hardware;
 
 namespace GetStartedApp.Services.Impressao;
 
@@ -96,6 +97,55 @@ public class CupomTermicoService
         sb.AppendLine();
 
         return sb.ToString();
+    }
+
+    public byte[] GerarBytesComprovante(
+        string textoCupom, 
+        bool acionarGaveta = false, 
+        string formaPagamento = "Dinheiro",
+        IGavetaDinheiroService? gavetaService = null)
+    {
+        var buffer = new List<byte>();
+
+        // Texto do cupom em bytes (Latin1 para acentuação padrão ESC/POS)
+        buffer.AddRange(Encoding.Latin1.GetBytes(textoCupom ?? string.Empty));
+        buffer.AddRange(Encoding.Latin1.GetBytes("\n\n\n\n"));
+
+        // Pulso de gaveta se habilitado e forma de pagamento for dinheiro
+        bool ehDinheiro = formaPagamento.Contains("Dinheiro", StringComparison.OrdinalIgnoreCase) || 
+                          formaPagamento.Contains("01");
+
+        if (acionarGaveta && ehDinheiro)
+        {
+            var comandoGaveta = gavetaService?.ObterComandoAberturaGaveta() 
+                ?? GavetaDinheiroService.PulsoEscPosPadrao;
+            buffer.AddRange(comandoGaveta);
+        }
+
+        // Corte parcial de papel ESC/POS (GS V 66 0)
+        buffer.AddRange([0x1D, 0x56, 0x42, 0x00]);
+
+        return buffer.ToArray();
+    }
+
+    public byte[] AnexarPulsoGavetaSeHabilitado(
+        byte[] cupomBytes, 
+        bool acionarGaveta, 
+        string formaPagamento = "Dinheiro",
+        IGavetaDinheiroService? gavetaService = null)
+    {
+        var lista = new List<byte>(cupomBytes ?? []);
+        bool ehDinheiro = formaPagamento.Contains("Dinheiro", StringComparison.OrdinalIgnoreCase) || 
+                          formaPagamento.Contains("01");
+
+        if (acionarGaveta && ehDinheiro)
+        {
+            var comando = gavetaService?.ObterComandoAberturaGaveta() 
+                ?? GavetaDinheiroService.PulsoEscPosPadrao;
+            lista.AddRange(comando);
+        }
+
+        return lista.ToArray();
     }
 
     private static string Centralizar(string texto, int largura)

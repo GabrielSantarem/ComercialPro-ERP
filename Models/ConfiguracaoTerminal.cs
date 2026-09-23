@@ -14,4 +14,10 @@ public class ConfiguracaoTerminal
     public bool ImprimirComandaBalcaoAutomatico { get; set; } = true;
     public bool IntegracaoBalancaHabilitada { get; set; } = false;
     public string ModeloBalanca { get; set; } = "Toledo Prix 3";
+
+    // Automação Comercial, Hardware & Etiquetas (REV-004)
+    public string ModoBalancaEtiqueta { get; set; } = "ValorTotal"; // "ValorTotal" ou "PesoLiquido"
+    public bool AcionarGavetaAutomaticamente { get; set; } = true;
+    public bool UsarEmuladorBalanca { get; set; } = true;
+    public int TamanhoCodigoBalanca { get; set; } = 4;
 }
