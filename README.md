@@ -3,6 +3,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Avalonia UI](https://img.shields.io/badge/Avalonia%20UI-11.2-8E44AD?logo=avalonia)](https://avaloniaui.net/)
 [![SQLite](https://img.shields.io/badge/Database-SQLite%203-003B57?logo=sqlite)](https://www.sqlite.org/)
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 [![Unit Tests](https://img.shields.io/badge/Tests-243%20Passed%20(100%25)-27AE60)](#-qualidade--testes-automatizados)
 [![Zero Mouse PDV](https://img.shields.io/badge/UX-100%25%20Zero%20Mouse-E67E22)](#-ergonomia-de-frente-de-caixa-zero-mouse)
 [![SEFAZ NFC-e](https://img.shields.io/badge/Fiscal-NFC--e%204.00%20(Zeus)-2980B9)](#-conformidade-fiscal-brasileira)
@@ -137,6 +138,18 @@ dotnet run --project ComercialPro.csproj
 
 ---
 
-## 📄 Licença e Uso
+## 📄 Licença e Termos de Uso
 
-Este software é disponibilizado para fins de demonstração técnica, estudo de engenharia de software orientada a agentes de inteligência artificial e base de aceleração para automação comercial.
+Este projeto está licenciado sob a licença **Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)**.
+
+```
+Você tem o direito de:
+  Compartilhar — copiar e redistribuir o material em qualquer suporte ou formato para fins de estudo e exemplo.
+
+Sob as seguintes condições:
+  Atribuição (BY) — Você deve dar o crédito apropriado ao autor original (Gabriel Santarém).
+  Não Comercial (NC) — Você NÃO pode utilizar este material ou partes dele para fins comerciais ou lucrativos.
+  Sem Derivados (ND) — Se você remixar, transformar ou criar a partir do material, você NÃO pode distribuir o material modificado.
+```
+
+Para detalhes jurídicos completos, consulte o arquivo [LICENSE](file:///home/tomate/Lixeira/dotnet/C#/GetStartedApp/LICENSE).
