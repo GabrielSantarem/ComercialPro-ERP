@@ -1,4 +1,4 @@
-# 🏪 ERP Varejo & PDV Autônomo (.NET 10 + Avalonia UI)
+# 🏪 ComercialPro ERP & PDV (.NET 10 + Avalonia UI)
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Avalonia UI](https://img.shields.io/badge/Avalonia%20UI-11.2-8E44AD?logo=avalonia)](https://avaloniaui.net/)
@@ -8,13 +8,13 @@
 [![SEFAZ NFC-e](https://img.shields.io/badge/Fiscal-NFC--e%204.00%20(Zeus)-2980B9)](#-conformidade-fiscal-brasileira)
 
 > **Case de Engenharia de Software Orientada por Agentes Autônomos de IA:**  
-> Este projeto demonstra a concepção, desenvolvimento, auditoria técnica e homologação de um **ERP e PDV Comercial completo de nível profissional para o mercado brasileiro**, construído e evoluído através de uma esteira rigorosa de **Agentes de IA (Arquitetura Agente-Executor / Agente-Auditor)** com especificações formais (`REV-001` a `REV-004`), conformidade fiscal real (NFC-e / SEFAZ) e cobertura massiva de testes de unidade sem regressões.
+> Este projeto demonstra a concepção, desenvolvimento, auditoria técnica e homologação do **ComercialPro ERP**, uma plataforma completa de ERP e PDV Comercial de nível profissional para o mercado varejista brasileiro, construída e evoluída através de uma esteira rigorosa de **Agentes de IA (Arquitetura Agente-Executor / Agente-Auditor)** com especificações formais (`REV-001` a `REV-004`), conformidade fiscal real (NFC-e / SEFAZ) e cobertura massiva de testes de unidade sem regressões.
 
 ---
 
 ## 🎯 Sobre o Projeto
 
-O sistema foi desenhado para resolver as dores reais do comércio varejista físico brasileiro (mercados, padarias, açougues, hortifrutis, papelarias e distribuidores), aliando:
+O **ComercialPro ERP** foi desenhado para resolver as dores reais do comércio varejista físico brasileiro (mercados, padarias, açougues, hortifrutis, papelarias e distribuidores), aliando:
 1. **Velocidade Extrema no Checkout:** Operação de caixa 100% por teclado (*Zero Mouse*), fila balcão pré-venda com comanda FIFO e contingência offline resiliente.
 2. **Conformidade Tributária Rigorosa:** Motor NFC-e 4.00 (Zeus Automação), DANFE térmico ESC/POS e DANFE simplificado A4 em PDF vetorial (QuestPDF), cancelamento oficial SEFAZ (Evento 110111) e pacote contábil mensal `.zip`.
 3. **Hardware & Automação Sem Atrito:** Parser inteligente de etiquetas pesáveis de balança (EAN-13 iniciado por `2`), acionamento automático de gaveta de dinheiro (RJ12 ESC/POS) e gerador de etiquetas de gôndola adesivas A4 (Pimaco).
@@ -99,8 +99,8 @@ Diferente de projetos gerados por prompts casuais que acumulam dívida técnica 
 O repositório adota a premissa de **Zero Dependência de Hardware Físico** para desenvolvimento e execução em esteiras de integração contínua (CI/CD). O ecossistema conta com drivers emuladores para balança, impressora térmica e gaveta:
 
 ```bash
-# Executar a suíte completa de testes
-dotnet test
+# Executar a suíte completa de testes da solução ComercialPro
+dotnet test ComercialPro.sln
 ```
 
 ### Cobertura da Bateria de Testes (243 testes aprovados com 100% de êxito):
@@ -122,17 +122,17 @@ dotnet test
 ### Passos de Instalação e Execução
 ```bash
 # 1. Clonar o repositório
-git clone https://github.com/seu-usuario/seu-repositorio.git
-cd seu-repositorio
+git clone https://github.com/seu-usuario/ComercialPro-ERP.git
+cd ComercialPro-ERP
 
 # 2. Restaurar dependências
-dotnet restore
+dotnet restore ComercialPro.sln
 
 # 3. Executar os testes automatizados
-dotnet test
+dotnet test ComercialPro.sln
 
 # 4. Rodar o ERP
-dotnet run --project GetStartedApp
+dotnet run --project ComercialPro.csproj
 ```
 
 ---

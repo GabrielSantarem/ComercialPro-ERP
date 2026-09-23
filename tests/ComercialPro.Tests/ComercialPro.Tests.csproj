@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\GetStartedApp.csproj" />
+    <ProjectReference Include="..\..\ComercialPro.csproj" />
   </ItemGroup>
 
 </Project>
