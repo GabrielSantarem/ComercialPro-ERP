@@ -231,7 +231,7 @@ public partial class BalcaoViewModel : ViewModelBase
         if (Carrinho.Count == 0) return;
         if (VendedorSelecionado == null) return;
 
-        var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
+        var itens = Carrinho.Select(i => (i.Produto, (int)Math.Max(1, Math.Round(i.Quantidade)))).ToList();
 
         var nomeFinal = string.IsNullOrWhiteSpace(ClienteNome) ? "Cliente Balcão" : ClienteNome.Trim();
 

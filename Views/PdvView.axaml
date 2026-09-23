@@ -133,14 +133,22 @@
                     <!-- Busca e Lançamento Direto (Venda Direta no Caixa) -->
                     <Border Grid.Row="0" Background="#2C3E50" CornerRadius="4" Padding="15" Margin="0,0,0,15">
                         <StackPanel Spacing="10">
-                            <Grid ColumnDefinitions="*, Auto">
+                            <Grid ColumnDefinitions="*, Auto, Auto">
                                 <TextBlock Grid.Column="0" Text="VENDA DIRETA / CÓDIGO (Ex: 5*sacola):" Foreground="#F1C40F" FontSize="13" FontWeight="Bold"/>
-                                <Border Grid.Column="1" Background="#34495E" CornerRadius="3" Padding="5,2">
+                                <Button Grid.Column="1" Command="{Binding CapturarPesoBalancaCommand}" Background="#8E44AD" Foreground="White" FontWeight="Bold" FontSize="11" Padding="6,2" CornerRadius="3" Margin="0,0,5,0" Cursor="Hand" ToolTip.Tip="Captura peso da balança de checkout ou emulador [F3]">
+                                    <TextBlock Text="[F3] ⚖️ Balança"/>
+                                </Button>
+                                <Border Grid.Column="2" Background="#34495E" CornerRadius="3" Padding="5,2">
                                     <TextBlock Text="[F2] Foco" Foreground="#ECF0F1" FontSize="11" FontWeight="Bold"/>
                                 </Border>
                             </Grid>
                             
                             <TextBox x:Name="TxtPesquisa" Text="{Binding TextoPesquisa, Mode=TwoWay}" FontSize="20" FontWeight="Bold" Padding="10" Background="White" BorderThickness="0" CornerRadius="4" PlaceholderText="Digite ou bipe o item..."/>
+
+                            <!-- Mensagem de feedback da balança -->
+                            <Border Background="#34495E" CornerRadius="4" Padding="6,4" IsVisible="{Binding MensagemStatusBalanca, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                <TextBlock Text="{Binding MensagemStatusBalanca}" Foreground="#F1C40F" FontWeight="Bold" FontSize="12"/>
+                            </Border>
 
                             <!-- Sugestões da Busca Flutuante -->
                             <ListBox x:Name="ListaSugestoes" ItemsSource="{Binding ResultadosPesquisa}" SelectedItem="{Binding ProdutoPesquisaSelecionado}" MaxHeight="180" Background="White" CornerRadius="4" BorderThickness="0" IsVisible="{Binding ResultadosPesquisa.Count}">
@@ -183,7 +191,7 @@
                             <TextBlock Text="🔄 [F10] Trocas" FontWeight="Bold"/>
                         </Button>
                         <Button Grid.Column="3" Command="{Binding AbrirModalPagamentoCommand}" Background="#27AE60" Foreground="White" FontWeight="Black" FontSize="12" Padding="8" Margin="3,0,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
-                            <TextBlock Text="💰 [F12] RECEBER" FontWeight="Black"/>
+                            <TextBlock Text="💵 [F12] RECEBER" FontWeight="Black"/>
                         </Button>
                     </Grid>
 
@@ -197,6 +205,7 @@
                     <TextBlock Text="[F4] Fila do Balcão  |  " Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[ENTER] Lançar/Confirmar  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F2] Foco Busca  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
+                    <TextBlock Text="[F3] ⚖️ Balança  |  " Foreground="#9B59B6" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[DEL] Excluir Item  |  " Foreground="#BDC3C7" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F7] Cancelar NFC-e  |  " Foreground="#E74C3C" FontSize="13" FontWeight="Bold"/>
                     <TextBlock Text="[F10] Trocas/Vales  |  " Foreground="#F39C12" FontSize="13" FontWeight="Bold"/>
@@ -218,7 +227,7 @@
             <Border Background="White" Width="680" MaxHeight="720" CornerRadius="12" Padding="30" VerticalAlignment="Center" HorizontalAlignment="Center" BoxShadow="0 10 30 0 #AAF1C40F">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Spacing="14">
-                        <TextBlock Text="💰 RECEBIMENTO DE NOTA / CHECKOUT" FontSize="22" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                        <TextBlock Text="💵 RECEBIMENTO DE NOTA / CHECKOUT" FontSize="22" FontWeight="Black" Foreground="#2C3E50" HorizontalAlignment="Center" Margin="0,0,0,5"/>
                         
                         <!-- Identificação do Cliente / Comanda -->
                         <Border Background="#F4F6F7" CornerRadius="8" Padding="12">

@@ -95,6 +95,25 @@ public partial class ConfiguracoesViewModel : ViewModelBase
         "Elgin DP-30"
     ];
 
+    // Automação Comercial, Balança de Gôndola e Pulso de Gaveta (REV-004)
+    [ObservableProperty]
+    public partial string ModoBalancaEtiqueta { get; set; } = "ValorTotal";
+
+    public ObservableCollection<string> ModosBalancaEtiquetaDisponiveis { get; } = 
+    [
+        "ValorTotal",
+        "PesoLiquido"
+    ];
+
+    [ObservableProperty]
+    public partial bool AcionarGavetaAutomaticamente { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool UsarEmuladorBalanca { get; set; } = true;
+
+    [ObservableProperty]
+    public partial int TamanhoCodigoBalanca { get; set; } = 4;
+
     [ObservableProperty]
     public partial string MensagemAvisoHardware { get; set; } = string.Empty;
 
@@ -161,6 +180,32 @@ public partial class ConfiguracoesViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    public async Task CarregarVendedoresAsync()
+    {
+        VendedoresLista.Clear();
+        var lista = await _service.ObterVendedoresAsync();
+        foreach (var v in lista)
+        {
+            VendedoresLista.Add(v);
+        }
+    }
+
+    [RelayCommand]
+    public async Task AdicionarVendedorAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NovoVendedorNome))
+        {
+            MensagemAviso = "Por favor, digite o nome do operador.";
+            return;
+        }
+
+        await _service.AdicionarVendedorAsync(new Vendedor { Nome = NovoVendedorNome.Trim() });
+        NovoVendedorNome = string.Empty;
+        MensagemAviso = "Operador cadastrado com sucesso!";
+        await CarregarVendedoresAsync();
+    }
+
+    [RelayCommand]
     public async Task CarregarConfiguracoesHardwareAsync()
     {
         var config = await _service.ObterConfiguracaoTerminalAsync();
@@ -173,6 +218,10 @@ public partial class ConfiguracoesViewModel : ViewModelBase
         ImprimirComandaBalcaoAutomatico = config.ImprimirComandaBalcaoAutomatico;
         IntegracaoBalancaHabilitada = config.IntegracaoBalancaHabilitada;
         ModeloBalanca = config.ModeloBalanca;
+        ModoBalancaEtiqueta = config.ModoBalancaEtiqueta;
+        AcionarGavetaAutomaticamente = config.AcionarGavetaAutomaticamente;
+        UsarEmuladorBalanca = config.UsarEmuladorBalanca;
+        TamanhoCodigoBalanca = config.TamanhoCodigoBalanca;
     }
 
     [RelayCommand]
@@ -189,11 +238,15 @@ public partial class ConfiguracoesViewModel : ViewModelBase
             ModoImpressaoPadrao = ModoImpressaoPadrao,
             ImprimirComandaBalcaoAutomatico = ImprimirComandaBalcaoAutomatico,
             IntegracaoBalancaHabilitada = IntegracaoBalancaHabilitada,
-            ModeloBalanca = ModeloBalanca
+            ModeloBalanca = ModeloBalanca,
+            ModoBalancaEtiqueta = ModoBalancaEtiqueta,
+            AcionarGavetaAutomaticamente = AcionarGavetaAutomaticamente,
+            UsarEmuladorBalanca = UsarEmuladorBalanca,
+            TamanhoCodigoBalanca = TamanhoCodigoBalanca
         };
 
         await _service.SalvarConfiguracaoTerminalAsync(config);
-        MensagemAvisoHardware = "✅ Configurações de hardware e impressora salvas com sucesso no banco de dados!";
+        MensagemAvisoHardware = "✅ Configurações de hardware, balança e gaveta salvas com sucesso no banco de dados!";
         _ = LimparAvisoHardwareAsync();
     }
 
@@ -323,41 +376,14 @@ public partial class ConfiguracoesViewModel : ViewModelBase
             }
             else
             {
-                DataUltimoBackupTexto = "Nenhum backup encontrado";
+                DataUltimoBackupTexto = "Nenhum backup recente";
                 TamanhoUltimoBackupTexto = "0 KB";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Supressão defensiva em inicialização
+            MensagemBackupStatus = $"Erro ao verificar backups: {ex.Message}";
         }
-    }
-
-    [RelayCommand]
-    private async Task CarregarVendedoresAsync()
-    {
-        VendedoresLista.Clear();
-        var lista = await _service.ObterVendedoresAsync();
-        foreach (var v in lista) VendedoresLista.Add(v);
-    }
-
-    [RelayCommand]
-    private async Task AdicionarVendedorAsync()
-    {
-        if (string.IsNullOrWhiteSpace(NovoVendedorNome)) return;
-        await _service.AdicionarVendedorAsync(new Vendedor { Nome = NovoVendedorNome });
-
-        NovoVendedorNome = string.Empty;
-        MensagemAviso = "Funcionário habilitado com sucesso!";
-
-        await CarregarVendedoresAsync();
-        _ = LimparAvisoAsync();
-    }
-
-    private async Task LimparAvisoAsync()
-    {
-        await Task.Delay(3000);
-        MensagemAviso = string.Empty;
     }
 
     private async Task LimparAvisoHardwareAsync()

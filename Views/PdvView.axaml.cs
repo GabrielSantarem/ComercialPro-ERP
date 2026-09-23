@@ -254,6 +254,15 @@ public partial class PdvView : UserControl
         // 5. ATALHOS NA TELA PRINCIPAL DO PDV (BOCA DE CAIXA):
         // ==========================================
 
+        // F3: Captura peso da balança de checkout (REV-004)
+        if (e.Key == Key.F3)
+        {
+            Log.Information("[PDV ATALHO] F3 -> Capturar peso da balança de checkout");
+            await vm.CapturarPesoBalancaCommand.ExecuteAsync(null);
+            e.Handled = true;
+            return;
+        }
+
         // F4: Abre o modal de Fila do Balcão
         if (e.Key == Key.F4)
         {

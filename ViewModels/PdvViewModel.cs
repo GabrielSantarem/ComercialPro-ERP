@@ -11,6 +11,7 @@ using GetStartedApp.Services;
 using GetStartedApp.Services.Clientes;
 using GetStartedApp.Services.Comercial;
 using GetStartedApp.Services.Fiscal;
+using GetStartedApp.Services.Hardware;
 using Microsoft.Extensions.Logging;
 
 namespace GetStartedApp.ViewModels;
@@ -25,6 +26,9 @@ public partial class PdvViewModel : ViewModelBase
     private readonly INfceCancelamentoService? _cancelamentoService;
     private readonly ITrocaDevolucaoService? _trocaService;
     private readonly IClienteService? _clienteService;
+    private readonly IBalancaEtiquetaParserService _balancaParserService;
+    private readonly IBalancaCheckoutService _balancaCheckoutService;
+    private readonly IGavetaDinheiroService _gavetaService;
 
     public ObservableCollection<ProdutoItem> Carrinho { get; } = [];
     public ObservableCollection<Produto> ResultadosPesquisa { get; } = [];
@@ -45,6 +49,11 @@ public partial class PdvViewModel : ViewModelBase
     [ObservableProperty]
     private string _textoPesquisa = string.Empty;
 
+    [ObservableProperty]
+    private string _mensagemStatusBalanca = string.Empty;
+
+    public ConfiguracaoTerminal? ConfigTerminal { get; private set; }
+
     public bool IsBloqueadoPorModal => IsModalAberto || ModalCaixaAberto || ModalFilaBalcaoAberto || ModalNfceEmitidaAberto || ModalCancelamentoAberto || ModalTrocasAberto;
 
     public PdvViewModel(
@@ -55,7 +64,10 @@ public partial class PdvViewModel : ViewModelBase
         DanfeA4PdfService? danfePdfService = null,
         INfceCancelamentoService? cancelamentoService = null,
         ITrocaDevolucaoService? trocaService = null,
-        IClienteService? clienteService = null)
+        IClienteService? clienteService = null,
+        IBalancaEtiquetaParserService? balancaParserService = null,
+        IBalancaCheckoutService? balancaCheckoutService = null,
+        IGavetaDinheiroService? gavetaService = null)
     {
         _pdvService = pdvService;
         _logger = logger;
@@ -65,11 +77,16 @@ public partial class PdvViewModel : ViewModelBase
         _cancelamentoService = cancelamentoService;
         _trocaService = trocaService;
         _clienteService = clienteService;
+        _balancaParserService = balancaParserService ?? new BalancaEtiquetaParserService();
+        _balancaCheckoutService = balancaCheckoutService ?? new BalancaMockService();
+        _gavetaService = gavetaService ?? new GavetaDinheiroService();
     }
 
     public async Task InicializarAsync()
     {
-        _logger.LogInformation("Inicializando PdvViewModel e carregando vendedores...");
+        _logger.LogInformation("Inicializando PdvViewModel e carregando configurações...");
+        ConfigTerminal = await _pdvService.ObterConfiguracaoTerminalAsync();
+
         Vendedores.Clear();
         var vendedoresDb = await _pdvService.ObterVendedoresAsync();
         foreach (var v in vendedoresDb) Vendedores.Add(v);
@@ -81,7 +98,7 @@ public partial class PdvViewModel : ViewModelBase
 
     private void AtualizarTotal()
     {
-        TotalVenda = Carrinho.Sum(x => x.Produto.Preco * x.Quantidade);
+        TotalVenda = Carrinho.Sum(x => x.Total);
         OnPropertyChanged(nameof(Troco));
         OnPropertyChanged(nameof(TotalComTaxa));
         OnPropertyChanged(nameof(PodeConfirmarPagamento));
@@ -140,7 +157,7 @@ public partial class PdvViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void LancarProduto()
+    public async Task LancarProdutoAsync()
     {
         if (string.IsNullOrWhiteSpace(TextoPesquisa)) return;
 
@@ -152,6 +169,58 @@ public partial class PdvViewModel : ViewModelBase
         }
 
         var (quantidade, termo) = ProcessarMultiplicador(TextoPesquisa);
+
+        // REV-004: Detecção e decodificação automática de código de balança de retaguarda (Prefixo 2)
+        if (termo.Length is 12 or 13 && termo.StartsWith('2') && termo.All(char.IsDigit))
+        {
+            if (ConfigTerminal == null)
+            {
+                ConfigTerminal = await _pdvService.ObterConfiguracaoTerminalAsync();
+            }
+
+            var tamanhoCodigo = ConfigTerminal?.TamanhoCodigoBalanca ?? 4;
+            var modoBalanca = (ConfigTerminal?.ModoBalancaEtiqueta?.Equals("PesoLiquido", StringComparison.OrdinalIgnoreCase) ?? false)
+                ? ModoCodigoBalanca.PesoLiquido
+                : ModoCodigoBalanca.ValorTotal;
+
+            // Busca produto por ID ou código de barras
+            var codExtraido = termo.Substring(1, Math.Min(tamanhoCodigo, termo.Length - 1));
+            var todosProdutos = await _pdvService.ObterTodosProdutosAsync();
+            var produtoBalanca = todosProdutos.FirstOrDefault(p => 
+                p.Id.ToString() == codExtraido || 
+                p.Id.ToString() == codExtraido.TrimStart('0') ||
+                p.CodigoBarras == termo ||
+                p.CodigoBarras == codExtraido);
+
+            if (produtoBalanca != null)
+            {
+                var resultado = _balancaParserService.DecodificarCodigo(
+                    termo, 
+                    produtoBalanca.Preco, 
+                    modoBalanca, 
+                    tamanhoCodigo);
+
+                if (resultado.IsCodigoBalanca && string.IsNullOrEmpty(resultado.MensagemErro))
+                {
+                    _logger.LogInformation("Produto de balança lançado via leitor: '{Nome}', Qtd/Peso: {Qtd}, Total: R$ {Total:N2}",
+                        produtoBalanca.Nome, resultado.QuantidadeOuPeso, resultado.ValorTotalCalculado);
+
+                    AdicionarAoCarrinho(produtoBalanca, resultado.QuantidadeOuPeso, resultado.ValorTotalCalculado);
+                    TextoPesquisa = string.Empty;
+                    ResultadosPesquisa.Clear();
+                    ProdutoPesquisaSelecionado = null;
+                    return;
+                }
+                else if (!string.IsNullOrEmpty(resultado.MensagemErro))
+                {
+                    _logger.LogWarning("Erro ao decodificar etiqueta de balança: {Msg}", resultado.MensagemErro);
+                    MensagemCaixaErro = $"⚠️ Erro na etiqueta da balança: {resultado.MensagemErro}";
+                    return;
+                }
+            }
+        }
+
+        // Fluxo padrão caso não seja código de balança
         var produtoAlvo = ProdutoPesquisaSelecionado ?? ResultadosPesquisa.FirstOrDefault();
 
         if (produtoAlvo != null)
@@ -165,6 +234,42 @@ public partial class PdvViewModel : ViewModelBase
         else
         {
             _logger.LogWarning("Nenhum produto encontrado para o termo '{Termo}' com quantidade {Qtd}", termo, quantidade);
+        }
+    }
+
+    public void LancarProduto()
+    {
+        _ = LancarProdutoAsync();
+    }
+
+    [RelayCommand]
+    public async Task CapturarPesoBalancaAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Capturando peso da balança de checkout...");
+            var peso = await _balancaCheckoutService.LerPesoAsync();
+            MensagemStatusBalanca = $"⚖️ Balança: {peso:N3} kg capturado!";
+
+            if (ItemSelecionado != null)
+            {
+                ItemSelecionado.Quantidade = peso;
+                ItemSelecionado.TotalCustomizado = null;
+                AtualizarTotal();
+                _logger.LogInformation("Peso {Peso} kg aplicado ao item selecionado '{Nome}'", peso, ItemSelecionado.Produto.Nome);
+            }
+            else if (ProdutoPesquisaSelecionado != null)
+            {
+                AdicionarAoCarrinho(ProdutoPesquisaSelecionado, peso);
+                TextoPesquisa = string.Empty;
+                ResultadosPesquisa.Clear();
+                ProdutoPesquisaSelecionado = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falha ao ler peso da balança de checkout");
+            MensagemStatusBalanca = "⚠️ Falha ao comunicar com a balança.";
         }
     }
 
@@ -182,10 +287,15 @@ public partial class PdvViewModel : ViewModelBase
 
     public void AdicionarAoCarrinho(Produto produto, int quantidade)
     {
+        AdicionarAoCarrinho(produto, (decimal)quantidade, null);
+    }
+
+    public void AdicionarAoCarrinho(Produto produto, decimal quantidade, decimal? valorTotalCalculado = null)
+    {
         if (produto == null || quantidade <= 0) return;
 
-        var itemExistente = Carrinho.FirstOrDefault(x => x.Produto.Id == produto.Id);
-        if (itemExistente != null)
+        var itemExistente = Carrinho.FirstOrDefault(x => x.Produto.Id == produto.Id && x.TotalCustomizado == null);
+        if (itemExistente != null && !valorTotalCalculado.HasValue)
         {
             itemExistente.Quantidade += quantidade;
             var index = Carrinho.IndexOf(itemExistente);
@@ -193,7 +303,12 @@ public partial class PdvViewModel : ViewModelBase
         }
         else
         {
-            Carrinho.Add(new ProdutoItem { Produto = produto, Quantidade = quantidade });
+            Carrinho.Add(new ProdutoItem 
+            { 
+                Produto = produto, 
+                Quantidade = quantidade, 
+                TotalCustomizado = valorTotalCalculado 
+            });
         }
 
         AtualizarTotal();

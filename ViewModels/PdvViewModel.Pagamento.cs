@@ -414,7 +414,7 @@ public partial class PdvViewModel
         else
         {
             // Venda direta lançada pelo caixa
-            var itens = Carrinho.Select(i => (i.Produto, i.Quantidade)).ToList();
+            var itens = Carrinho.Select(i => (i.Produto, (int)Math.Max(1, Math.Round(i.Quantidade)))).ToList();
             var vendedorId = VendedorSelecionado?.Id ?? 1;
             vendaCriada = await _pdvService.SalvarPedidoAsync(vendedorId, itens, formaDescricao, parcelasDetalhadas);
         }
@@ -433,6 +433,15 @@ public partial class PdvViewModel
                     await _trocaService.ResgatarValeCreditoAsync(cod, pv.Valor, vendaCriada.Id);
                 }
             }
+        }
+
+        // REV-004: Acionamento elétrico de gaveta se o pagamento incluir dinheiro físico
+        bool temDinheiro = pagamentosNfce.Any(p => p.MeioPagamento == "01") || 
+                           formaDescricao.Contains("Dinheiro", StringComparison.OrdinalIgnoreCase);
+
+        if (temDinheiro && (ConfigTerminal?.AcionarGavetaAutomaticamente ?? true))
+        {
+            _ = _gavetaService.AcionarAberturaAsync(ConfigTerminal?.PortaComunicacao ?? "USB");
         }
 
         // Emissão Fiscal Automática NFC-e se estiver ativo

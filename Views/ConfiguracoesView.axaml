@@ -76,10 +76,10 @@
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <Grid ColumnDefinitions="*, *" Margin="0,20,0,0">
                                 
-                                <!-- Coluna 1: Impressora Térmica & Bobina -->
+                                <!-- Coluna 1: Impressora Térmica, Bobina e Gaveta -->
                                 <Border Grid.Column="0" Background="White" CornerRadius="12" Padding="25" Margin="0,0,15,0" BoxShadow="0 4 15 0 #1A000000" VerticalAlignment="Top">
-                                    <StackPanel Spacing="16">
-                                        <TextBlock Text="📠 Impressora Térmica de Cupons / NFC-e" FontSize="18" FontWeight="Bold" Foreground="#2C3E50"/>
+                                    <StackPanel Spacing="14">
+                                        <TextBlock Text="📠 Impressora Térmica &amp; Gaveta de Dinheiro" FontSize="18" FontWeight="Bold" Foreground="#2C3E50"/>
                                         
                                         <StackPanel Spacing="5">
                                             <TextBlock Text="Identificação desta Estação:" FontSize="13" FontWeight="SemiBold" Foreground="#7F8C8D"/>
@@ -113,6 +113,10 @@
                                                   IsChecked="{Binding CortarPapelAutomatico}" 
                                                   FontWeight="SemiBold" Foreground="#34495E"/>
 
+                                        <CheckBox Content="Acionar abertura de gaveta de dinheiro em pagamentos (ESC/POS)" 
+                                                  IsChecked="{Binding AcionarGavetaAutomaticamente}" 
+                                                  FontWeight="SemiBold" Foreground="#34495E"/>
+
                                         <Button Command="{Binding TestarImpressaoCupomCommand}" 
                                                 Content="🖨️ Testar Impressão ESC/POS (Prévia)" 
                                                 Background="#3498DB" Foreground="White" FontWeight="Bold" FontSize="14" 
@@ -120,10 +124,10 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Coluna 2: Modos de Impressão & Balança Checkout -->
+                                <!-- Coluna 2: Modos de Impressão, Balança e Etiquetas -->
                                 <Border Grid.Column="1" Background="White" CornerRadius="12" Padding="25" Margin="15,0,0,0" BoxShadow="0 4 15 0 #1A000000" VerticalAlignment="Top">
-                                    <StackPanel Spacing="16">
-                                        <TextBlock Text="⚖️ Fluxo Operacional e Balança de Checkout" FontSize="18" FontWeight="Bold" Foreground="#2C3E50"/>
+                                    <StackPanel Spacing="14">
+                                        <TextBlock Text="⚖️ Fluxo Operacional, Balança e Etiquetas" FontSize="18" FontWeight="Bold" Foreground="#2C3E50"/>
 
                                         <StackPanel Spacing="5">
                                             <TextBlock Text="Comportamento Padrão na Venda:" FontSize="13" FontWeight="SemiBold" Foreground="#7F8C8D"/>
@@ -134,11 +138,33 @@
 
                                         <CheckBox Content="Imprimir comanda de balcão automaticamente na pré-venda" 
                                                   IsChecked="{Binding ImprimirComandaBalcaoAutomatico}" 
-                                                  FontWeight="SemiBold" Foreground="#34495E" Margin="0,5"/>
+                                                  FontWeight="SemiBold" Foreground="#34495E" Margin="0,3"/>
 
-                                        <Border Height="1" Background="#ECF0F1" Margin="0,5"/>
+                                        <Border Height="1" Background="#ECF0F1" Margin="0,3"/>
 
-                                        <CheckBox Content="Habilitar integração contínua com Balança de Peso" 
+                                        <!-- Configuração do Parser de Balança (Prefixo 2) -->
+                                        <TextBlock Text="🏷️ Etiquetas de Balança de Retaguarda (Prefixo 2):" FontSize="14" FontWeight="Bold" Foreground="#2C3E50"/>
+
+                                        <Grid ColumnDefinitions="*, *" Margin="0,2">
+                                            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,6,0">
+                                                <TextBlock Text="Modo da Etiqueta:" FontSize="12" FontWeight="SemiBold" Foreground="#7F8C8D"/>
+                                                <ComboBox ItemsSource="{Binding ModosBalancaEtiquetaDisponiveis}" 
+                                                          SelectedItem="{Binding ModoBalancaEtiqueta}"
+                                                          HorizontalAlignment="Stretch" Background="#F4F6F7" BorderThickness="0" Padding="8" CornerRadius="6"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1" Spacing="4" Margin="6,0,0,0">
+                                                <TextBlock Text="Dígitos Cód. Prod. (4 a 6):" FontSize="12" FontWeight="SemiBold" Foreground="#7F8C8D"/>
+                                                <NumericUpDown Value="{Binding TamanhoCodigoBalanca, Mode=TwoWay}" 
+                                                               Minimum="4" Maximum="6" Increment="1" FormatString="0"
+                                                               HorizontalAlignment="Stretch" Background="#F4F6F7" BorderThickness="0" CornerRadius="6"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Border Height="1" Background="#ECF0F1" Margin="0,3"/>
+
+                                        <!-- Balança de Checkout e Emulação -->
+                                        <CheckBox Content="Habilitar integração com Balança de Checkout (F3)" 
                                                   IsChecked="{Binding IntegracaoBalancaHabilitada}" 
                                                   FontWeight="Bold" Foreground="#2C3E50"/>
 
@@ -149,11 +175,15 @@
                                                       HorizontalAlignment="Stretch" Background="#F4F6F7" BorderThickness="0" Padding="10" CornerRadius="6"/>
                                         </StackPanel>
 
+                                        <CheckBox Content="Usar emulação de balança serial estável (Ambiente Testes/Mock)" 
+                                                  IsChecked="{Binding UsarEmuladorBalanca}" 
+                                                  FontWeight="SemiBold" Foreground="#34495E"/>
+
                                         <!-- Botão Salvar Todas as Configurações -->
                                         <Button Command="{Binding SalvarConfiguracoesHardwareCommand}" 
                                                 Content="💾 Salvar Configurações de Hardware" 
                                                 Background="#27AE60" Foreground="White" FontWeight="Bold" FontSize="15" 
-                                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="14" CornerRadius="8" Cursor="Hand" Margin="0,20,0,0"/>
+                                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="14" CornerRadius="8" Cursor="Hand" Margin="0,15,0,0"/>
 
                                         <TextBlock Text="{Binding MensagemAvisoHardware}" Foreground="#27AE60" FontWeight="Bold" TextWrapping="Wrap" HorizontalAlignment="Center"/>
                                     </StackPanel>

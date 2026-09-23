@@ -60,7 +60,7 @@ public partial class PdvViewModel
     public void AbrirModalTrocas()
     {
         TrocaVendaOrigemTexto = string.Empty;
-        TrocaClienteNome = string.Empty;
+        TrocaClienteNome = ClienteIdentificacao;
         TrocaClienteCpf = string.Empty;
         TrocaMotivoGeral = "Troca e Devolução no Balcão";
         TrocaMensagemErro = string.Empty;
@@ -77,7 +77,7 @@ public partial class PdvViewModel
                 {
                     ProdutoId = item.Produto.Id,
                     ProdutoNome = item.Produto.Nome,
-                    Quantidade = item.Quantidade,
+                    Quantidade = (int)Math.Max(1, Math.Round(item.Quantidade)),
                     PrecoUnitario = item.Produto.Preco,
                     DestinarAvaria = false,
                     Motivo = "Troca de mercadoria"

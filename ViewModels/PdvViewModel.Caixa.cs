@@ -234,21 +234,37 @@ public partial class PdvViewModel
             {
                 case "ABERTURA":
                     await _pdvService.AbrirCaixaAsync(vendedorId, ValorModalCaixa, MotivoModalCaixa);
+                    if (ConfigTerminal?.AcionarGavetaAutomaticamente ?? true)
+                    {
+                        _ = _gavetaService.AcionarAberturaAsync(ConfigTerminal?.PortaComunicacao ?? "USB");
+                    }
                     break;
 
                 case "SUPRIMENTO":
                     if (TurnoAtual == null) throw new InvalidOperationException("Nenhum turno aberto.");
                     await _pdvService.RegistrarSuprimentoAsync(TurnoAtual.Id, ValorModalCaixa, MotivoModalCaixa);
+                    if (ConfigTerminal?.AcionarGavetaAutomaticamente ?? true)
+                    {
+                        _ = _gavetaService.AcionarAberturaAsync(ConfigTerminal?.PortaComunicacao ?? "USB");
+                    }
                     break;
 
                 case "SANGRIA":
                     if (TurnoAtual == null) throw new InvalidOperationException("Nenhum turno aberto.");
                     await _pdvService.RegistrarSangriaAsync(TurnoAtual.Id, ValorModalCaixa, MotivoModalCaixa);
+                    if (ConfigTerminal?.AcionarGavetaAutomaticamente ?? true)
+                    {
+                        _ = _gavetaService.AcionarAberturaAsync(ConfigTerminal?.PortaComunicacao ?? "USB");
+                    }
                     break;
 
                 case "FECHAMENTO":
                     if (TurnoAtual == null) throw new InvalidOperationException("Nenhum turno aberto.");
                     var turnoFechado = await _pdvService.FecharCaixaAsync(TurnoAtual.Id, ValorModalCaixa, MotivoModalCaixa);
+                    if (ConfigTerminal?.AcionarGavetaAutomaticamente ?? true)
+                    {
+                        _ = _gavetaService.AcionarAberturaAsync(ConfigTerminal?.PortaComunicacao ?? "USB");
+                    }
                     _logger.LogInformation("Fechamento concluído. Quebra: R$ {Quebra}", turnoFechado.DiferencaQuebra);
                     break;
             }
