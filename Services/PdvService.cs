@@ -24,8 +24,19 @@ public partial class PdvService
 
     public async Task InicializarBancoDadosAsync()
     {
-        await _db.Database.MigrateAsync();
-        _logger.LogInformation("Banco de Dados inicializado/verificado com sucesso.");
+        try
+        {
+            var pending = await _db.Database.GetPendingMigrationsAsync();
+            if (pending.Any())
+            {
+                await _db.Database.MigrateAsync();
+            }
+            _logger.LogInformation("Banco de Dados inicializado/verificado com sucesso.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Aviso ao verificar/aplicar migrações do banco de dados.");
+        }
 
         if (!await _db.ConfiguracoesTerminal.AnyAsync())
         {
