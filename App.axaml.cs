@@ -93,6 +93,18 @@ public partial class App : Application
 
             Services = collection.BuildServiceProvider();
 
+            // Garantir inicialização do banco SQLite, aplicação de migrations e seeds essenciais
+            try
+            {
+                var pdvService = Services.GetRequiredService<PdvService>();
+                pdvService.InicializarBancoDadosAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Falha crítica ao auto-migrar e inicializar o banco de dados SQLite no startup.");
+                throw;
+            }
+
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 var mainVm = Services.GetRequiredService<MainViewModel>();
